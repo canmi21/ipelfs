@@ -11,16 +11,19 @@ pub struct Config {
     pub data_dir: Option<String>,
 }
 
+// format current time as HH:MM:SS
 fn now() -> String {
     let time = chrono::Local::now();
     format!("{:02}:{:02}:{:02}", time.hour(), time.minute(), time.second())
 }
 
+// log with prefix and timestamp
 fn log(prefix: &str, msg: &str) {
     println!("{} {} {}", now(), prefix, msg);
 }
 
 impl Config {
+    // load config, create if not exists
     pub fn load() -> Result<Config, Box<dyn std::error::Error>> {
         if !Path::new(CONFIG_PATH).exists() {
             let default = Config {
