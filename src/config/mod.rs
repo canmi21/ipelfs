@@ -17,6 +17,7 @@ pub struct IpelFs {
     pub os: String,
     pub arch: String,
     pub ram: String,
+    pub fs_type: String,
     pub version: String,
     pub timestamp: String,
 }
@@ -30,6 +31,7 @@ impl Config {
                     os: std::env::consts::OS.to_string(),
                     arch: std::env::consts::ARCH.to_string(),
                     ram: get_ram(),
+                    fs_type: get_fs_type(),
                     version: env!("CARGO_PKG_VERSION").to_string(),
                     timestamp: chrono::Local::now().to_rfc3339(),
                 },
@@ -53,4 +55,17 @@ fn get_ram() -> String {
         Ok(mem) => format!("{} MB", mem.total / 1024),
         Err(_) => "unknown".to_string(),
     }
+}
+
+// return filesystem type of /
+fn get_fs_type() -> String {
+    if let Ok(content) = fs::read_to_string("/proc/mounts") {
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 3 && parts[1] == "/" {
+                return parts[2].to_string();
+            }
+        }
+    }
+    "unknown".to_string()
 }
