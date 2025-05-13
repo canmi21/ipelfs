@@ -19,6 +19,7 @@ fn main() {
                 }
             }
             log::warn(&format!("failed to load config: {}", e));
+            log::action("config file may have been worn out and needs to be handled manually");
             return;
         }
     }
