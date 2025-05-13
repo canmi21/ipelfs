@@ -50,7 +50,7 @@ fn main() {
                     if ipelfs_path.exists() {
                         match std::fs::read_to_string(&ipelfs_path) {
                             Ok(owner_id) => {
-                                log::warn(&format!("volume already owned by id: {}", owner_id.trim()));
+                                log::warn(&format!("volume already owned by @{}", owner_id.trim()));
                             }
                             Err(_) => {
                                 log::warn("ipelfs exists, volume was broken");
