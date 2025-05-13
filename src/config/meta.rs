@@ -1,35 +1,24 @@
+use toml::Value;
 use chrono::Local;
 use std::fs::File;
 use std::io::Write;
+use toml::map::Map;
 use std::path::Path;
-use serde::Serialize;
 use std::process::Command;
+
 use crate::log;
 
-#[derive(Serialize)]
-struct VolumeMeta {
-    id: String,
-    timestamp: String,
-    fs_type: String,
-    storage_type: Option<String>,
-    connection_type: Option<String>,
-    removable: bool,
-    smart_total_written: Option<u64>,
-    power_on_hours: Option<u64>,
-    tbw_estimate: Option<u64>,
-    poh_estimate: Option<u64>,
-}
-
 pub fn init_volume_meta(id: &str, path: &str) -> std::io::Result<()> {
-    let ipelfs_path = Path::new(path).join(".ipelfs");
+    let id_path = Path::new(path).join(".ipelfs");
     let meta_path = Path::new(path).join("meta.toml");
 
-    File::create(&ipelfs_path)?.write_all(id.as_bytes())?;
+    File::create(&id_path)?.write_all(id.as_bytes())?;
 
     let device = get_device_name(path)?;
     let fs_type = get_fs_type(path)?;
     let removable = is_removable(&device)?;
     let connection_type = detect_connection_type(&device);
+
     let storage_type = if removable {
         None
     } else {
@@ -43,29 +32,55 @@ pub fn init_volume_meta(id: &str, path: &str) -> std::io::Result<()> {
         }
     };
 
+    let storage_type_clone = storage_type.as_ref().map(|s| s.clone());
     let smart_str = get_smart_output(&device)?;
     let smart_total_written = parse_data_units_written(&smart_str);
     let power_on_hours = parse_power_on_hours_nvme(&smart_str);
 
-    let meta = VolumeMeta {
-        id: id.to_string(),
-        timestamp: Local::now().to_rfc3339(),
-        fs_type,
-        storage_type: storage_type.clone(),
-        connection_type,
-        removable,
-        smart_total_written,
-        power_on_hours,
-        tbw_estimate: estimate_tbw(storage_type.as_deref()),
-        poh_estimate: estimate_poh(storage_type.as_deref()),
-    };
+    // [volume]
+    let mut volume = Map::new();
+    volume.insert("id".to_string(), Value::String(id.to_string()));
+    volume.insert("fs_type".to_string(), Value::String(fs_type));
+    volume.insert("timestamp".to_string(), Value::String(Local::now().to_rfc3339()));
 
-    let toml_str = toml::to_string(&meta).unwrap();
-    File::create(&meta_path)?.write_all(toml_str.as_bytes())?;
+    // [device]
+    let mut device = Map::new();
+    device.insert("removable".to_string(), Value::Boolean(removable));
+    device.insert("storage_type".to_string(), opt_str(storage_type_clone));
+    device.insert("connection_type".to_string(), opt_str(connection_type));
 
-    log::good(&format!("metadata successful save at {}", meta_path.display()));
+    // [smart]
+    let mut smart = Map::new();
+    smart.insert("smart_total_written".to_string(), opt_u64(smart_total_written));
+    smart.insert("power_on_hours".to_string(), opt_u64(power_on_hours));
+    smart.insert("tbw_estimate".to_string(), opt_u64(estimate_tbw(storage_type.as_deref())));
+    smart.insert("poh_estimate".to_string(), opt_u64(estimate_poh(storage_type.as_deref(), smart_total_written)));
 
+    // full metadata
+    let mut root = Map::new();
+    root.insert("volume".to_string(), Value::Table(volume));
+    root.insert("device".to_string(), Value::Table(device));
+    root.insert("smart".to_string(), Value::Table(smart));
+
+    let mut f = File::create(&meta_path)?;
+    f.write_all(toml::to_string(&Value::Table(root)).unwrap().as_bytes())?;
+
+    log::good(&format!("metadata successful saved at {}", meta_path.display()));
     Ok(())
+}
+
+fn opt_str(opt: Option<String>) -> Value {
+    match opt {
+        Some(s) => Value::String(s),
+        None => Value::String("null".to_string()),
+    }
+}
+
+fn opt_u64(opt: Option<u64>) -> Value {
+    match opt {
+        Some(n) => Value::Integer(n as i64),
+        None => Value::String("null".to_string()),
+    }
 }
 
 fn device_basename(dev: &str) -> &str {
@@ -75,8 +90,7 @@ fn device_basename(dev: &str) -> &str {
 fn get_device_name(path: &str) -> std::io::Result<String> {
     let out = Command::new("df").arg(path).output()?;
     Ok(String::from_utf8_lossy(&out.stdout)
-        .lines()
-        .nth(1)
+        .lines().nth(1)
         .and_then(|l| l.split_whitespace().next())
         .unwrap_or("/dev/unknown")
         .to_string())
@@ -85,8 +99,7 @@ fn get_device_name(path: &str) -> std::io::Result<String> {
 fn get_fs_type(path: &str) -> std::io::Result<String> {
     let out = Command::new("df").arg("-T").arg(path).output()?;
     Ok(String::from_utf8_lossy(&out.stdout)
-        .lines()
-        .nth(1)
+        .lines().nth(1)
         .and_then(|l| l.split_whitespace().nth(1))
         .unwrap_or("unknown")
         .to_string())
@@ -97,8 +110,7 @@ fn is_removable(dev: &str) -> std::io::Result<bool> {
         .args(&["info", "--query=property", "--name", dev])
         .output()?;
     Ok(String::from_utf8_lossy(&out.stdout)
-        .lines()
-        .any(|l| l.contains("ID_BUS=usb")))
+        .lines().any(|l| l.contains("ID_BUS=usb")))
 }
 
 fn detect_connection_type(dev: &str) -> Option<String> {
@@ -142,9 +154,22 @@ fn estimate_tbw(ty: Option<&str>) -> Option<u64> {
     }
 }
 
-fn estimate_poh(ty: Option<&str>) -> Option<u64> {
+fn estimate_poh(ty: Option<&str>, written: Option<u64>) -> Option<u64> {
     match ty {
         Some("hdd") => Some(3 * 365 * 24),
-        _ => None,
+        Some("ssd") => {
+            match written {
+                Some(bytes) => {
+                    let tb = bytes as f64 / (1024.0 * 1024.0 * 1024.0 * 1024.0);
+                    Some(match tb {
+                        tb if tb < 3.0 => 3 * 365 * 24,
+                        tb if tb < 5.0 => 5 * 365 * 24,
+                        _ => 7 * 365 * 24,
+                    })
+                }
+                None => None
+            }
+        }
+        _ => None
     }
 }
