@@ -4,7 +4,7 @@ use std::fs::File;
 use chrono::Local;
 use std::io::Write;
 use std::io::ErrorKind;
-use cli::{Cli, Commands, AddTarget, RemoveTarget, ListTarget};
+use cli::{Cli, Commands, AddTarget, RemoveTarget, ListTarget, DeleteTarget};
 
 mod log;
 mod cli;
@@ -103,21 +103,13 @@ fn main() {
                 }
             }
         },
-        Commands::Delete { value } => {
-            let remove_result = if value.starts_with('/') {
-                config::volume::remove_volume_by_path(value)
-            } else {
-                config::volume::remove_volume_by_id(value)
-            };
-
-            match remove_result {
-                Ok(_) => {
-                    if let Err(e) = config::volume::delete_ipelfs(value) {
-                        log::warn(&format!("failed to remove .ipelfs: {}", e));
+        Commands::Delete { target } => match target {
+            DeleteTarget::Volume { value } => {
+                match config::volume::delete_ipelfs(value) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        log::warn(&format!("failed to delete volume: {}", e));
                     }
-                }
-                Err(e) => {
-                    log::warn(&format!("failed to delete volume: {}", e));
                 }
             }
         },

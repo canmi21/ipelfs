@@ -23,7 +23,8 @@ pub enum Commands {
         target: ListTarget,
     },
     Delete {
-        value: String,
+        #[command(subcommand)]
+        target: DeleteTarget,
     },
 }
 
@@ -44,4 +45,11 @@ pub enum RemoveTarget {
 #[derive(Subcommand, Debug)]
 pub enum ListTarget {
     Volume,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum DeleteTarget {
+    Volume {
+        value: String,
+    },
 }

@@ -39,7 +39,7 @@ pub fn add_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     config.volume = Some(volumes);
     save_config(&config)?;
 
-    log::good(&format!("volume added: {} -> {}", id, path));
+    log::good(&format!("volume added @{} -> {}", id, path));
     Ok(id)
 }
 
@@ -64,7 +64,7 @@ pub fn remove_volume_by_id(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let vlock_path = std::path::Path::new(&path).join(".vlock");
     let _ = std::fs::remove_file(&vlock_path);
 
-    log::info(&format!("volume removed: {}", id));
+    log::info(&format!("volume removed @{}", id));
     Ok(())
 }
 
@@ -94,7 +94,7 @@ pub fn remove_volume_by_path(target_path: &str) -> Result<(), Box<dyn std::error
             let vlock_path = std::path::Path::new(target_path).join(".vlock");
             let _ = std::fs::remove_file(&vlock_path);
 
-            log::info(&format!("volume removed: {}", id));
+            log::info(&format!("volume removed @{}", id));
             Ok(())
         }
         _ => {
@@ -153,7 +153,7 @@ pub fn list_volumes() -> Result<(), Box<dyn std::error::Error>> {
     log::good(&format!("{} volume(s) found in {} ms", count, elapsed));
 
     for (id, path) in volumes {
-        log::info(&format!("{} -> {}", id, path));
+        log::info(&format!("@{} -> {}", id, path));
     }
 
     Ok(())
@@ -182,27 +182,43 @@ pub fn is_dir_empty(path: &str) -> bool {
 }
 
 pub fn delete_ipelfs(path_or_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let target_path = if path_or_id.starts_with('/') {
-        Path::new(path_or_id).to_path_buf()
+    let (id, target_path) = if path_or_id.starts_with('/') {
+        // resolve by path
+        let config = load_config()?;
+        let volumes = config.volume.unwrap_or_default();
+
+        let matches: Vec<(String, String)> = volumes.iter()
+            .filter(|(_, v)| *v == path_or_id)
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+
+        match matches.len() {
+            0 => return Err("no matching volume found for path".into()),
+            1 => (matches[0].0.clone(), Path::new(&matches[0].1).to_path_buf()),
+            _ => return Err("multiple volumes match this path".into()),
+        }
     } else {
+        // resolve by id
         let config = load_config()?;
         let volumes = config.volume.unwrap_or_default();
         match volumes.get(path_or_id) {
-            Some(p) => Path::new(p).to_path_buf(),
+            Some(p) => (path_or_id.to_string(), Path::new(p).to_path_buf()),
             None => return Err("volume id not found".into()),
         }
     };
 
-    let meta_path = target_path.join(".ipelfs");
-    if meta_path.exists() {
-        fs::remove_file(&meta_path)?;
-        log::action(&format!(
-            "@{} has been released and .ipelfs removed — you may now manage or wipe the volume manually",
-            path_or_id
-        ));
-    } else {
-        log::warn(".ipelfs not found on target path");
-    }
+    // remove from config
+    let mut config = load_config()?;
+    let mut volumes = config.volume.take().unwrap_or_default();
+    volumes.remove(&id);
+    config.volume = Some(volumes);
+    save_config(&config)?;
 
+    // remove .vlock and .ipelfs
+    let _ = std::fs::remove_file(target_path.join(".vlock"));
+    let _ = std::fs::remove_file(target_path.join(".ipelfs"));
+
+    log::info(&format!("@{} has been released and ipelfs removed", id));
+    log::action("You may now manage or wipe the volume manually");
     Ok(())
 }
