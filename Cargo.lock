@@ -485,6 +485,7 @@ dependencies = [
  "axum",
  "chrono",
  "clap",
+ "once_cell",
  "rand",
  "serde",
  "serde_json",

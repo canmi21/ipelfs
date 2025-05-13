@@ -112,7 +112,7 @@ fn main() {
                 match config::volume::delete_ipelfs(value) {
                     Ok(_) => {}
                     Err(e) => {
-                        log::warn(&format!("failed to delete volume: {}", e));
+                        log::action(&format!("failed to delete volume: {}", e));
                     }
                 }
             }
@@ -122,11 +122,11 @@ fn main() {
             rt.block_on(async {
                 let app = web::routes::build_router();
 
-                let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-                println!("Web service running at http://127.0.0.1:8080");
+                let listener = TcpListener::bind("127.0.0.1:33330").await.unwrap();
+                log::action("webapi running at http://localhost:33330");
 
                 if let Err(e) = serve(listener, app).await {
-                    eprintln!("Web server error: {}", e);
+                    log::warn(&format!("axum error: {}", e));
                 }
             });
         }

@@ -3,6 +3,7 @@ use rand::Rng;
 use std::fs::File;
 use std::path::Path;
 use std::time::Instant;
+use once_cell::sync::Lazy;
 use std::collections::BTreeMap;
 use std::io::{BufReader, BufRead};
 use serde::{Deserialize, Serialize};
@@ -12,10 +13,18 @@ use crate::log;
 const CONFIG_PATH: &str = "/etc/ipel/fs/config.toml";
 
 #[derive(Debug, Deserialize, Serialize)]
-struct FullConfig {
+pub struct FullConfig {
     #[serde(flatten)]
     rest: BTreeMap<String, toml::Value>,
     volume: Option<BTreeMap<String, String>>,
+}
+
+static EMPTY_VOLUME_MAP: Lazy<BTreeMap<String, String>> = Lazy::new(BTreeMap::new);
+
+impl FullConfig {
+    pub fn get_volume_map(&self) -> &BTreeMap<String, String> {
+        self.volume.as_ref().unwrap_or(&EMPTY_VOLUME_MAP)
+    }
 }
 
 // add new volume and return id
@@ -105,7 +114,7 @@ pub fn remove_volume_by_path(target_path: &str) -> Result<(), Box<dyn std::error
 }
 
 // load config file
-fn load_config() -> Result<FullConfig, Box<dyn std::error::Error>> {
+pub fn load_config() -> Result<FullConfig, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(CONFIG_PATH)?;
     let config: FullConfig = toml::from_str(&content)?;
     Ok(config)
