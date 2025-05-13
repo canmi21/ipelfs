@@ -1,7 +1,7 @@
 use std::io;
 use clap::Parser;
 use std::io::ErrorKind;
-use cli::{Cli, Commands, AddTarget, RemoveTarget};
+use cli::{Cli, Commands, AddTarget, RemoveTarget, ListTarget};
 
 mod log;
 mod cli;
@@ -43,6 +43,13 @@ fn main() {
                     if let Err(e) = config::volume::remove_volume_by_id(value) {
                         log::warn(&format!("failed to remove volume by id: {}", e));
                     }
+                }
+            }
+        },
+        Commands::List { target } => match target {
+            ListTarget::Volume => {
+                if let Err(e) = config::volume::list_volumes() {
+                    log::warn(&format!("failed to list volumes: {}", e));
                 }
             }
         },

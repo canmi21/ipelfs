@@ -18,6 +18,10 @@ pub enum Commands {
         #[command(subcommand)]
         target: RemoveTarget,
     },
+    List {
+        #[command(subcommand)]
+        target: ListTarget,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -30,6 +34,11 @@ pub enum AddTarget {
 #[derive(Subcommand, Debug)]
 pub enum RemoveTarget {
     Volume {
-        value: String, // either id or path
+        value: String,
     },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ListTarget {
+    Volume,
 }

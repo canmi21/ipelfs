@@ -115,3 +115,19 @@ fn gen_id(existing: &BTreeMap<String, String>) -> String {
         }
     }
 }
+
+// list all volumes
+pub fn list_volumes() -> Result<(), Box<dyn std::error::Error>> {
+    let config = load_config()?;
+    let volumes = config.volume.unwrap_or_default();
+
+    if volumes.is_empty() {
+        log::info("no volumes found");
+    } else {
+        for (id, path) in volumes {
+            log::info(&format!("{} -> {}", id, path));
+        }
+    }
+
+    Ok(())
+}
