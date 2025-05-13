@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(name = "ipelfs")]
-#[command(about = "IP Embedded Local Filesystem Tool")]
+#[command(about = "IP Embedded Local Filesystem")]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -21,6 +21,9 @@ pub enum Commands {
     List {
         #[command(subcommand)]
         target: ListTarget,
+    },
+    Delete {
+        value: String,
     },
 }
 

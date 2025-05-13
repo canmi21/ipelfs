@@ -103,5 +103,23 @@ fn main() {
                 }
             }
         },
+        Commands::Delete { value } => {
+            let remove_result = if value.starts_with('/') {
+                config::volume::remove_volume_by_path(value)
+            } else {
+                config::volume::remove_volume_by_id(value)
+            };
+
+            match remove_result {
+                Ok(_) => {
+                    if let Err(e) = config::volume::delete_ipelfs(value) {
+                        log::warn(&format!("failed to remove .ipelfs: {}", e));
+                    }
+                }
+                Err(e) => {
+                    log::warn(&format!("failed to delete volume: {}", e));
+                }
+            }
+        },
     }
 }

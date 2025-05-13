@@ -1,6 +1,7 @@
 use std::fs;
 use rand::Rng;
 use std::fs::File;
+use std::path::Path;
 use std::time::Instant;
 use std::collections::BTreeMap;
 use std::io::{BufReader, BufRead};
@@ -178,4 +179,30 @@ pub fn is_dir_empty(path: &str) -> bool {
         Ok(mut entries) => entries.next().is_none(),
         Err(_) => false,
     }
+}
+
+pub fn delete_ipelfs(path_or_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let target_path = if path_or_id.starts_with('/') {
+        Path::new(path_or_id).to_path_buf()
+    } else {
+        let config = load_config()?;
+        let volumes = config.volume.unwrap_or_default();
+        match volumes.get(path_or_id) {
+            Some(p) => Path::new(p).to_path_buf(),
+            None => return Err("volume id not found".into()),
+        }
+    };
+
+    let meta_path = target_path.join(".ipelfs");
+    if meta_path.exists() {
+        fs::remove_file(&meta_path)?;
+        log::action(&format!(
+            "@{} has been released and .ipelfs removed — you may now manage or wipe the volume manually",
+            path_or_id
+        ));
+    } else {
+        log::warn(".ipelfs not found on target path");
+    }
+
+    Ok(())
 }
