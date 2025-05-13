@@ -38,7 +38,7 @@ impl Config {
         } else {
             let content = fs::read_to_string(CONFIG_PATH)?;
             let config: Config = toml::from_str(&content)?;
-            log("#", "config.toml loaded");
+            //log("#", "config.toml loaded");
             Ok(config)
         }
     }
