@@ -14,11 +14,22 @@ pub enum Commands {
         #[command(subcommand)]
         target: AddTarget,
     },
+    Remove {
+        #[command(subcommand)]
+        target: RemoveTarget,
+    },
 }
 
 #[derive(Subcommand, Debug)]
 pub enum AddTarget {
     Volume {
         path: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum RemoveTarget {
+    Volume {
+        value: String, // either id or path
     },
 }

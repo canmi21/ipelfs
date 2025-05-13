@@ -1,7 +1,7 @@
 use std::io;
 use clap::Parser;
 use std::io::ErrorKind;
-use cli::{Cli, Commands, AddTarget};
+use cli::{Cli, Commands, AddTarget, RemoveTarget};
 
 mod log;
 mod cli;
@@ -30,6 +30,19 @@ fn main() {
             AddTarget::Volume { path } => {
                 if let Err(e) = config::volume::add_volume(path) {
                     log::warn(&format!("failed to add volume: {}", e));
+                }
+            }
+        },
+        Commands::Remove { target } => match target {
+            RemoveTarget::Volume { value } => {
+                if value.starts_with('/') {
+                    if let Err(e) = config::volume::remove_volume_by_path(value) {
+                        log::warn(&format!("failed to remove volume by path: {}", e));
+                    }
+                } else {
+                    if let Err(e) = config::volume::remove_volume_by_id(value) {
+                        log::warn(&format!("failed to remove volume by id: {}", e));
+                    }
                 }
             }
         },
