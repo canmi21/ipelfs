@@ -1,7 +1,9 @@
 use std::fs;
+use std::time::Instant;
 use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use rand::{distributions::Alphanumeric};
+
 use crate::log;
 
 const CONFIG_PATH: &str = "/etc/ipel/fs/config.toml";
@@ -116,17 +118,20 @@ fn gen_id(existing: &BTreeMap<String, String>) -> String {
     }
 }
 
-// list all volumes
+// list all volumes with total count and elapsed time
 pub fn list_volumes() -> Result<(), Box<dyn std::error::Error>> {
+    let start = Instant::now();
+
     let config = load_config()?;
     let volumes = config.volume.unwrap_or_default();
 
-    if volumes.is_empty() {
-        log::info("no volumes found");
-    } else {
-        for (id, path) in volumes {
-            log::info(&format!("{} -> {}", id, path));
-        }
+    let count = volumes.len();
+    let elapsed = start.elapsed().as_millis();
+
+    log::good(&format!("{} volume(s) found in {} ms", count, elapsed));
+
+    for (id, path) in volumes {
+        log::info(&format!("{} -> {}", id, path));
     }
 
     Ok(())
