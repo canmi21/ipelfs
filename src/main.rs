@@ -45,7 +45,21 @@ fn main() {
                 };
 
                 if !config::volume::is_dir_empty(&actual_path) {
-                    log::warn(&format!("cannot initialize volume: '{}' is not empty", actual_path));
+                    let ipelfs_path = std::path::Path::new(&actual_path).join(".ipelfs");
+
+                    if ipelfs_path.exists() {
+                        match std::fs::read_to_string(&ipelfs_path) {
+                            Ok(owner_id) => {
+                                log::warn(&format!("volume already owned by id: {}", owner_id.trim()));
+                            }
+                            Err(_) => {
+                                log::warn("ipelfs exists, volume was broken");
+                            }
+                        }
+                    } else {
+                        log::warn(&format!("cannot initialize volume: '{}' is not empty", actual_path));
+                    }
+
                     return;
                 }
 
