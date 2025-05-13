@@ -41,7 +41,7 @@ fn main() {
                 };
 
                 if !config::volume::is_dir_empty(&actual_path) {
-                    log::warn("cannot initialize volume because is not empty");
+                    log::warn(&format!("cannot initialize volume: '{}' is not empty", actual_path));
                     return;
                 }
 
