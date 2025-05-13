@@ -1,7 +1,9 @@
 use std::fs;
 use rand::Rng;
+use std::fs::File;
 use std::time::Instant;
 use std::collections::BTreeMap;
+use std::io::{BufReader, BufRead};
 use serde::{Deserialize, Serialize};
 
 use crate::log;
@@ -142,4 +144,26 @@ pub fn list_volumes() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+// check if device is mounted and return Some(mount_point) or None
+pub fn resolve_mount_point(dev_path: &str) -> Option<String> {
+    if let Ok(file) = File::open("/proc/mounts") {
+        let reader = BufReader::new(file);
+        for line in reader.lines().flatten() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 && parts[0] == dev_path {
+                return Some(parts[1].to_string());
+            }
+        }
+    }
+    None
+}
+
+// check if dir is empty
+pub fn is_dir_empty(path: &str) -> bool {
+    match fs::read_dir(path) {
+        Ok(mut entries) => entries.next().is_none(),
+        Err(_) => false,
+    }
 }

@@ -28,7 +28,24 @@ fn main() {
     match &cli.command {
         Commands::Add { target } => match target {
             AddTarget::Volume { path } => {
-                if let Err(e) = config::volume::add_volume(path) {
+                let actual_path = if path.starts_with("/dev/") {
+                    match config::volume::resolve_mount_point(path) {
+                        Some(mount_point) => mount_point,
+                        None => {
+                            log::warn("device is not mounted");
+                            return;
+                        }
+                    }
+                } else {
+                    path.clone()
+                };
+
+                if !config::volume::is_dir_empty(&actual_path) {
+                    log::warn("cannot initialize volume because is not empty");
+                    return;
+                }
+
+                if let Err(e) = config::volume::add_volume(&actual_path) {
                     log::warn(&format!("failed to add volume: {}", e));
                 }
             }
