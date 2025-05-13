@@ -1,12 +1,13 @@
 use std::io;
 use std::io::ErrorKind;
 
-mod config;
 mod log;
+mod config;
 
 fn main() {
     match config::Config::load() {
-        Ok(cfg) => println!("{:#?}", cfg),
+        Ok(_) => {}
+        //Ok(cfg) => println!("{:#?}", cfg),
         Err(e) => {
             if let Some(io_err) = e.downcast_ref::<io::Error>() {
                 if io_err.kind() == ErrorKind::PermissionDenied {
