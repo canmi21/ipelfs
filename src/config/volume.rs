@@ -17,8 +17,8 @@ struct FullConfig {
     volume: Option<BTreeMap<String, String>>,
 }
 
-// add new volume with generated id -> path
-pub fn add_volume(path: &str) -> Result<(), Box<dyn std::error::Error>> {
+// add new volume and return id
+pub fn add_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     let mut config = load_config()?;
     let mut volumes = config.volume.take().unwrap_or_default();
 
@@ -27,7 +27,6 @@ pub fn add_volume(path: &str) -> Result<(), Box<dyn std::error::Error>> {
         return Err("duplicate path".into());
     }
 
-    // ensure id is unique
     let id = loop {
         let id = gen_id();
         if !volumes.contains_key(&id) {
@@ -40,7 +39,7 @@ pub fn add_volume(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     save_config(&config)?;
 
     log::good(&format!("volume added: {} -> {}", id, path));
-    Ok(())
+    Ok(id)
 }
 
 // remove by volume id

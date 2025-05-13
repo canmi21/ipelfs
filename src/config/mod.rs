@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::log;
 
+pub mod meta;
 pub mod volume;
 
 const CONFIG_PATH: &str = "/etc/ipel/fs/config.toml";

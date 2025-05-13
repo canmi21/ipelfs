@@ -46,8 +46,16 @@ fn main() {
                     return;
                 }
 
-                if let Err(e) = config::volume::add_volume(&actual_path) {
-                    log::warn(&format!("failed to add volume: {}", e));
+                // add volume and get id
+                match config::volume::add_volume(&actual_path) {
+                    Ok(id) => {
+                        if let Err(e) = config::meta::init_volume_meta(&id, &actual_path) {
+                            log::warn(&format!("meta init failed: {}", e));
+                        }
+                    }
+                    Err(e) => {
+                        log::warn(&format!("failed to add volume: {}", e));
+                    }
                 }
             }
         },
