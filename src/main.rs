@@ -1,12 +1,11 @@
 use std::io;
+use clap::Parser;
 use std::io::ErrorKind;
+use cli::{Cli, Commands, AddTarget};
 
 mod log;
-mod config;
 mod cli;
-
-use clap::Parser;
-use cli::{Cli, Commands, AddTarget};
+mod config;
 
 fn main() {
     match config::Config::load() {
@@ -29,7 +28,9 @@ fn main() {
     match &cli.command {
         Commands::Add { target } => match target {
             AddTarget::Volume { path } => {
-                log::action(&format!("add volume requested: {}", path));
+                if let Err(e) = config::volume::add_volume(path) {
+                    log::warn(&format!("failed to add volume: {}", e));
+                }
             }
         },
     }
