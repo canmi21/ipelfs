@@ -3,11 +3,14 @@ use std::io::ErrorKind;
 
 mod log;
 mod config;
+mod cli;
+
+use clap::Parser;
+use cli::{Cli, Commands, AddTarget};
 
 fn main() {
     match config::Config::load() {
         Ok(_) => {}
-        //Ok(cfg) => println!("{:#?}", cfg),
         Err(e) => {
             if let Some(io_err) = e.downcast_ref::<io::Error>() {
                 if io_err.kind() == ErrorKind::PermissionDenied {
@@ -17,6 +20,17 @@ fn main() {
                 }
             }
             log::warn(&format!("failed to load config: {}", e));
+            return;
         }
+    }
+
+    let cli = Cli::parse();
+
+    match &cli.command {
+        Commands::Add { target } => match target {
+            AddTarget::Volume { path } => {
+                log::action(&format!("add volume requested: {}", path));
+            }
+        },
     }
 }

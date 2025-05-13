@@ -13,10 +13,10 @@ pub fn info(msg: &str) {
     println!("{} - {}", timestamp(), msg);
 }
 
-pub fn action(msg: &str) {
-    println!("{} > {}", timestamp(), msg);
-}
-
 pub fn warn(msg: &str) {
     println!("{} ! {}", timestamp(), msg);
+}
+
+pub fn action(msg: &str) {
+    println!("{} > {}", timestamp(), msg);
 }
