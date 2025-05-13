@@ -1,11 +1,15 @@
 use std::io;
+use axum::serve;
 use clap::Parser;
 use std::fs::File;
 use chrono::Local;
 use std::io::Write;
 use std::io::ErrorKind;
+use tokio::net::TcpListener;
+use tokio::runtime::Runtime;
 use cli::{Cli, Commands, AddTarget, RemoveTarget, ListTarget, DeleteTarget};
 
+mod web;
 mod log;
 mod cli;
 mod config;
@@ -113,5 +117,18 @@ fn main() {
                 }
             }
         },
+        Commands::Web => {
+            let rt = Runtime::new().unwrap();
+            rt.block_on(async {
+                let app = web::routes::build_router();
+
+                let listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
+                println!("Web service running at http://127.0.0.1:8080");
+
+                if let Err(e) = serve(listener, app).await {
+                    eprintln!("Web server error: {}", e);
+                }
+            });
+        }
     }
 }

@@ -26,6 +26,8 @@ pub enum Commands {
         #[command(subcommand)]
         target: DeleteTarget,
     },
+    //webapi
+    Web,
 }
 
 #[derive(Subcommand, Debug)]
