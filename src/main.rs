@@ -1,5 +1,8 @@
 use std::io;
 use clap::Parser;
+use std::fs::File;
+use chrono::Local;
+use std::io::Write;
 use std::io::ErrorKind;
 use cli::{Cli, Commands, AddTarget, RemoveTarget, ListTarget};
 
@@ -46,11 +49,18 @@ fn main() {
                     return;
                 }
 
-                // add volume and get id
                 match config::volume::add_volume(&actual_path) {
                     Ok(id) => {
                         if let Err(e) = config::meta::init_volume_meta(&id, &actual_path) {
                             log::warn(&format!("meta init failed: {}", e));
+                            return;
+                        }
+
+                        // write .vlock with timestamp
+                        let vlock_path = std::path::Path::new(&actual_path).join(".vlock");
+                        if let Ok(mut f) = File::create(&vlock_path) {
+                            let now = Local::now().to_rfc3339();
+                            let _ = f.write_all(now.as_bytes());
                         }
                     }
                     Err(e) => {
