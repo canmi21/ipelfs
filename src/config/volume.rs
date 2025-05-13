@@ -1,8 +1,8 @@
 use std::fs;
+use rand::Rng;
 use std::time::Instant;
 use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
-use rand::{distributions::Alphanumeric};
 
 use crate::log;
 
@@ -15,20 +15,25 @@ struct FullConfig {
     volume: Option<BTreeMap<String, String>>,
 }
 
-// add new volume entry with random id -> path
+// add new volume with generated id -> path
 pub fn add_volume(path: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = load_config()?;
     let mut volumes = config.volume.take().unwrap_or_default();
 
-    // prevent duplicate path
     if volumes.values().any(|v| v == path) {
         log::warn("path already exists in volume table");
         return Err("duplicate path".into());
     }
 
-    let id = gen_id(&volumes);
-    volumes.insert(id.clone(), path.to_string());
+    // ensure id is unique
+    let id = loop {
+        let id = gen_id();
+        if !volumes.contains_key(&id) {
+            break id;
+        }
+    };
 
+    volumes.insert(id.clone(), path.to_string());
     config.volume = Some(volumes);
     save_config(&config)?;
 
@@ -84,41 +89,43 @@ pub fn remove_volume_by_path(target_path: &str) -> Result<(), Box<dyn std::error
     }
 }
 
-// load config file and parse into struct
+// load config file
 fn load_config() -> Result<FullConfig, Box<dyn std::error::Error>> {
     let content = fs::read_to_string(CONFIG_PATH)?;
     let config: FullConfig = toml::from_str(&content)?;
     Ok(config)
 }
 
-// write config struct back to file
+// write config to file
 fn save_config(cfg: &FullConfig) -> Result<(), Box<dyn std::error::Error>> {
     let content = toml::to_string(cfg)?;
     fs::write(CONFIG_PATH, content)?;
     Ok(())
 }
 
-// generate unique 5-char id (start with letter, avoid conflict)
-fn gen_id(existing: &BTreeMap<String, String>) -> String {
-    use rand::distributions::DistString;
+// generate 7-char id (first is letter, rest biased 70% digit)
+fn gen_id() -> String {
+    const ID_LENGTH: usize = 7;
+    const DIGIT_WEIGHT: f64 = 0.7;
 
-    loop {
-        let raw = Alphanumeric.sample_string(&mut rand::thread_rng(), 8)
-            .to_lowercase()
-            .chars()
-            .filter(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
-            .take(5)
-            .collect::<String>();
+    let mut rng = rand::thread_rng();
+    let mut id = String::new();
 
-        if raw.chars().next().map(|c| c.is_ascii_lowercase()).unwrap_or(false)
-            && !existing.contains_key(&raw)
-        {
-            return raw;
+    id.push((b'a' + rng.gen_range(0..26)) as char);
+
+    for _ in 0..(ID_LENGTH - 1) {
+        // avoid .gen::<f32>() -> use range instead
+        if rng.gen_range(0.0..1.0) < DIGIT_WEIGHT {
+            id.push((b'0' + rng.gen_range(0..10)) as char);
+        } else {
+            id.push((b'a' + rng.gen_range(0..26)) as char);
         }
     }
+
+    id
 }
 
-// list all volumes with total count and elapsed time
+// list all volumes
 pub fn list_volumes() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
 
