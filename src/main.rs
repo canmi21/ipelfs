@@ -11,7 +11,7 @@ fn main() {
             if let Some(io_err) = e.downcast_ref::<io::Error>() {
                 if io_err.kind() == ErrorKind::PermissionDenied {
                     log::warn(&format!("failed to load config: {}", io_err));
-                    log::info("permission denied - if this is your first time running, try: sudo ipelfs");
+                    log::action("if this is your first time running, try: sudo ipelfs");
                     return;
                 }
             }

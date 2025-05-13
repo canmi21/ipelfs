@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 
 use crate::log;
@@ -8,16 +9,30 @@ const CONFIG_PATH: &str = "/etc/ipel/fs/config.toml";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    pub log_level: Option<String>,
-    pub data_dir: Option<String>,
+    pub ipelfs: IpelFs,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct IpelFs {
+    pub os: String,
+    pub arch: String,
+    pub ram: String,
+    pub version: String,
+    pub timestamp: String,
 }
 
 impl Config {
+    // load config, create if not exists
     pub fn load() -> Result<Config, Box<dyn std::error::Error>> {
         if !Path::new(CONFIG_PATH).exists() {
             let default = Config {
-                log_level: Some("info".to_string()),
-                data_dir: Some("/var/lib/ipel/fs".to_string()),
+                ipelfs: IpelFs {
+                    os: std::env::consts::OS.to_string(),
+                    arch: std::env::consts::ARCH.to_string(),
+                    ram: get_ram(),
+                    version: env!("CARGO_PKG_VERSION").to_string(),
+                    timestamp: chrono::Local::now().to_rfc3339(),
+                },
             };
             let toml_string = toml::to_string(&default)?;
             fs::create_dir_all("/etc/ipel/fs")?;
@@ -27,8 +42,15 @@ impl Config {
         } else {
             let content = fs::read_to_string(CONFIG_PATH)?;
             let config: Config = toml::from_str(&content)?;
-            //log::info("config.toml loaded");
             Ok(config)
         }
+    }
+}
+
+// return total memory in MB
+fn get_ram() -> String {
+    match sys_info::mem_info() {
+        Ok(mem) => format!("{} MB", mem.total / 1024),
+        Err(_) => "unknown".to_string(),
     }
 }
