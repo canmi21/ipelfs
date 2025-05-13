@@ -47,13 +47,21 @@ pub fn remove_volume_by_id(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = load_config()?;
     let mut volumes = config.volume.take().unwrap_or_default();
 
-    if volumes.remove(id).is_none() {
-        log::warn(&format!("volume id not found: {}", id));
-        return Err("volume id not found".into());
-    }
+    let path = match volumes.get(id) {
+        Some(p) => p.clone(),
+        None => {
+            log::warn(&format!("volume @{} not found", id));
+            return Err("volume id not found".into());
+        }
+    };
 
+    volumes.remove(id);
     config.volume = Some(volumes);
     save_config(&config)?;
+
+    // remove .vlock
+    let vlock_path = std::path::Path::new(&path).join(".vlock");
+    let _ = std::fs::remove_file(&vlock_path);
 
     log::info(&format!("volume removed: {}", id));
     Ok(())
@@ -80,6 +88,11 @@ pub fn remove_volume_by_path(target_path: &str) -> Result<(), Box<dyn std::error
             volumes.remove(id);
             config.volume = Some(volumes);
             save_config(&config)?;
+
+            // remove .vlock
+            let vlock_path = std::path::Path::new(target_path).join(".vlock");
+            let _ = std::fs::remove_file(&vlock_path);
+
             log::info(&format!("volume removed: {}", id));
             Ok(())
         }
