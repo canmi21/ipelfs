@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, watchEffect, nextTick, onMounted } from 'vue'
+import { ref, watchEffect, nextTick, onMounted, onUnmounted } from 'vue' 
 import { 
   Sun, Moon, SunMoon, 
   PanelRightOpen, PanelRightClose, 
-  Cuboid, SquareArrowOutUpRight 
+  Cuboid, SquareArrowOutUpRight,
+  Server, ServerOff 
 } from 'lucide-vue-next'
 
 // --- Theme Initialization ---
@@ -84,7 +85,7 @@ watchEffect(() => {
 
 // --- Sidebar Animation State & Logic ---
 const isSidebarCollapsed = ref(false)
-const showSidebarText = ref(true)
+const showSidebarText = ref(true) 
 const sidebarWidthClass = ref('w-56')
 const contentMarginClass = ref('ml-64')
 const isAnimating = ref(false)
@@ -94,11 +95,40 @@ const githubIconExpandTimer = ref<number | undefined>(undefined);
 
 const mainContentEl = ref<HTMLElement | null>(null)
 
+// --- Backend Connection State ---
+const isBackendConnected = ref(false);
+const healthCheckInterval = ref<number | undefined>(undefined);
+
+const checkBackendStatus = async () => {
+  try {
+    const response = await fetch('http://localhost:33330/v1/ipelfs/healthcheck');
+    if (response.ok) {
+      const data = await response.json();
+      isBackendConnected.value = data.success === true;
+    } else {
+      isBackendConnected.value = false;
+    }
+  } catch (error) {
+    isBackendConnected.value = false;
+  }
+};
+
 onMounted(() => {
   showSidebarText.value = !isSidebarCollapsed.value;
   showGithubIcon.value = !isSidebarCollapsed.value;
   sidebarWidthClass.value = isSidebarCollapsed.value ? 'w-14' : 'w-56';
   contentMarginClass.value = isSidebarCollapsed.value ? 'ml-14' : 'ml-64';
+
+  checkBackendStatus(); 
+  healthCheckInterval.value = window.setInterval(checkBackendStatus, 1000); 
+});
+
+onUnmounted(() => {
+  if (healthCheckInterval.value !== undefined) {
+    clearInterval(healthCheckInterval.value);
+  }
+  if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
+  if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
 });
 
 const handleSidebarToggle = () => {
@@ -111,36 +141,25 @@ const handleSidebarToggle = () => {
   githubIconExpandTimer.value = undefined;
 
   const currentlyCollapsed = isSidebarCollapsed.value;
-  const animationDuration = 300; // from duration-300
-  const collapseHideDelay = 75;   // Hide GitHub icon 75ms after content starts sliding over
-  const expandShowEarlyMs = 50;   // Show GitHub icon 50ms before content finishes sliding away
+  const animationDuration = 300; 
+  const collapseHideDelay = 75;   
+  const expandShowEarlyMs = 50;  
 
   if (!currentlyCollapsed) { // Intent: COLLAPSE
-    isSidebarCollapsed.value = true; // Update intent
-    // showGithubIcon remains true initially
+    isSidebarCollapsed.value = true; 
+    showGithubIcon.value = false; 
     showSidebarText.value = true; 
     sidebarWidthClass.value = 'w-56';
 
     nextTick(() => {
-      contentMarginClass.value = 'ml-14'; // Content starts sliding over
-      
-      githubIconCollapseTimer.value = window.setTimeout(() => {
-        if (isSidebarCollapsed.value) { // Only hide if still collapsing
-          showGithubIcon.value = false;
-        }
-      }, collapseHideDelay);
+      contentMarginClass.value = 'ml-14'; 
     });
 
     const onCollapseAnimationEnd = () => {
-      if (isSidebarCollapsed.value) { // Final state check
-        showSidebarText.value = false;
+      if (isSidebarCollapsed.value) { 
+        showSidebarText.value = false; 
         sidebarWidthClass.value = 'w-14';
-        // Ensure GitHub icon is hidden if the timer didn't catch it or state changed
-        if (showGithubIcon.value) {
-            clearTimeout(githubIconCollapseTimer.value);
-            githubIconCollapseTimer.value = undefined;
-            showGithubIcon.value = false;
-        }
+        if (showGithubIcon.value) showGithubIcon.value = false; 
       }
       isAnimating.value = false;
     };
@@ -148,36 +167,34 @@ const handleSidebarToggle = () => {
     if (mainContentEl.value) {
       mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true });
     } else {
-      setTimeout(onCollapseAnimationEnd, animationDuration + 50); // Fallback
+      setTimeout(onCollapseAnimationEnd, animationDuration + 50); 
     }
 
   } else { // Intent: EXPAND
-    isSidebarCollapsed.value = false; // Update intent
-    // showGithubIcon remains false initially
-    showSidebarText.value = true;
+    isSidebarCollapsed.value = false; 
+    showSidebarText.value = true; 
     sidebarWidthClass.value = 'w-56';
 
     nextTick(() => { 
-      contentMarginClass.value = 'ml-64'; // Content starts sliding away
+      contentMarginClass.value = 'ml-64'; 
       
       const showTime = animationDuration - expandShowEarlyMs;
       if (showTime > 0) {
         githubIconExpandTimer.value = window.setTimeout(() => {
-          if (!isSidebarCollapsed.value) { // Only show if still expanding
-            showGithubIcon.value = true;
+          if (!isSidebarCollapsed.value) { 
+            showGithubIcon.value = true; 
           }
         }, showTime);
-      } else { // Fallback if calculated showTime is not positive
+      } else { 
          if (!isSidebarCollapsed.value) showGithubIcon.value = true;
       }
     });
 
     const onExpandAnimationEnd = () => {
-      // Ensure GitHub icon is shown if timer missed or state changed
       if (!isSidebarCollapsed.value && !showGithubIcon.value) {
          clearTimeout(githubIconExpandTimer.value);
          githubIconExpandTimer.value = undefined;
-         showGithubIcon.value = true;
+         showGithubIcon.value = true; 
       }
       isAnimating.value = false;
     };
@@ -185,12 +202,11 @@ const handleSidebarToggle = () => {
     if (mainContentEl.value) {
       mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true });
     } else {
-      setTimeout(onExpandAnimationEnd, animationDuration + 50); // Fallback
+      setTimeout(onExpandAnimationEnd, animationDuration + 50);
     }
   }
 };
 
-// --- GitHub Link Handler ---
 const openGitHubLink = () => {
   window.open('https://github.com/canmi21/ipelfs', '_blank', 'noopener noreferrer');
 };
@@ -265,6 +281,20 @@ const openGitHubLink = () => {
         title="Open GitHub Repository"
       >
         <SquareArrowOutUpRight class="w-6 h-6 text-black dark:text-white icon-hover" />
+      </div>
+
+      <div 
+        class="absolute bottom-4 left-4" 
+        :title="isBackendConnected ? 'Backend Connected' : 'Backend Disconnected - Retrying...'"
+      >
+        <component 
+          :is="isBackendConnected ? Server : ServerOff" 
+          class="w-6 h-6 icon-hover"
+          :class="{
+            'text-green-600 dark:text-green-500': isBackendConnected,
+            'text-red-600 dark:text-red-500': !isBackendConnected
+          }"
+        />
       </div>
 
     </div>
