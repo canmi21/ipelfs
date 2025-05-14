@@ -41,20 +41,17 @@ const handleToggle = () => {
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       if (!systemIsDark) {
-        // System is light, switch to dark
         currentIcon.value = 'moon'
         currentTheme.value = 'dark'
         isDark.value = true
         localStorage.setItem('theme', 'dark')
       } else {
-        // System is dark, switch to system
         currentIcon.value = 'sun-moon'
         currentTheme.value = 'system'
         isDark.value = systemIsDark
         localStorage.removeItem('theme')
       }
     } catch {
-      // Fallback to dark if system preference fails
       currentIcon.value = 'moon'
       currentTheme.value = 'dark'
       isDark.value = true
@@ -64,13 +61,11 @@ const handleToggle = () => {
     // Current is system, check system preference
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      // Switch to dark regardless of system preference
       currentIcon.value = 'moon'
       currentTheme.value = 'dark'
       isDark.value = true
       localStorage.setItem('theme', 'dark')
     } catch {
-      // Fallback to dark if system preference fails
       currentIcon.value = 'moon'
       currentTheme.value = 'dark'
       isDark.value = true
@@ -92,6 +87,17 @@ watchEffect(() => {
 
 <template>
   <div class="relative min-h-screen" style="background-color: var(--bg); color: var(--text);">
+    <!-- Left Sidebar -->
+    <div class="absolute top-0 left-0 h-full w-64 bg-gray-200 dark:bg-gray-800">
+      <div class="p-4">
+        <ul class="space-y-4">
+          <li class="cursor-pointer text-lg hover:text-gray-600 dark:hover:text-gray-300">Tab 1</li>
+          <li class="cursor-pointer text-lg hover:text-gray-600 dark:hover:text-gray-300">Tab 2</li>
+          <li class="cursor-pointer text-lg hover:text-gray-600 dark:hover:text-gray-300">Tab 3</li>
+        </ul>
+      </div>
+    </div>
+
     <!-- Top-right toggle icon -->
     <div class="absolute top-4 right-4 z-20 cursor-pointer" @click="handleToggle">
       <component
@@ -101,7 +107,7 @@ watchEffect(() => {
     </div>
 
     <!-- Content -->
-    <div class="flex items-center justify-center min-h-screen">
+    <div class="flex items-center justify-center min-h-screen ml-64">
       <div class="text-xl text-center">
         Hello, World!
       </div>
