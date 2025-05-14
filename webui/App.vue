@@ -96,7 +96,7 @@ watchEffect(() => {
     <div class="absolute top-4 right-4 z-20 cursor-pointer" @click="handleToggle">
       <component
         :is="currentIcon === 'sun' ? Sun : currentIcon === 'moon' ? Moon : SunMoon"
-        class="w-6 h-6 text-black dark:text-white"
+        class="w-6 h-6 text-black dark:text-white icon-hover"
       />
     </div>
 
@@ -120,5 +120,13 @@ watchEffect(() => {
 }
 body {
   margin: 0;
+}
+
+.icon-hover {
+  transition: transform 0.2s ease-out;
+}
+
+.icon-hover:hover {
+  transform: scale(1.1);
 }
 </style>
