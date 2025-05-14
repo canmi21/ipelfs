@@ -1,13 +1,11 @@
-use std::fs;
-use rand::Rng;
-use std::io::Write;
-use std::fs::File;
+use std::fs::{self, File};
+use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::time::Instant;
 use once_cell::sync::Lazy;
-use std::collections::BTreeMap;
-use std::io::{BufReader, BufRead};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 use crate::log;
 
@@ -269,6 +267,14 @@ pub fn add_existing_volume(path: &str) -> Result<String, Box<dyn std::error::Err
     let now = chrono::Local::now().to_rfc3339();
     let _ = File::create(root.join(".vlock"))?.write_all(now.as_bytes());
 
-    log::good(&format!("existing volume mounted @{} -> {}", id, path));
+    //log::good(&format!("existing volume mounted @{} -> {}", id, path));
     Ok(id)
+}
+
+pub fn try_add_existing_volume(path: &str) -> Result<String, String> {
+    add_existing_volume(path).map_err(|e| e.to_string())
+}
+
+pub fn try_create_new_volume(path: &str) -> Result<String, String> {
+    create_volume(path).map_err(|e| e.to_string())
 }

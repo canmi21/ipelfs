@@ -1,10 +1,10 @@
-use axum::Json;
+use axum::{Json, extract::Json as ExtractJson};
 use chrono::Local;
-use serde::Serialize;
-use std::time::Instant;
+use serde::{Serialize, Deserialize};
+//use std::time::Instant;
 
 use crate::web::response::ApiResponse;
-use crate::config::volume::load_config;
+use crate::config::volume::{load_config, try_add_existing_volume, try_create_new_volume};
 
 #[derive(Serialize)]
 struct Volume {
@@ -17,8 +17,15 @@ pub struct VolumeList {
     volumes: Vec<Volume>,
 }
 
+#[derive(Deserialize)]
+pub struct VolumeInput {
+    path: String,
+}
+
+
 pub async fn get_volumes() -> Json<ApiResponse<VolumeList>> {
-    let _start = Instant::now();// Reserve for future use
+    
+    //let start = Instant::now();
 
     let volumes = match load_config() {
         Ok(cfg) => cfg.get_volume_map()
@@ -37,4 +44,18 @@ pub async fn get_volumes() -> Json<ApiResponse<VolumeList>> {
     });
 
     Json(ApiResponse::ok(VolumeList { volumes }, Some(meta)))
+}
+
+pub async fn post_add_volume(Json(input): ExtractJson<VolumeInput>) -> Json<ApiResponse<String>> {
+    match try_add_existing_volume(&input.path) {
+        Ok(id) => Json(ApiResponse::ok(id, None)),
+        Err(msg) => Json(ApiResponse::fail(msg)),
+    }
+}
+
+pub async fn post_create_volume(Json(input): ExtractJson<VolumeInput>) -> Json<ApiResponse<String>> {
+    match try_create_new_volume(&input.path) {
+        Ok(id) => Json(ApiResponse::ok(id, None)),
+        Err(msg) => Json(ApiResponse::fail(msg)),
+    }
 }

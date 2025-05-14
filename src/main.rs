@@ -1,13 +1,11 @@
-use std::io;
-use axum::serve;
-use clap::Parser;
 use std::fs::File;
+use std::io::{self, ErrorKind, Write};
+use axum::serve;
 use chrono::Local;
-use std::io::Write;
-use std::io::ErrorKind;
+use clap::Parser;
 use tokio::net::TcpListener;
 use tokio::runtime::Runtime;
-use cli::{Cli, Commands, CreateTarget, RemoveTarget, ListTarget, DeleteTarget, AddTarget};
+use cli::{Cli, Commands, AddTarget, CreateTarget, DeleteTarget, ListTarget, RemoveTarget};
 
 mod web;
 mod log;
