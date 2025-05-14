@@ -125,3 +125,47 @@ pub fn list_collections(volume_id: &str) -> Result<Map<String, Value>, String> {
 
     Ok(table)
 }
+
+pub fn delete_collection_by_id(volume_id: &str, collection_id: &str) -> Result<(), String> {
+    let root = get_volume_root(volume_id)?;
+    let mut table = load_or_init_index(&root)?;
+    let coll_map = get_or_init_collection_table(&mut table)?;
+
+    if !coll_map.contains_key(collection_id) {
+        return Err("collection id not found".into());
+    }
+
+    let coll_path = root.join(collection_id);
+    if coll_path.exists() {
+        fs::remove_dir_all(&coll_path)
+            .map_err(|e| format!("failed to remove collection folder: {}", e))?;
+    }
+
+    coll_map.remove(collection_id);
+    save_index(&root, table)?;
+
+    Ok(())
+}
+
+pub fn delete_collection_by_name(volume_id: &str, name: &str) -> Result<(), String> {
+    let root = get_volume_root(volume_id)?;
+    let mut table = load_or_init_index(&root)?;
+    let coll_map = get_or_init_collection_table(&mut table)?;
+
+    let collection_id = coll_map
+        .iter()
+        .find(|(_, v)| v.as_str() == Some(name))
+        .map(|(id, _)| id.clone())
+        .ok_or("collection name not found")?;
+
+    let coll_path = root.join(&collection_id);
+    if coll_path.exists() {
+        fs::remove_dir_all(&coll_path)
+            .map_err(|e| format!("failed to remove collection folder: {}", e))?;
+    }
+
+    coll_map.remove(&collection_id);
+    save_index(&root, table)?;
+
+    Ok(())
+}

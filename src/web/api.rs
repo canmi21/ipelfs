@@ -47,6 +47,12 @@ pub struct CollectionEntry {
     name: String,
 }
 
+#[derive(Deserialize)]
+pub struct DeleteCollectionInput {
+    value: String, // name or id
+    by: String,     // "name" or "id"
+}
+
 // GET /v1/ipelfs/volumes
 pub async fn get_volumes() -> Json<ApiResponse<VolumeList>> {
     let volumes = match volume::load_config() {
@@ -142,6 +148,31 @@ pub async fn get_collections(
                 })
                 .collect();
             Json(ApiResponse::ok(CollectionList { collections }, None))
+        }
+        Err(err) => Json(ApiResponse::fail(err)),
+    }
+}
+
+// POST /v1/ipelfs/volumes/{id}/collections/delete
+pub async fn post_delete_collection(
+    Path(volume_id): Path<String>,
+    Json(input): ExtractJson<DeleteCollectionInput>,
+) -> Json<ApiResponse<String>> {
+    let result = match input.by.as_str() {
+        "id" => collection::delete_collection_by_id(&volume_id, &input.value),
+        "name" => collection::delete_collection_by_name(&volume_id, &input.value),
+        _ => Err("invalid 'by' value, must be 'id' or 'name'".into()),
+    };
+
+    match result {
+        Ok(()) => {
+            if let Some(root) = volume::get_volume_root(&volume_id) {
+                let entry = format!("@v:{}/c:{}", volume_id, input.value);
+                let _ = metadata::delete(&root, &entry);
+            }
+
+            log::info(&format!("collection deleted @{}:{}", volume_id, input.value));
+            Json(ApiResponse::ok(input.value.clone(), None))
         }
         Err(err) => Json(ApiResponse::fail(err)),
     }
