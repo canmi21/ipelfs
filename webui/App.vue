@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { useDark, useToggle } from '@vueuse/core'
 import { ref, watchEffect, nextTick, onMounted } from 'vue'
-import { Sun, Moon, SunMoon, PanelRightOpen, PanelRightClose, Cuboid } from 'lucide-vue-next'
+import { 
+  Sun, Moon, SunMoon, 
+  PanelRightOpen, PanelRightClose, 
+  Cuboid, SquareArrowOutUpRight 
+} from 'lucide-vue-next'
 
 // --- Theme Initialization ---
 const storedTheme = localStorage.getItem('theme')
@@ -84,11 +88,15 @@ const showSidebarText = ref(true)
 const sidebarWidthClass = ref('w-56')
 const contentMarginClass = ref('ml-64')
 const isAnimating = ref(false)
+const showGithubIcon = ref(true); 
+const githubIconCollapseTimer = ref<number | undefined>(undefined);
+const githubIconExpandTimer = ref<number | undefined>(undefined);
 
 const mainContentEl = ref<HTMLElement | null>(null)
 
 onMounted(() => {
   showSidebarText.value = !isSidebarCollapsed.value;
+  showGithubIcon.value = !isSidebarCollapsed.value;
   sidebarWidthClass.value = isSidebarCollapsed.value ? 'w-14' : 'w-56';
   contentMarginClass.value = isSidebarCollapsed.value ? 'ml-14' : 'ml-64';
 });
@@ -97,54 +105,94 @@ const handleSidebarToggle = () => {
   if (isAnimating.value) return;
   isAnimating.value = true;
 
+  if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
+  if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
+  githubIconCollapseTimer.value = undefined;
+  githubIconExpandTimer.value = undefined;
+
   const currentlyCollapsed = isSidebarCollapsed.value;
+  const animationDuration = 300; // from duration-300
+  const collapseHideDelay = 75;   // Hide GitHub icon 75ms after content starts sliding over
+  const expandShowEarlyMs = 50;   // Show GitHub icon 50ms before content finishes sliding away
 
   if (!currentlyCollapsed) { // Intent: COLLAPSE
-    isSidebarCollapsed.value = true;
-    // For collapse animation, text should be visible initially to be covered
-    // And sidebar should be wide to allow content to slide over text
+    isSidebarCollapsed.value = true; // Update intent
+    // showGithubIcon remains true initially
     showSidebarText.value = true; 
     sidebarWidthClass.value = 'w-56';
 
     nextTick(() => {
-      contentMarginClass.value = 'ml-14';
+      contentMarginClass.value = 'ml-14'; // Content starts sliding over
+      
+      githubIconCollapseTimer.value = window.setTimeout(() => {
+        if (isSidebarCollapsed.value) { // Only hide if still collapsing
+          showGithubIcon.value = false;
+        }
+      }, collapseHideDelay);
     });
 
-    const transitionEndHandler = () => {
-      if (mainContentEl.value) mainContentEl.value.removeEventListener('transitionend', transitionEndHandler);
-      // Only fully collapse (hide text, shrink sidebar) if still in collapsed state
-      if (isSidebarCollapsed.value) { 
+    const onCollapseAnimationEnd = () => {
+      if (isSidebarCollapsed.value) { // Final state check
         showSidebarText.value = false;
         sidebarWidthClass.value = 'w-14';
+        // Ensure GitHub icon is hidden if the timer didn't catch it or state changed
+        if (showGithubIcon.value) {
+            clearTimeout(githubIconCollapseTimer.value);
+            githubIconCollapseTimer.value = undefined;
+            showGithubIcon.value = false;
+        }
       }
       isAnimating.value = false;
     };
 
     if (mainContentEl.value) {
-      mainContentEl.value.addEventListener('transitionend', transitionEndHandler, { once: true });
+      mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true });
     } else {
-      setTimeout(transitionEndHandler, 350); // Fallback
+      setTimeout(onCollapseAnimationEnd, animationDuration + 50); // Fallback
     }
 
   } else { // Intent: EXPAND
-    isSidebarCollapsed.value = false;
-    // For expand animation, text should appear first, sidebar widens
+    isSidebarCollapsed.value = false; // Update intent
+    // showGithubIcon remains false initially
     showSidebarText.value = true;
     sidebarWidthClass.value = 'w-56';
 
-    nextTick(() => { // Ensure DOM updates for sidebar are processed
-      contentMarginClass.value = 'ml-64'; // Then slide content
-      const transitionEndHandler = () => {
-        if (mainContentEl.value) mainContentEl.value.removeEventListener('transitionend', transitionEndHandler);
-        isAnimating.value = false;
-      };
-      if (mainContentEl.value) {
-        mainContentEl.value.addEventListener('transitionend', transitionEndHandler, { once: true });
-      } else {
-        setTimeout(transitionEndHandler, 350); // Fallback
+    nextTick(() => { 
+      contentMarginClass.value = 'ml-64'; // Content starts sliding away
+      
+      const showTime = animationDuration - expandShowEarlyMs;
+      if (showTime > 0) {
+        githubIconExpandTimer.value = window.setTimeout(() => {
+          if (!isSidebarCollapsed.value) { // Only show if still expanding
+            showGithubIcon.value = true;
+          }
+        }, showTime);
+      } else { // Fallback if calculated showTime is not positive
+         if (!isSidebarCollapsed.value) showGithubIcon.value = true;
       }
     });
+
+    const onExpandAnimationEnd = () => {
+      // Ensure GitHub icon is shown if timer missed or state changed
+      if (!isSidebarCollapsed.value && !showGithubIcon.value) {
+         clearTimeout(githubIconExpandTimer.value);
+         githubIconExpandTimer.value = undefined;
+         showGithubIcon.value = true;
+      }
+      isAnimating.value = false;
+    };
+    
+    if (mainContentEl.value) {
+      mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true });
+    } else {
+      setTimeout(onExpandAnimationEnd, animationDuration + 50); // Fallback
+    }
   }
+};
+
+// --- GitHub Link Handler ---
+const openGitHubLink = () => {
+  window.open('https://github.com/canmi21/ipelfs', '_blank', 'noopener noreferrer');
 };
 </script>
 
@@ -154,31 +202,71 @@ const handleSidebarToggle = () => {
       :class="sidebarWidthClass" 
       class="absolute top-0 left-0 h-full bg-gray-200 dark:bg-gray-800 z-10 transition-all ease-in-out duration-300 overflow-hidden"
     >
-      <div class="flex flex-col items-start p-4"> <div @click="handleSidebarToggle" class="cursor-pointer mb-4">
-          <component
-            :is="isSidebarCollapsed ? PanelRightClose : PanelRightOpen"
-            class="w-6 h-6 text-black dark:text-white icon-hover" 
-          />
+      <div class="flex flex-col items-start p-2"> 
+        <div @click="handleSidebarToggle" class="cursor-pointer mb-4 w-full rounded-md">
+          <div class="flex items-center h-12 px-2"> 
+            <component
+              :is="isSidebarCollapsed ? PanelRightClose : PanelRightOpen"
+              class="w-6 h-6 text-black dark:text-white icon-hover" 
+            />
+          </div>
         </div>
         
-        <ul class="space-y-2 w-full">
-          <li class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md">
-            <div class="flex items-center h-12"> <Cuboid class="w-6 h-6 flex-shrink-0" /> <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 1</span> </div>
+        <ul class="space-y-1 w-full"> 
+          <li 
+            class="cursor-pointer rounded-md"
+            :class="{ 
+              'hover:bg-gray-300 dark:hover:bg-gray-700': showSidebarText 
+            }"
+          >
+            <div class="flex items-center h-10 px-2"> 
+              <Cuboid 
+                class="w-6 h-6 flex-shrink-0"
+                :class="{ 'icon-hover': !showSidebarText }"
+              />
+              <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 1</span>
+            </div>
           </li>
-          <li class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md">
-            <div class="flex items-center h-12">
-              <Cuboid class="w-6 h-6 flex-shrink-0" />
+          <li 
+            class="cursor-pointer rounded-md"
+            :class="{ 
+              'hover:bg-gray-300 dark:hover:bg-gray-700': showSidebarText 
+            }"
+          >
+            <div class="flex items-center h-10 px-2">
+              <Cuboid 
+                class="w-6 h-6 flex-shrink-0"
+                :class="{ 'icon-hover': !showSidebarText }"
+              />
               <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 2</span>
             </div>
           </li>
-          <li class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md">
-            <div class="flex items-center h-12">
-              <Cuboid class="w-6 h-6 flex-shrink-0" />
+          <li 
+            class="cursor-pointer rounded-md"
+            :class="{ 
+              'hover:bg-gray-300 dark:hover:bg-gray-700': showSidebarText 
+            }"
+          >
+            <div class="flex items-center h-10 px-2">
+              <Cuboid 
+                class="w-6 h-6 flex-shrink-0"
+                :class="{ 'icon-hover': !showSidebarText }"
+              />
               <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 3</span>
             </div>
           </li>
         </ul>
       </div>
+
+      <div 
+        v-show="showGithubIcon" 
+        class="absolute top-4 right-4 cursor-pointer"
+        @click="openGitHubLink"
+        title="Open GitHub Repository"
+      >
+        <SquareArrowOutUpRight class="w-6 h-6 text-black dark:text-white icon-hover" />
+      </div>
+
     </div>
 
     <div class="absolute top-4 right-4 z-30 cursor-pointer" @click="handleToggle">
