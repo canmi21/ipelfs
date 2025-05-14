@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDark, useToggle } from '@vueuse/core'
-import { ref, watchEffect, nextTick, onMounted } from 'vue' // Added nextTick, onMounted
+import { ref, watchEffect, nextTick, onMounted } from 'vue'
 import { Sun, Moon, SunMoon, PanelRightOpen, PanelRightClose, Cuboid } from 'lucide-vue-next'
 
 // --- Theme Initialization ---
@@ -21,7 +21,6 @@ const isDark = useDark({
     }
   })()
 })
-// const toggleDark = useToggle(isDark) // Not directly used by handleToggle, but available
 
 const currentIcon = ref<'sun' | 'moon' | 'sun-moon'>(
   storedTheme === 'dark' ? 'moon' :
@@ -35,7 +34,6 @@ const currentTheme = ref<'light' | 'dark' | 'system'>(
 )
 
 const handleToggle = () => {
-  // ... (Theme toggling logic - keeping it the same as provided)
   if (currentTheme.value === 'light') {
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -58,10 +56,9 @@ const handleToggle = () => {
     }
   } else if (currentTheme.value === 'system') {
     try {
-      // const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches // Not needed for system -> dark
       currentIcon.value = 'moon'
       currentTheme.value = 'dark'
-      isDark.value = true // Force dark mode
+      isDark.value = true
       localStorage.setItem('theme', 'dark')
     } catch {
       currentIcon.value = 'moon'
@@ -82,19 +79,17 @@ watchEffect(() => {
 })
 
 // --- Sidebar Animation State & Logic ---
-const isSidebarCollapsed = ref(false)    // User's *intent* to have sidebar collapsed or expanded
-const showSidebarText = ref(true)        // Controls text visibility in sidebar items for animation
-const sidebarWidthClass = ref('w-56')    // Dynamic class for sidebar's actual width
-const contentMarginClass = ref('ml-64')  // Dynamic class for main content's margin-left
-const isAnimating = ref(false)           // Flag to prevent re-triggering animations
+const isSidebarCollapsed = ref(false)
+const showSidebarText = ref(true)
+const sidebarWidthClass = ref('w-56')
+const contentMarginClass = ref('ml-64')
+const isAnimating = ref(false)
 
-const mainContentEl = ref<HTMLElement | null>(null) // Template ref for the main content div
+const mainContentEl = ref<HTMLElement | null>(null)
 
 onMounted(() => {
-  // Initialize visual state based on the initial 'isSidebarCollapsed' value
   showSidebarText.value = !isSidebarCollapsed.value;
   sidebarWidthClass.value = isSidebarCollapsed.value ? 'w-14' : 'w-56';
-  // Use ml-14 for collapsed state to align with w-14 (3.5rem or 56px)
   contentMarginClass.value = isSidebarCollapsed.value ? 'ml-14' : 'ml-64';
 });
 
@@ -102,48 +97,43 @@ const handleSidebarToggle = () => {
   if (isAnimating.value) return;
   isAnimating.value = true;
 
-  const currentlyCollapsed = isSidebarCollapsed.value; // State *before* this toggle action
+  const currentlyCollapsed = isSidebarCollapsed.value;
 
-  if (!currentlyCollapsed) { // Intent: COLLAPSE (Sidebar is currently expanded)
-    isSidebarCollapsed.value = true; // Update primary intent state
+  if (!currentlyCollapsed) { // Intent: COLLAPSE
+    isSidebarCollapsed.value = true;
+    // For collapse animation, text should be visible initially to be covered
+    // And sidebar should be wide to allow content to slide over text
+    showSidebarText.value = true; 
+    sidebarWidthClass.value = 'w-56';
 
-    // Phase 1: Content slides left. Sidebar itself is still wide with text visible underneath.
-    showSidebarText.value = true;     // Keep text visible to be covered
-    sidebarWidthClass.value = 'w-56'; // Keep sidebar full width initially
-
-    nextTick(() => { // Ensure DOM has sidebar at w-56 before changing content margin
-      contentMarginClass.value = 'ml-14'; // Slide content to cover text part
+    nextTick(() => {
+      contentMarginClass.value = 'ml-14';
     });
 
     const transitionEndHandler = () => {
       if (mainContentEl.value) mainContentEl.value.removeEventListener('transitionend', transitionEndHandler);
-      // Phase 2: After content covers, hide text and shrink sidebar's container.
-      // Check if the state is still "collapsing" (in case of rapid toggles, though isAnimating should prevent)
-      if (isSidebarCollapsed.value) {
-        showSidebarText.value = false;    // Now hide the text
-        sidebarWidthClass.value = 'w-14'; // And shrink the sidebar container
+      // Only fully collapse (hide text, shrink sidebar) if still in collapsed state
+      if (isSidebarCollapsed.value) { 
+        showSidebarText.value = false;
+        sidebarWidthClass.value = 'w-14';
       }
       isAnimating.value = false;
     };
 
     if (mainContentEl.value) {
       mainContentEl.value.addEventListener('transitionend', transitionEndHandler, { once: true });
-    } else { // Fallback if ref isn't immediately available (should be rare)
-      setTimeout(transitionEndHandler, 350); // Duration slightly > transition (300ms)
+    } else {
+      setTimeout(transitionEndHandler, 350); // Fallback
     }
 
-  } else { // Intent: EXPAND (Sidebar is currently collapsed)
-    isSidebarCollapsed.value = false; // Update primary intent state
-
-    // Phase 1: Prepare sidebar: show text, expand width. Content is still overlaying.
+  } else { // Intent: EXPAND
+    isSidebarCollapsed.value = false;
+    // For expand animation, text should appear first, sidebar widens
     showSidebarText.value = true;
     sidebarWidthClass.value = 'w-56';
 
-    // Phase 2: Content slides right to reveal sidebar.
-    // Use nextTick to ensure sidebar DOM updates (width, text visibility) are rendered before content animation.
-    nextTick(() => {
-      contentMarginClass.value = 'ml-64';
-
+    nextTick(() => { // Ensure DOM updates for sidebar are processed
+      contentMarginClass.value = 'ml-64'; // Then slide content
       const transitionEndHandler = () => {
         if (mainContentEl.value) mainContentEl.value.removeEventListener('transitionend', transitionEndHandler);
         isAnimating.value = false;
@@ -151,7 +141,7 @@ const handleSidebarToggle = () => {
       if (mainContentEl.value) {
         mainContentEl.value.addEventListener('transitionend', transitionEndHandler, { once: true });
       } else {
-        setTimeout(transitionEndHandler, 350);
+        setTimeout(transitionEndHandler, 350); // Fallback
       }
     });
   }
@@ -164,32 +154,28 @@ const handleSidebarToggle = () => {
       :class="sidebarWidthClass" 
       class="absolute top-0 left-0 h-full bg-gray-200 dark:bg-gray-800 z-10 transition-all ease-in-out duration-300 overflow-hidden"
     >
-      <div class="flex flex-col items-start p-4">
-        <div @click="handleSidebarToggle" class="cursor-pointer mb-4">
+      <div class="flex flex-col items-start p-4"> <div @click="handleSidebarToggle" class="cursor-pointer mb-4">
           <component
             :is="isSidebarCollapsed ? PanelRightClose : PanelRightOpen"
-            class="w-6 h-6 text-black dark:text-white"
+            class="w-6 h-6 text-black dark:text-white icon-hover" 
           />
         </div>
         
-        <ul class="space-y-4 w-full">
-          <li class="cursor-pointer text-lg hover:text-gray-600 dark:hover:text-gray-300">
-            <div v-if="showSidebarText" class="flex items-center">
-              <Cuboid class="w-6 h-6 mr-2 flex-shrink-0" /> Tab 1
-            </div>
-            <Cuboid v-else class="w-6 h-6" />
+        <ul class="space-y-2 w-full">
+          <li class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md">
+            <div class="flex items-center h-12"> <Cuboid class="w-6 h-6 flex-shrink-0" /> <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 1</span> </div>
           </li>
-          <li class="cursor-pointer text-lg hover:text-gray-600 dark:hover:text-gray-300">
-            <div v-if="showSidebarText" class="flex items-center">
-              <Cuboid class="w-6 h-6 mr-2 flex-shrink-0" /> Tab 2
+          <li class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md">
+            <div class="flex items-center h-12">
+              <Cuboid class="w-6 h-6 flex-shrink-0" />
+              <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 2</span>
             </div>
-            <Cuboid v-else class="w-6 h-6" />
           </li>
-          <li class="cursor-pointer text-lg hover:text-gray-600 dark:hover:text-gray-300">
-            <div v-if="showSidebarText" class="flex items-center">
-              <Cuboid class="w-6 h-6 mr-2 flex-shrink-0" /> Tab 3
+          <li class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 rounded-md">
+            <div class="flex items-center h-12">
+              <Cuboid class="w-6 h-6 flex-shrink-0" />
+              <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 3</span>
             </div>
-            <Cuboid v-else class="w-6 h-6" />
           </li>
         </ul>
       </div>
@@ -236,14 +222,7 @@ body {
   transform: scale(1.1);
 }
 
-/* Non-linear sidebar transition for width and margin changes */
 .transition-all {
   transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1); 
-}
-
-/* Ensure sidebar icons don't cause wrap when sidebar is narrow before text hides */
-.sidebar-item-text {
-  white-space: nowrap;
-  overflow: hidden;
 }
 </style>
