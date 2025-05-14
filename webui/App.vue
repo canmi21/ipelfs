@@ -1,31 +1,88 @@
 <script setup lang="ts">
 import { useDark, useToggle } from '@vueuse/core'
 import { ref, watchEffect } from 'vue'
-import { Sun, Moon } from 'lucide-vue-next'
+import { Sun, Moon, SunMoon } from 'lucide-vue-next'
 
-const isDark = useDark()
+// Initialize theme
+const storedTheme = localStorage.getItem('theme')
+const isDark = useDark({
+  valueDark: 'dark',
+  valueLight: '',
+  storageKey: null,
+  initialValue: (() => {
+    if (storedTheme === 'dark') return 'dark'
+    if (storedTheme === 'light') return ''
+    try {
+      const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      return systemIsDark ? 'dark' : ''
+    } catch {
+      localStorage.setItem('theme', 'dark')
+      return 'dark'
+    }
+  })()
+})
 const toggleDark = useToggle(isDark)
 
-const isTransitioning = ref(false)
-const showContent = ref(true)
-const overlayColor = ref('#ffffff')
+// Track current icon and theme state
+const currentIcon = ref<'sun' | 'moon' | 'sun-moon'>(
+  storedTheme === 'dark' ? 'moon' : 
+  storedTheme === 'light' ? 'sun' : 
+  'sun-moon'
+)
+const currentTheme = ref<'light' | 'dark' | 'system'>(
+  storedTheme === 'dark' ? 'dark' : 
+  storedTheme === 'light' ? 'light' : 
+  'system'
+)
 
 const handleToggle = () => {
-  showContent.value = false
-  isTransitioning.value = true
-  overlayColor.value = isDark.value ? '#111827' : '#ffffff'
-  requestAnimationFrame(() => {
-    overlayColor.value = isDark.value ? '#ffffff' : '#111827'
-  })
-
-  setTimeout(() => {
-    toggleDark()
-  }, 500)
-
-  setTimeout(() => {
-    isTransitioning.value = false
-    showContent.value = true
-  }, 800)
+  if (currentTheme.value === 'light') {
+    // Current is light, check system preference
+    try {
+      const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (!systemIsDark) {
+        // System is light, switch to dark
+        currentIcon.value = 'moon'
+        currentTheme.value = 'dark'
+        isDark.value = true
+        localStorage.setItem('theme', 'dark')
+      } else {
+        // System is dark, switch to system
+        currentIcon.value = 'sun-moon'
+        currentTheme.value = 'system'
+        isDark.value = systemIsDark
+        localStorage.removeItem('theme')
+      }
+    } catch {
+      // Fallback to dark if system preference fails
+      currentIcon.value = 'moon'
+      currentTheme.value = 'dark'
+      isDark.value = true
+      localStorage.setItem('theme', 'dark')
+    }
+  } else if (currentTheme.value === 'system') {
+    // Current is system, check system preference
+    try {
+      const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      // Switch to dark regardless of system preference
+      currentIcon.value = 'moon'
+      currentTheme.value = 'dark'
+      isDark.value = true
+      localStorage.setItem('theme', 'dark')
+    } catch {
+      // Fallback to dark if system preference fails
+      currentIcon.value = 'moon'
+      currentTheme.value = 'dark'
+      isDark.value = true
+      localStorage.setItem('theme', 'dark')
+    }
+  } else {
+    // Current is dark, switch to light
+    currentIcon.value = 'sun'
+    currentTheme.value = 'light'
+    isDark.value = false
+    localStorage.setItem('theme', 'light')
+  }
 }
 
 watchEffect(() => {
@@ -34,36 +91,21 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div class="relative min-h-screen overflow-hidden" style="background-color: var(--bg); color: var(--text);">
+  <div class="relative min-h-screen" style="background-color: var(--bg); color: var(--text);">
     <!-- Top-right toggle icon -->
-    <div
-      class="absolute top-4 right-4 z-20 cursor-pointer transition-transform duration-200 ease-out group"
-      @click="handleToggle"
-    >
+    <div class="absolute top-4 right-4 z-20 cursor-pointer" @click="handleToggle">
       <component
-        :is="isDark ? Moon : Sun"
-        class="w-6 h-6 transition-all duration-300 ease-in-out transform group-hover:scale-110 text-black dark:text-white dark:group-hover:text-gray-200"
+        :is="currentIcon === 'sun' ? Sun : currentIcon === 'moon' ? Moon : SunMoon"
+        class="w-6 h-6 text-black dark:text-white"
       />
     </div>
 
-    <!-- Overlay -->
-    <div
-      v-if="isTransitioning"
-      class="fixed inset-0 z-50 pointer-events-none transition-colors duration-700"
-      :style="{ backgroundColor: overlayColor }"
-    ></div>
-
     <!-- Content -->
-    <transition name="fade-in" appear>
-      <div
-        v-if="showContent"
-        class="z-10 transition-opacity duration-300 flex items-center justify-center min-h-screen"
-      >
-        <div class="text-xl text-center">
-          Hello, World!
-        </div>
+    <div class="flex items-center justify-center min-h-screen">
+      <div class="text-xl text-center">
+        Hello, World!
       </div>
-    </transition>
+    </div>
   </div>
 </template>
 
@@ -76,20 +118,7 @@ watchEffect(() => {
   --bg: #111827;
   --text: #ffffff;
 }
-
 body {
   margin: 0;
-  transition: background-color 0.6s ease, color 0.5s ease;
-}
-
-.fade-in-enter-active {
-  transition: opacity 0.2s ease;
-}
-.fade-in-leave-active {
-  transition: opacity 0.1s ease;
-}
-.fade-in-enter-from,
-.fade-in-leave-to {
-  opacity: 0;
 }
 </style>
