@@ -1,6 +1,6 @@
 use axum::{Json};
 use axum::extract::{Json as ExtractJson, Path};
-use chrono::Local;
+use chrono::{Local, DateTime}; // 确保 DateTime 被导入
 use serde::{Serialize, Deserialize};
 
 use crate::log;
@@ -57,6 +57,13 @@ pub struct DeleteCollectionInput {
 #[derive(Deserialize)]
 pub struct CollectionTransferInput {
     to: String,
+}
+
+// GET /v1/ipelfs/healthcheck
+pub async fn get_healthcheck() -> Json<ApiResponse<String>> {
+    let now: DateTime<Local> = Local::now();
+    let timestamp = now.to_rfc3339();
+    Json(ApiResponse::ok(timestamp, None))
 }
 
 // GET /v1/ipelfs/volumes
