@@ -117,14 +117,14 @@ pub fn load_config() -> Result<FullConfig, Box<dyn std::error::Error>> {
 }
 
 // write config to file
-fn save_config(cfg: &FullConfig) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_config(cfg: &FullConfig) -> Result<(), Box<dyn std::error::Error>> {
     let content = toml::to_string(cfg)?;
     fs::write(CONFIG_PATH, content)?;
     Ok(())
 }
 
 // generate 7-char id (first is letter, rest biased 70% digit)
-fn gen_id() -> String {
+pub fn gen_id() -> String {
     const ID_LENGTH: usize = 7;
     const DIGIT_WEIGHT: f64 = 0.7;
 

@@ -3,7 +3,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 use toml::{map::Map, Value};
 
-use crate::config::volume::{load_config, save_config, gen_id};
+use crate::config::volume::{load_config, gen_id};
 
 // Entry point for creating a collection
 pub fn create_collection(volume_id: &str, name: &str) -> Result<String, String> {
@@ -97,4 +97,31 @@ fn save_index(root: &Path, table: Map<String, Value>) -> Result<(), String> {
 // Create physical folder
 fn create_collection_folder(root: &Path, id: &str) -> Result<(), String> {
     fs::create_dir_all(root.join(id)).map_err(|e| format!("mkdir failed: {}", e))
+}
+
+pub fn list_collections(volume_id: &str) -> Result<Map<String, Value>, String> {
+    let config = load_config().map_err(|e| e.to_string())?;
+    let path = config
+        .get_volume_map()
+        .get(volume_id)
+        .ok_or("volume id not found")?;
+    let index_path = Path::new(path).join("index.toml");
+
+    if !index_path.exists() {
+        return Ok(Map::new());
+    }
+
+    let mut content = String::new();
+    File::open(&index_path)
+        .and_then(|mut f| f.read_to_string(&mut content))
+        .map_err(|e| format!("read error: {}", e))?;
+
+    let data: Value = content.parse().map_err(|e| format!("toml error: {}", e))?;
+    let table = data
+        .get("collection")
+        .and_then(|v| v.as_table())
+        .cloned()
+        .unwrap_or_default();
+
+    Ok(table)
 }

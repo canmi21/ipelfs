@@ -11,6 +11,7 @@ mod web;
 mod log;
 mod cli;
 mod config;
+mod volume;
 
 fn main() {
     match config::Config::load() {
