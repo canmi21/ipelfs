@@ -9,30 +9,31 @@ const isTransitioning = ref(false)
 const showContent = ref(true)
 const overlayColor = ref('#ffffff')
 
+// Toggle dark mode and handle overlay transitions
 const handleToggle = () => {
-  // 步骤 1：立即隐藏内容，显示遮罩
+  // Immediately hide content and show the overlay
   showContent.value = false
   isTransitioning.value = true
 
-  // 步骤 2：设定遮罩颜色渐变
+  // Set initial overlay color
   overlayColor.value = isDark.value ? '#111827' : '#ffffff'
   requestAnimationFrame(() => {
     overlayColor.value = isDark.value ? '#ffffff' : '#111827'
   })
 
-  // 步骤 3：提前切换主题（略早于遮罩消失）
+  // Switch theme slightly before the overlay disappears
   setTimeout(() => {
     toggleDark()
   }, 500)
 
-  // 步骤 4：延迟恢复内容，和遮罩一起渐变淡入
+  // Delay restoring content and fade in with overlay
   setTimeout(() => {
     isTransitioning.value = false
     showContent.value = true
   }, 800)
 }
 
-// 保证 html 上 dark class 生效
+// Ensure the 'dark' class is toggled on the <html> element
 watchEffect(() => {
   document.documentElement.classList.toggle('dark', isDark.value)
 })
@@ -41,18 +42,18 @@ watchEffect(() => {
 <template>
   <div class="relative min-h-screen flex items-center justify-center overflow-hidden" style="background-color: var(--bg); color: var(--text);">
     
-    <!-- 遮罩层 -->
+    <!-- Overlay layer with transition -->
     <div
       v-if="isTransitioning"
       class="fixed inset-0 z-50 pointer-events-none transition-colors duration-700"
       :style="{ backgroundColor: overlayColor }"
     ></div>
 
-    <!-- 内容区域 -->
+    <!-- Content area -->
     <transition name="fade-in" appear>
       <div
         v-if="showContent"
-        class="z-10 transition-opacity duration-500 flex items-center justify-center"
+        class="z-10 transition-opacity duration-300 flex items-center justify-center"
       >
         <button
           @click="handleToggle"
@@ -71,7 +72,7 @@ watchEffect(() => {
   --text: #000000;
 }
 .dark {
-  --bg: #111827;
+  --bg: #111827; /* Dark gray background */
   --text: #ffffff;
 }
 
@@ -80,7 +81,7 @@ body {
   transition: background-color 0.6s ease, color 0.5s ease;
 }
 
-/* 内容区域淡入效果 */
+/* Fade-in effect for content */
 .fade-in-enter-active {
   transition: opacity 0.2s ease;
 }
