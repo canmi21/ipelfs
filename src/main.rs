@@ -7,7 +7,7 @@ use std::io::Write;
 use std::io::ErrorKind;
 use tokio::net::TcpListener;
 use tokio::runtime::Runtime;
-use cli::{Cli, Commands, CreateTarget, RemoveTarget, ListTarget, DeleteTarget};
+use cli::{Cli, Commands, CreateTarget, RemoveTarget, ListTarget, DeleteTarget, AddTarget};
 
 mod web;
 mod log;
@@ -113,6 +113,30 @@ fn main() {
                     Ok(_) => {}
                     Err(e) => {
                         log::action(&format!("failed to delete volume: {}", e));
+                    }
+                }
+            }
+        },
+        Commands::Add { target } => match target {
+            AddTarget::Volume { path } => {
+                let actual_path = if path.starts_with("/dev/") {
+                    match config::volume::resolve_mount_point(path) {
+                        Some(mount_point) => mount_point,
+                        None => {
+                            log::warn("device is not mounted");
+                            return;
+                        }
+                    }
+                } else {
+                    path.clone()
+                };
+
+                match config::volume::add_existing_volume(&actual_path) {
+                    Ok(id) => {
+                        log::good(&format!("volume mounted as @{}", id));
+                    }
+                    Err(e) => {
+                        log::warn(&format!("failed to add volume: {}", e));
                     }
                 }
             }

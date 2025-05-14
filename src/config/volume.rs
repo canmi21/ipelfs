@@ -1,5 +1,6 @@
 use std::fs;
 use rand::Rng;
+use std::io::Write;
 use std::fs::File;
 use std::path::Path;
 use std::time::Instant;
@@ -227,4 +228,47 @@ pub fn delete_ipelfs(path_or_id: &str) -> Result<(), Box<dyn std::error::Error>>
     log::info(&format!("@{} has been released and ipelfs removed", id));
     log::action("You may now manage or wipe the volume manually");
     Ok(())
+}
+
+pub fn add_existing_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let root = Path::new(path);
+
+    let ipelfs_file = root.join(".ipelfs");
+    if !ipelfs_file.exists() {
+        return Err("'.ipelfs' not found in volume root".into());
+    }
+
+    let id = fs::read_to_string(&ipelfs_file)
+        .map_err(|_| "failed to read .ipelfs file")?
+        .trim()
+        .to_string();
+
+    if id.len() != 7 || !id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()) {
+        return Err("invalid volume ID format in .ipelfs".into());
+    }
+
+    if root.join(".vlock").exists() {
+        return Err("volume appears locked ('.vlock' exists) — either in use or not cleanly unmounted".into());
+    }
+
+    let mut config = load_config()?;
+    let mut volumes = config.volume.take().unwrap_or_default();
+
+    if volumes.contains_key(&id) {
+        return Err(format!("volume ID '{}' already registered", id).into());
+    }
+
+    if volumes.values().any(|v| v == path) {
+        return Err("volume path already registered".into());
+    }
+
+    volumes.insert(id.clone(), path.to_string());
+    config.volume = Some(volumes);
+    save_config(&config)?;
+
+    let now = chrono::Local::now().to_rfc3339();
+    let _ = File::create(root.join(".vlock"))?.write_all(now.as_bytes());
+
+    log::good(&format!("existing volume mounted @{} -> {}", id, path));
+    Ok(id)
 }

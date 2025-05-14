@@ -26,6 +26,10 @@ pub enum Commands {
         #[command(subcommand)]
         target: DeleteTarget,
     },
+    Add {
+        #[command(subcommand)]
+        target: AddTarget,
+    },
     //webapi
     Web,
 }
@@ -53,5 +57,12 @@ pub enum ListTarget {
 pub enum DeleteTarget {
     Volume {
         value: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AddTarget {
+    Volume {
+        path: String,
     },
 }
