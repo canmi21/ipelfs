@@ -9,6 +9,7 @@ use crate::web::api::{
     get_collections,
     post_create_collection,
     post_delete_collection,
+    post_transfer_collection,
 };
 
 pub fn build_router() -> Router {
@@ -21,7 +22,8 @@ pub fn build_router() -> Router {
             .route("/volumes/delete", post(post_delete_volume))
             .route("/volumes/:id/collections", get(get_collections))
             .route("/volumes/:id/collections", post(post_create_collection))
+            .route("/volumes/:id/collections/create", post(post_create_collection))
             .route("/volumes/:id/collections/delete", post(post_delete_collection))
-
+            .route("/volumes/:from/collections/:id/transfer",post(post_transfer_collection))
         )
 }

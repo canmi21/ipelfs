@@ -169,3 +169,58 @@ pub fn delete_collection_by_name(volume_id: &str, name: &str) -> Result<(), Stri
 
     Ok(())
 }
+
+// Transfer a collection from source volume to target volume
+pub fn transfer_collection(
+    from_volume: &str,
+    collection_id: &str,
+    to_volume: &str,
+) -> Result<(), String> {
+    if from_volume == to_volume {
+        return Err("source and target volume must be different".into());
+    }
+
+    let from_root = get_volume_root(from_volume)?;
+    let to_root = get_volume_root(to_volume)?;
+
+    let mut from_index = load_or_init_index(&from_root)?;
+    let from_map = get_or_init_collection_table(&mut from_index)?;
+
+    // get collection name
+    let name = from_map
+        .get(collection_id)
+        .and_then(|v| v.as_str())
+        .ok_or("collection not found in source volume")?
+        .to_string();
+
+    let mut to_index = load_or_init_index(&to_root)?;
+    let to_map = get_or_init_collection_table(&mut to_index)?;
+
+    // check for conflict in destination volume
+    if to_map.contains_key(collection_id) {
+        return Err("collection id already exists in target volume".into());
+    }
+    if to_map.values().any(|v| v.as_str() == Some(&name)) {
+        return Err("collection name already exists in target volume".into());
+    }
+
+    // move folder
+    let from_path = from_root.join(collection_id);
+    let to_path = to_root.join(collection_id);
+
+    if !from_path.exists() {
+        return Err("collection folder not found in source volume".into());
+    }
+
+    fs::rename(&from_path, &to_path)
+        .map_err(|e| format!("failed to move collection folder: {}", e))?;
+
+    // update index files
+    from_map.remove(collection_id);
+    to_map.insert(collection_id.to_string(), Value::String(name.clone()));
+
+    save_index(&from_root, from_index)?;
+    save_index(&to_root, to_index)?;
+
+    Ok(())
+}

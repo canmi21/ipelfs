@@ -53,6 +53,12 @@ pub struct DeleteCollectionInput {
     by: String,     // "name" or "id"
 }
 
+// Collection transfer input
+#[derive(Deserialize)]
+pub struct CollectionTransferInput {
+    to: String,
+}
+
 // GET /v1/ipelfs/volumes
 pub async fn get_volumes() -> Json<ApiResponse<VolumeList>> {
     let volumes = match volume::load_config() {
@@ -173,6 +179,36 @@ pub async fn post_delete_collection(
 
             log::info(&format!("collection deleted @{}:{}", volume_id, input.value));
             Json(ApiResponse::ok(input.value.clone(), None))
+        }
+        Err(err) => Json(ApiResponse::fail(err)),
+    }
+}
+
+// POST /v1/ipelfs/volumes/{id}/collections/{id}/transfer
+pub async fn post_transfer_collection(
+    Path((from_volume, collection_id)): Path<(String, String)>,
+    Json(input): ExtractJson<CollectionTransferInput>,
+) -> Json<ApiResponse<String>> {
+    let is_valid_id = collection_id.len() == 7
+        && collection_id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit());
+
+    if !is_valid_id {
+    return Json(ApiResponse::<String>::fail("invalid collection id"));
+    }
+
+    match collection::transfer_collection(&from_volume, &collection_id, &input.to) {
+        Ok(_) => {
+            log::info(&format!("collection transferred @{}:{} -> {}", from_volume, collection_id, input.to));
+            if let Some(from_root) = volume::get_volume_root(&from_volume) {
+                let entry = format!("@v:{}/c:{}", from_volume, collection_id);
+                let _ = metadata::transfer(&from_root, &entry, &input.to);
+            }
+            if let Some(to_root) = volume::get_volume_root(&input.to) {
+                let entry = format!("@v:{}/c:{}", from_volume, collection_id);
+                let _ = metadata::receive(&to_root, &entry, &input.to);
+            }
+
+            Json(ApiResponse::ok(collection_id, None))
         }
         Err(err) => Json(ApiResponse::fail(err)),
     }
