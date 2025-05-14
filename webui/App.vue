@@ -22,7 +22,7 @@ const isDark = useDark({
       return systemIsDark ? 'dark' : ''
     } catch (e) {
       console.error("Failed to detect system color scheme:", e);
-      localStorage.setItem('theme', 'dark') // Fallback to dark
+      localStorage.setItem('theme', 'dark') 
       return 'dark'
     }
   })()
@@ -56,7 +56,7 @@ const handleToggle = () => {
       }
     } catch (e) {
       console.error("Failed to switch theme based on system preference:", e);
-      currentIcon.value = 'moon' // Fallback to dark
+      currentIcon.value = 'moon' 
       currentTheme.value = 'dark'
       isDark.value = true
       localStorage.setItem('theme', 'dark')
@@ -66,7 +66,7 @@ const handleToggle = () => {
      currentTheme.value = 'dark'
      isDark.value = true
      localStorage.setItem('theme', 'dark')
-  } else { // Current is dark
+  } else { 
     currentIcon.value = 'sun'
     currentTheme.value = 'light'
     isDark.value = false
@@ -80,13 +80,16 @@ watchEffect(() => {
 
 // --- Sidebar Animation State & Logic ---
 const isSidebarCollapsed = ref(false)
-const showSidebarText = ref(true) 
+const showSidebarText = ref(true) // For general sidebar text like Tab 1, Tab 2
 const sidebarWidthClass = ref('w-56')
 const contentMarginClass = ref('ml-64')
 const isAnimating = ref(false)
 const showGithubIcon = ref(true);
 const githubIconCollapseTimer = ref<number | undefined>(undefined);
 const githubIconExpandTimer = ref<number | undefined>(undefined);
+const showInlineStatusText = ref(true); // Dedicated ref for bottom status text
+const statusTextExpandTimer = ref<number | undefined>(undefined);
+
 
 const mainContentEl = ref<HTMLElement | null>(null)
 
@@ -106,36 +109,36 @@ const formattedLatency = computed(() => {
   if (ms === 0) return "0ms";
 
   const ns = ms * 1_000_000;
-  if (ms > 0 && ms < 0.001) { // 0 to 999 ns
+  if (ms > 0 && ms < 0.001) { 
       return `${Math.floor(ns)}ns`;
   }
 
-  if (ms < 1000) { // 0.001ms to 999.999... ms
-    if (ms < 10) { // Target: X.YYms
+  if (ms < 1000) { 
+    if (ms < 10) { 
       const val = truncate(ms, 2);
       return `${val.toFixed(2)}ms`;
-    } else if (ms < 100) { // Target: XX.Yms
+    } else if (ms < 100) { 
       const val = truncate(ms, 1);
       return `${val.toFixed(1)}ms`;
-    } else { // Target: XXXms
+    } else { 
       return `${Math.floor(ms)}ms`;
     }
-  } else { // >= 1000ms (1s)
+  } else { 
     const s = ms / 1000;
-    if (s < 10) { // Target: X.YYs
+    if (s < 10) { 
       const val = truncate(s, 2);
       return `${val.toFixed(2)}s`;
-    } else if (s < 100) { // Target: XX.Ys
+    } else if (s < 100) { 
       const val = truncate(s, 1);
       return `${val.toFixed(1)}s`;
-    } else { // Target: XXXs
+    } else { 
       return `${Math.floor(s)}s`;
     }
   }
 });
 
 const checkBackendStatus = async () => {
-  const requestSentTimestamp = Date.now();
+  const requestSentTimestamp = Date.now(); // Milliseconds
   try {
     const response = await fetch('http://localhost:33330/v1/ipelfs/healthcheck');
     if (response.ok) {
@@ -144,15 +147,36 @@ const checkBackendStatus = async () => {
 
       if (newConnectionState) {
         try {
-          const backendTime = new Date(data.data).getTime();
-          if (!isNaN(backendTime)) {
-            latencyMs.value = backendTime - requestSentTimestamp;
-          } else {
-            console.warn("Backend returned invalid timestamp for latency calculation.");
-            latencyMs.value = null;
+          const backendTimestampStr = data.data as string; // e.g., "2025-05-15T01:26:27.828466497+08:00"
+          
+          const datePart = backendTimestampStr.substring(0, 19); // "2025-05-15T01:26:27"
+          const fractionalPartMatch = backendTimestampStr.match(/\.(\d+)/);
+          // Gracefully find timezone part, handling 'Z' or +/-HH:mm
+          let timezonePart = "Z"; // Default to UTC if no explicit offset found after fractional seconds
+          const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/);
+          if (timezoneMatch) {
+            timezonePart = timezoneMatch[0];
           }
+          
+          let backendEpochNs: bigint;
+          const baseMsBigInt = BigInt(new Date(datePart + timezonePart).getTime());
+
+          if (fractionalPartMatch && fractionalPartMatch[1]) {
+              let nanoStr = fractionalPartMatch[1]; 
+              if (nanoStr.length > 9) nanoStr = nanoStr.substring(0, 9);
+              else if (nanoStr.length < 9) nanoStr = nanoStr.padEnd(9, '0');
+              const nanoseconds = BigInt(nanoStr);
+              backendEpochNs = baseMsBigInt * 1_000_000n + nanoseconds;
+          } else {
+              backendEpochNs = baseMsBigInt * 1_000_000n; 
+          }
+          
+          const requestSentEpochNs = BigInt(requestSentTimestamp) * 1_000_000n;
+          const latencyNanos = backendEpochNs - requestSentEpochNs;
+          latencyMs.value = Number(latencyNanos) / 1_000_000.0;
+
         } catch (e) {
-          console.error("Error parsing backend timestamp for latency:", e);
+          console.error("Error parsing backend timestamp or calculating latency:", e);
           latencyMs.value = null;
         }
         isBackendConnected.value = true;
@@ -173,10 +197,12 @@ const checkBackendStatus = async () => {
 };
 
 onMounted(() => {
-  showSidebarText.value = !isSidebarCollapsed.value;
-  showGithubIcon.value = !isSidebarCollapsed.value;
-  sidebarWidthClass.value = isSidebarCollapsed.value ? 'w-14' : 'w-56';
-  contentMarginClass.value = isSidebarCollapsed.value ? 'ml-14' : 'ml-64';
+  const initialSidebarState = isSidebarCollapsed.value;
+  showSidebarText.value = !initialSidebarState;
+  showGithubIcon.value = !initialSidebarState;
+  showInlineStatusText.value = !initialSidebarState; // Initialize based on sidebar state
+  sidebarWidthClass.value = initialSidebarState ? 'w-14' : 'w-56';
+  contentMarginClass.value = initialSidebarState ? 'ml-14' : 'ml-64';
 
   checkBackendStatus();
   healthCheckInterval.value = window.setInterval(checkBackendStatus, 1000);
@@ -188,42 +214,49 @@ onUnmounted(() => {
   }
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
+  if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value);
 });
 
 const handleSidebarToggle = () => {
   if (isAnimating.value) return;
   isAnimating.value = true;
 
+  // Clear all animation timers
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
+  if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value);
   githubIconCollapseTimer.value = undefined;
   githubIconExpandTimer.value = undefined;
+  statusTextExpandTimer.value = undefined;
+
 
   const currentlyCollapsed = isSidebarCollapsed.value;
   const animationDuration = 300;
-  const expandShowEarlyMs = 50;
+  const expandShowEarlyMs = 50; // How early to show elements during expansion
 
   if (!currentlyCollapsed) { // Intent: COLLAPSE
     isSidebarCollapsed.value = true;
-    showGithubIcon.value = false;
+    showGithubIcon.value = false; // Hide GitHub icon immediately
+    showInlineStatusText.value = false; // Hide inline status text immediately
 
     nextTick(() => {
       contentMarginClass.value = 'ml-14';
     });
 
+    // General sidebar text (Tabs) hides later in the animation
+    const generalTextHideDelay = animationDuration - 150 > 0 ? animationDuration - 150 : 50;
+    setTimeout(() => {
+         if (isSidebarCollapsed.value) showSidebarText.value = false;
+    }, generalTextHideDelay);
+
     const onCollapseAnimationEnd = () => {
       if (isSidebarCollapsed.value) {
-        showSidebarText.value = false; 
+        // showSidebarText.value = false; // Already handled by timeout
         sidebarWidthClass.value = 'w-14';
       }
       isAnimating.value = false;
     };
     
-    setTimeout(() => {
-         if (isSidebarCollapsed.value) showSidebarText.value = false;
-    }, animationDuration - 150 > 0 ? animationDuration - 150 : 50);
-
-
     if (mainContentEl.value) {
         mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true });
     } else {
@@ -233,41 +266,52 @@ const handleSidebarToggle = () => {
 
   } else { // Intent: EXPAND
     isSidebarCollapsed.value = false;
-    sidebarWidthClass.value = 'w-56';
+    sidebarWidthClass.value = 'w-56'; // Start expanding width
 
     nextTick(() => {
       contentMarginClass.value = 'ml-64';
+      
+      // General sidebar text (Tabs) shows early
       setTimeout(() => {
         if(!isSidebarCollapsed.value) showSidebarText.value = true; 
       }, 50);
 
-
+      // GitHub icon shows with its specific timing
       const showIconTime = animationDuration - expandShowEarlyMs;
       if (showIconTime > 0) {
         githubIconExpandTimer.value = window.setTimeout(() => {
-          if (!isSidebarCollapsed.value) {
-            showGithubIcon.value = true;
-          }
+          if (!isSidebarCollapsed.value) showGithubIcon.value = true;
         }, showIconTime);
       } else {
          if (!isSidebarCollapsed.value) showGithubIcon.value = true;
       }
+
+      // Inline status text also shows with similar timing logic
+      // (can use same delay as icon or adjust if needed)
+      const showStatusTextTime = animationDuration - expandShowEarlyMs + 20; // e.g. slightly after icon
+       if (showStatusTextTime > 0) {
+        statusTextExpandTimer.value = window.setTimeout(() => {
+          if (!isSidebarCollapsed.value) showInlineStatusText.value = true;
+        }, showStatusTextTime);
+      } else {
+         if (!isSidebarCollapsed.value) showInlineStatusText.value = true;
+      }
     });
 
     const onExpandAnimationEnd = () => {
-      if (!isSidebarCollapsed.value && !showGithubIcon.value) {
-         clearTimeout(githubIconExpandTimer.value);
-         githubIconExpandTimer.value = undefined;
-         showGithubIcon.value = true;
+      // Fallback to ensure elements are visible if timers somehow failed or animation ended prematurely
+      if (!isSidebarCollapsed.value) {
+        if (!showGithubIcon.value) showGithubIcon.value = true;
+        if (!showInlineStatusText.value) showInlineStatusText.value = true;
+        if (!showSidebarText.value) showSidebarText.value = true;
       }
-      if(!isSidebarCollapsed.value) showSidebarText.value = true;
       isAnimating.value = false;
     };
     
     if (mainContentEl.value) {
         mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true });
     } else {
-        setTimeout(onExpandAnimationEnd, animationDuration + 50);
+        setTimeout(onExpandAnimationEnd, animationDuration + 50); 
     }
   }
 };
@@ -346,7 +390,7 @@ const openGitHubLink = () => {
             }"
           />
           <div 
-            v-if="showSidebarText" 
+            v-if="showInlineStatusText" 
             class="status-text-wrapper ml-3 flex-grow min-w-0 flex justify-center items-center"
           >
             <div v-if="!isBackendConnected" class="flex items-center">
@@ -355,13 +399,11 @@ const openGitHubLink = () => {
             </div>
 
             <div v-if="isBackendConnected" class="flex flex-col items-center">
-                <div class="flex items-center">
-                    <span class="status-orb orb-connected mr-1.5 flex-shrink-0"></span>
+                <div class="flex items-center"> <span class="status-orb orb-connected mr-1.5 flex-shrink-0"></span>
                     <span class="status-connected-text">Connected</span>
                 </div>
-                <div class="status-latency-text-container mt-0.5 text-center">
-                    <span v-if="formattedLatency" class="status-latency-text">(Latency: <span class="latency-value">{{ formattedLatency }}</span>)</span>
-                    <span v-else-if="latencyMs === null && healthCheckInterval" class="status-latency-text">(Calculating...)</span>
+                <div class="text-center -mt-1.5"> <span v-if="formattedLatency" class="status-latency-display-text">Latency: {{ formattedLatency }}</span>
+                    <span v-else-if="latencyMs === null && healthCheckInterval" class="status-latency-display-text">Calculating...</span>
                 </div>
             </div>
           </div>
@@ -393,10 +435,14 @@ const openGitHubLink = () => {
 :root {
   --bg: #ffffff;
   --text: #000000;
+  --sidebar-text-main: #1f2937; 
+  --sidebar-text-muted: #6b7280; 
 }
 .dark {
   --bg: #111827;
   --text: #ffffff;
+  --sidebar-text-main: #d1d5db; 
+  --sidebar-text-muted: #9ca3af; 
 }
 body {
   margin: 0;
@@ -420,34 +466,33 @@ body {
   display: inline-block;
 }
 .orb-connected {
-  background-color: #34d399; /* Tailwind green-400 */
+  background-color: #34d399; 
   box-shadow: 0 0 7px 2px #34d399a0;
 }
 .orb-disconnected {
-  background-color: #f87171; /* Tailwind red-400 */
+  background-color: #f87171; 
   box-shadow: 0 0 7px 2px #f87171a0;
 }
 
 .status-connected-text {
-  font-size: 0.875rem; /* 14px, Tailwind sm */
-  line-height: 1.25rem; /* 20px */
-  font-weight: 600; /* semibold */
-  /* Text color should be appropriate for sidebar, typically inherits or set like: */
-  /* color: #374151; */ /* dark:text-gray-300 */
+  font-size: 0.875rem; 
+  line-height: 1.25rem; 
+  font-weight: 600; 
+  color: var(--sidebar-text-main); 
 }
 
-.status-latency-text-container span { /* General styling for the latency line */
-  font-size: 0.75rem; /* 12px, Tailwind xs */
-  line-height: 1rem; /* 16px */
-  /* color: #6b7280; */ /* Example: text-gray-500 for muted */
+.status-latency-display-text {
+  font-size: 0.75rem; 
+  line-height: 1rem;  /* Default line height for xs font */
+  color: var(--sidebar-text-muted); 
 }
 
-.fixed-status-item-container .font-medium { /* For "Disconnected" text */
+/* For "Disconnected" text and general text sizing in status item if not directly using Tailwind */
+.fixed-status-item-container .font-medium.text-xs {
     font-weight: 500;
-}
-.fixed-status-item-container .text-xs { /* For "Disconnected" text & general latency line */
-    font-size: 0.75rem; 
+    font-size: 1rem;
     line-height: 1rem;
+    color: var(--sidebar-text-main); 
 }
 
 .min-w-0 {
