@@ -22,7 +22,7 @@ npm run build
 npm run lint
 ```
 
-### WebAPI [Axum]
+### WebAPI Axum
 
 ```sh
 sudo cargo run -- web
