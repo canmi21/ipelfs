@@ -33,7 +33,7 @@ pub fn create_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
 
     if volumes.values().any(|v| v == path) {
         //log::warn("path already exists in volume table");
-        return Err("Path already exists in volume table".into());
+        return Err("path already exists in volume table".into());
     }
 
     let id = loop {
@@ -47,7 +47,7 @@ pub fn create_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     config.volume = Some(volumes);
     save_config(&config)?;
 
-    log::good(&format!("Volume added @{} -> {}", id, path));
+    log::good(&format!("volume added @{} -> {}", id, path));
     Ok(id)
 }
 
@@ -59,7 +59,7 @@ pub fn remove_volume_by_id(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let path = match volumes.get(id) {
         Some(p) => p.clone(),
         None => {
-            return Err(format!("Volume @{} not found", id).into());
+            return Err(format!("volume @{} not found", id).into());
         }
     };
 
@@ -71,7 +71,7 @@ pub fn remove_volume_by_id(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let vlock_path = std::path::Path::new(&path).join(".vlock");
     let _ = std::fs::remove_file(&vlock_path);
 
-    log::info(&format!("Volume removed @{}", id));
+    log::info(&format!("volume removed @{}", id));
     Ok(())
 }
 
@@ -224,7 +224,7 @@ pub fn delete_ipelfs(path_or_id: &str) -> Result<(), Box<dyn std::error::Error>>
     let _ = std::fs::remove_file(target_path.join(".ipelfs"));
 
     log::info(&format!("@{} has been released and ipelfs removed", id));
-    log::action("You may now manage or wipe the volume manually");
+    log::action("you may now manage or wipe the volume manually");
     Ok(())
 }
 
@@ -276,5 +276,37 @@ pub fn try_add_existing_volume(path: &str) -> Result<String, String> {
 }
 
 pub fn try_create_new_volume(path: &str) -> Result<String, String> {
-    create_volume(path).map_err(|e| e.to_string())
+    init_new_volume(path)
+}
+
+pub fn init_new_volume(path: &str) -> Result<String, String> {
+    if !is_dir_empty(path) {
+        return Err("target directory is not empty".into());
+    }
+
+    let id = create_volume(path).map_err(|e| e.to_string())?;
+
+    // .ipelfs
+    let ipelfs_path = Path::new(path).join(".ipelfs");
+    if let Err(e) = fs::write(&ipelfs_path, &id) {
+        return Err(format!("failed to write .ipelfs: {}", e));
+    }
+
+    // meta.toml
+    if let Err(e) = crate::config::meta::init_volume_meta(&id, path) {
+        return Err(format!("meta init failed: {}", e));
+    }
+
+    // .vlock
+    let now = chrono::Local::now().to_rfc3339();
+    if let Err(e) = File::create(Path::new(path).join(".vlock"))
+        .and_then(|mut f| f.write_all(now.as_bytes())) {
+        return Err(format!("failed to write .vlock: {}", e));
+    }
+
+    Ok(id)
+}
+
+pub fn get_volume_root(id: &str) -> Option<std::path::PathBuf> {
+    load_config().ok()?.get_volume_map().get(id).map(|p| std::path::Path::new(p).to_path_buf())
 }

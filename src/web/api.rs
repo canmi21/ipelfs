@@ -3,9 +3,10 @@ use axum::extract::{Json as ExtractJson, Path};
 use chrono::Local;
 use serde::{Serialize, Deserialize};
 
+use crate::log;
 use crate::web::response::ApiResponse;
 use crate::config::volume;
-use crate::volume::collection;
+use crate::volume::{collection, metadata};
 
 // Volume struct for serialization
 #[derive(Serialize)]
@@ -111,7 +112,16 @@ pub async fn post_create_collection(
     Json(input): ExtractJson<CollectionInput>,
 ) -> Json<ApiResponse<String>> {
     match collection::create_collection(&volume_id, &input.name) {
-        Ok(cid) => Json(ApiResponse::ok(cid, None)),
+        Ok(cid) => {
+            log::good(&format!("collection created @{}:{} -> {}", volume_id, cid, input.name));
+
+            if let Some(root) = volume::get_volume_root(&volume_id) {
+                let entry = format!("@v:{}/c:{}", volume_id, cid);
+                let _ = metadata::create(&root, &entry);
+            }
+
+            Json(ApiResponse::ok(cid, None))
+        }
         Err(err) => Json(ApiResponse::fail(err)),
     }
 }
