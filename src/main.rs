@@ -7,7 +7,7 @@ use std::io::Write;
 use std::io::ErrorKind;
 use tokio::net::TcpListener;
 use tokio::runtime::Runtime;
-use cli::{Cli, Commands, AddTarget, RemoveTarget, ListTarget, DeleteTarget};
+use cli::{Cli, Commands, CreateTarget, RemoveTarget, ListTarget, DeleteTarget};
 
 mod web;
 mod log;
@@ -34,8 +34,8 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Add { target } => match target {
-            AddTarget::Volume { path } => {
+        Commands::Create { target } => match target {
+            CreateTarget::Volume { path } => {
                 let actual_path = if path.starts_with("/dev/") {
                     match config::volume::resolve_mount_point(path) {
                         Some(mount_point) => mount_point,
@@ -67,7 +67,7 @@ fn main() {
                     return;
                 }
 
-                match config::volume::add_volume(&actual_path) {
+                match config::volume::create_volume(&actual_path) {
                     Ok(id) => {
                         if let Err(e) = config::meta::init_volume_meta(&id, &actual_path) {
                             log::warn(&format!("meta init failed: {}", e));
@@ -82,7 +82,7 @@ fn main() {
                         }
                     }
                     Err(e) => {
-                        log::warn(&format!("failed to add volume: {}", e));
+                        log::warn(&format!("{}", e));
                     }
                 }
             }
@@ -91,11 +91,11 @@ fn main() {
             RemoveTarget::Volume { value } => {
                 if value.starts_with('/') {
                     if let Err(e) = config::volume::remove_volume_by_path(value) {
-                        log::warn(&format!("failed to remove volume by path: {}", e));
+                        log::warn(&format!("{}", e));
                     }
                 } else {
                     if let Err(e) = config::volume::remove_volume_by_id(value) {
-                        log::warn(&format!("failed to remove volume by id: {}", e));
+                        log::warn(&format!("{}", e));
                     }
                 }
             }

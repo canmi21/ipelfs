@@ -10,9 +10,9 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    Add {
+    Create {
         #[command(subcommand)]
-        target: AddTarget,
+        target: CreateTarget,
     },
     Remove {
         #[command(subcommand)]
@@ -31,7 +31,7 @@ pub enum Commands {
 }
 
 #[derive(Subcommand, Debug)]
-pub enum AddTarget {
+pub enum CreateTarget {
     Volume {
         path: String,
     },

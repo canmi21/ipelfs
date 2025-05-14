@@ -28,13 +28,13 @@ impl FullConfig {
 }
 
 // add new volume and return id
-pub fn add_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub fn create_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     let mut config = load_config()?;
     let mut volumes = config.volume.take().unwrap_or_default();
 
     if volumes.values().any(|v| v == path) {
-        log::warn("path already exists in volume table");
-        return Err("duplicate path".into());
+        //log::warn("path already exists in volume table");
+        return Err("Path already exists in volume table".into());
     }
 
     let id = loop {
@@ -48,7 +48,7 @@ pub fn add_volume(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     config.volume = Some(volumes);
     save_config(&config)?;
 
-    log::good(&format!("volume added @{} -> {}", id, path));
+    log::good(&format!("Volume added @{} -> {}", id, path));
     Ok(id)
 }
 
@@ -60,8 +60,7 @@ pub fn remove_volume_by_id(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let path = match volumes.get(id) {
         Some(p) => p.clone(),
         None => {
-            log::warn(&format!("volume @{} not found", id));
-            return Err("volume id not found".into());
+            return Err(format!("Volume @{} not found", id).into());
         }
     };
 
@@ -73,7 +72,7 @@ pub fn remove_volume_by_id(id: &str) -> Result<(), Box<dyn std::error::Error>> {
     let vlock_path = std::path::Path::new(&path).join(".vlock");
     let _ = std::fs::remove_file(&vlock_path);
 
-    log::info(&format!("volume removed @{}", id));
+    log::info(&format!("Volume removed @{}", id));
     Ok(())
 }
 
@@ -90,8 +89,7 @@ pub fn remove_volume_by_path(target_path: &str) -> Result<(), Box<dyn std::error
 
     match matches.len() {
         0 => {
-            log::warn("no volume found with given path");
-            Err("no match".into())
+            Err("no volume found with given path".into())
         }
         1 => {
             let id = &matches[0];
@@ -107,8 +105,7 @@ pub fn remove_volume_by_path(target_path: &str) -> Result<(), Box<dyn std::error
             Ok(())
         }
         _ => {
-            log::warn("multiple volumes match this path");
-            Err("ambiguous match".into())
+            Err("multiple volumes match this path".into())
         }
     }
 }
