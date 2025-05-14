@@ -36,10 +36,13 @@ watchEffect(() => {
 <template>
   <div class="relative min-h-screen overflow-hidden" style="background-color: var(--bg); color: var(--text);">
     <!-- Top-right toggle icon -->
-    <div class="absolute top-4 right-4 z-20 cursor-pointer" @click="handleToggle">
+    <div
+      class="absolute top-4 right-4 z-20 cursor-pointer transition transform hover:scale-110 group"
+      @click="handleToggle"
+    >
       <component
         :is="isDark ? Moon : Sun"
-        class="w-6 h-6 text-black dark:text-white transition-colors duration-300"
+        class="w-6 h-6 transition-colors duration-300 text-black dark:text-white group-hover:text-gray-800 dark:group-hover:text-gray-300"
       />
     </div>
 
