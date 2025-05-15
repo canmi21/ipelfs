@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Notification } from './../composables/useNotifications'
-import { X as IconX, Info, CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import type { Notification } from './../composables/useNotifications' // Assuming composables is one level up from components
+import { X as IconX } from 'lucide-vue-next' // Only X icon needed from lucide here
 
 const props = defineProps<{
   notification: Notification
@@ -9,85 +9,56 @@ const props = defineProps<{
 
 const emit = defineEmits(['dismiss'])
 
-const iconComponent = computed(() => {
-  switch (props.notification.type) {
-    case 'success':
-      return CheckCircle2
-    case 'warning':
-      return AlertTriangle
-    case 'error':
-      return AlertCircle
-    case 'info':
-    default:
-      return Info
-  }
-})
+const isHovered = ref(false)
 
-const iconColorClass = computed(() => {
-  switch (props.notification.type) {
-    case 'success':
-      return 'text-green-500 dark:text-green-400'
-    case 'warning':
-      return 'text-yellow-500 dark:text-yellow-400'
-    case 'error':
-      return 'text-red-500 dark:text-red-400'
-    case 'info':
-    default:
-      return 'text-blue-500 dark:text-blue-400'
-  }
-})
+// Updated: Default and 'info' types will use green theme.
+// Other types (success, warning, error) will retain their specific colors.
+// The border-l-4 and its color are now part of this computed class.
+const notificationThemeClasses = computed(() => {
+  const baseClasses = 'border-l-4' // Common left border thickness
 
-const bgColorClass = computed(() => {
-  // Using slightly transparent backgrounds for better blending, can be customized
   switch (props.notification.type) {
     case 'success':
-      return 'bg-green-50 dark:bg-green-900 border-green-500 dark:border-green-700'
+      return `${baseClasses} bg-green-50 dark:bg-green-800 border-green-500 dark:border-green-600`
     case 'warning':
-      return 'bg-yellow-50 dark:bg-yellow-900 border-yellow-500 dark:border-yellow-700'
+      return `${baseClasses} bg-yellow-50 dark:bg-yellow-800 border-yellow-500 dark:border-yellow-600`
     case 'error':
-      return 'bg-red-50 dark:bg-red-900 border-red-500 dark:border-red-700'
-    case 'info':
-    default:
-      return 'bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-700'
+      return `${baseClasses} bg-red-50 dark:bg-red-800 border-red-500 dark:border-red-600`
+    case 'info': // 'info' type now defaults to green
+    default: // Default notification style uses green theme
+      // Corresponds to --status-connected-color: #1c9376 (similar to Tailwind's green-600/700)
+      return `${baseClasses} bg-green-50 dark:bg-green-800 border-green-500 dark:border-green-600`
   }
 })
 
 const handleDismiss = () => {
   emit('dismiss', props.notification.id)
 }
-
-// Note: Auto-dismissal is handled by the useNotifications composable timer
 </script>
 
 <template>
   <div
-    class="notification-item w-full max-w-sm rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border-l-4"
-    :class="[bgColorClass]"
+    class="notification-item w-full max-w-sm rounded-md shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden"
+    :class="[notificationThemeClasses]"
     role="alert"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
   >
-    <div class="p-4">
-      <div class="flex items-start">
-        <div class="flex-shrink-0 pt-0.5">
-          <component
-            :is="iconComponent"
-            class="w-6 h-6"
-            :class="iconColorClass"
-            aria-hidden="true"
-          />
-        </div>
-        <div class="ml-3 w-0 flex-1">
-          <p class="text-sm font-medium text-notification-text dark:text-notification-dark-text">
+    <div class="p-3">
+      <div class="flex items-center">
+        <div class="w-0 flex-1">
+          <p class="text-xs font-medium text-notification-text dark:text-notification-dark-text">
             {{ notification.message }}
           </p>
         </div>
-        <div class="ml-4 flex-shrink-0 flex">
+        <div v-if="isHovered" class="ml-2 flex-shrink-0">
           <button
             @click="handleDismiss"
             type="button"
-            class="inline-flex rounded-md text-notification-text-muted dark:text-notification-dark-text-muted hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            class="inline-flex rounded-md text-notification-text-muted dark:text-notification-dark-text-muted hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-gray-400 dark:focus:ring-gray-500"
           >
             <span class="sr-only">Close</span>
-            <IconX class="h-5 w-5" aria-hidden="true" />
+            <IconX class="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -98,7 +69,7 @@ const handleDismiss = () => {
 <style scoped>
 .notification-item {
   /* Base styling for a notification item */
-  /* Colors for text are examples, should be defined in main.css as CSS variables if possible */
+  /* These CSS variables should ideally be defined in your global main.css */
   --text-notification-text: #1f2937; /* gray-800 */
   --text-notification-dark-text: #f3f4f6; /* gray-100 */
   --text-notification-text-muted: #6b7280; /* gray-500 */
@@ -118,7 +89,21 @@ const handleDismiss = () => {
   color: var(--text-notification-dark-text-muted);
 }
 
-/* Basic enter/leave transitions */
+/* Transition styles from NotificationContainer.vue will handle enter/leave for the list */
+/* If individual item fade/slide is needed, define .v-enter-active etc. here */
+/* For example, for opacity on hover for the X button if not using v-if: */
+/*
+.close-button-area {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+.notification-item:hover .close-button-area {
+  opacity: 1;
+}
+*/
+
+/* Basic enter/leave transitions if this component were to manage its own show/hide via v-show or v-if directly */
+/* However, list transitions are handled by NotificationContainer.vue using TransitionGroup */
 .v-enter-active,
 .v-leave-active {
   transition: all 0.3s ease-out;
@@ -126,10 +111,11 @@ const handleDismiss = () => {
 .v-enter-from,
 .v-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(30px); /* Slide from right */
 }
-/* For stacked notifications, you might want a list transition */
-.list-move, /* apply transition to moving elements */
+
+/* Styles for TransitionGroup in NotificationContainer.vue (if not already global) */
+.list-move,
 .list-enter-active,
 .list-leave-active {
   transition: all 0.5s ease;
@@ -139,9 +125,7 @@ const handleDismiss = () => {
   opacity: 0;
   transform: translateX(30px);
 }
-/* ensure leaving items are taken out of layout flow so that moving
-   animations can be calculated correctly. */
 .list-leave-active {
-  position: absolute;
+  position: absolute; /* Important for shuffle animations */
 }
 </style>
