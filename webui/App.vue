@@ -586,23 +586,23 @@ const openRepositoryIssuesPage = () => {
             <ul class="space-y-2.5 text-sm sm:text-base text-modal-text-secondary">
               <li class="flex items-start">
                 <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Ensure
-                the <strong>ipelfs service</strong> is running.
+                the ipelfs service is running.
               </li>
               <li class="flex items-start">
                 <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Verify
-                device and server are on the <strong>same network</strong>.
+                device and server are on the same network.
               </li>
               <li class="flex items-start">
                 <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Check
-                <strong>firewall settings</strong> for port <code>33330</code>.
+                firewall settings for port 33330.
               </li>
               <li class="flex items-start">
                 <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Confirm
-                backend URL (e.g., <code>http://localhost:33330</code>).
+                backend URL (e.g., http://localhost:33330).
               </li>
               <li class="flex items-start">
                 <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Inspect
-                <strong>developer console</strong> and backend logs.
+                developer console and backend logs.
               </li>
             </ul>
             <button
