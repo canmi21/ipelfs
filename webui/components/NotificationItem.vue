@@ -12,35 +12,76 @@ const emit = defineEmits(['dismiss'])
 const { pauseNotification, resumeNotification } = useNotifications()
 
 const isHovered = ref(false)
-// const isDismissing = ref(false) // Replaced by iconAnimationState
-
-// --- Icon Animation State ---
 type IconAnimationState = 'idle' | 'spinning' | 'fading'
 const iconAnimationState = ref<IconAnimationState>('idle')
 
-const SPIN_DURATION = 50
+const SPIN_DURATION = 100
 
-// --- Dark Mode Detection ---
-const isDarkMode = ref(false)
-let darkModeMediaQuery: MediaQueryList | undefined
+// --- Enhanced Dark Mode Detection (respecting localStorage and system preference) ---
+const effectiveIsDark = ref(false)
+let systemThemeMediaQuery: MediaQueryList | null = null
 
-const updateDarkMode = (event?: MediaQueryListEvent) => {
-  isDarkMode.value = event
-    ? event.matches
-    : window.matchMedia('(prefers-color-scheme: dark)').matches
+const handleSystemThemeChange = (event: MediaQueryListEvent) => {
+  if (localStorage.getItem('theme') === null) {
+    effectiveIsDark.value = event.matches
+  }
+}
+
+const checkAndUpdateEffectiveDarkMode = () => {
+  const storedTheme = localStorage.getItem('theme')
+  if (storedTheme === 'dark') {
+    effectiveIsDark.value = true
+    if (systemThemeMediaQuery) {
+      systemThemeMediaQuery.removeEventListener('change', handleSystemThemeChange)
+      // systemThemeMediaQuery = null; // Keep it to re-attach if localStorage is cleared
+    }
+  } else if (storedTheme === 'light') {
+    effectiveIsDark.value = false
+    if (systemThemeMediaQuery) {
+      systemThemeMediaQuery.removeEventListener('change', handleSystemThemeChange)
+      // systemThemeMediaQuery = null;
+    }
+  } else {
+    // System preference (localStorage is null or not 'dark'/'light')
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      if (!systemThemeMediaQuery) {
+        // Initialize and add listener only once or if cleared
+        systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        // Add listener only if it wasn't added before or re-add if necessary
+        // To prevent multiple listeners, we can remove then add, or check if already listening (complex)
+        // For simplicity, we might rely on onUnmounted to clean up.
+        // A robust way is to remove first if re-attaching.
+        try {
+          // Removing first in case it was somehow attached before
+          systemThemeMediaQuery.removeEventListener('change', handleSystemThemeChange)
+        } catch (_e) {
+          /* ignore if not attached */
+        }
+        systemThemeMediaQuery.addEventListener('change', handleSystemThemeChange)
+      }
+      effectiveIsDark.value = systemThemeMediaQuery.matches
+    } else {
+      effectiveIsDark.value = false // Fallback for non-browser environments
+    }
+  }
+}
+
+const handleStorageChange = (event: StorageEvent) => {
+  if (event.key === 'theme' || event.key === null) {
+    // event.key is null for localStorage.clear()
+    checkAndUpdateEffectiveDarkMode()
+  }
 }
 
 onMounted(() => {
-  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-    darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    isDarkMode.value = darkModeMediaQuery.matches
-    darkModeMediaQuery.addEventListener('change', updateDarkMode)
-  }
+  checkAndUpdateEffectiveDarkMode() // Initial check
+  window.addEventListener('storage', handleStorageChange) // Listen for localStorage changes from other tabs/windows
 })
 
 onUnmounted(() => {
-  if (darkModeMediaQuery) {
-    darkModeMediaQuery.removeEventListener('change', updateDarkMode)
+  window.removeEventListener('storage', handleStorageChange)
+  if (systemThemeMediaQuery) {
+    systemThemeMediaQuery.removeEventListener('change', handleSystemThemeChange)
   }
 })
 
@@ -113,40 +154,29 @@ const S_THEME = computed(() => {
   }
 })
 
+// --- Determine current themes based on light/dark mode ---
 const initialBgEffectiveClass = computed(() => {
-  return isDarkMode.value ? P_THEME.value.bgClass : S_THEME.value.bgClass
+  return effectiveIsDark.value ? P_THEME.value.bgClass : S_THEME.value.bgClass
 })
 
 const sweepFillEffectiveTheme = computed(() => {
-  return isDarkMode.value ? S_THEME.value : P_THEME.value
+  return effectiveIsDark.value ? S_THEME.value : P_THEME.value
 })
 
 const isPermanent = computed(() => props.notification.duration === 0)
 
 const handleDismiss = () => {
-  if (iconAnimationState.value !== 'idle') return // Prevent re-triggering if already dismissing
-
+  if (iconAnimationState.value !== 'idle') return
   iconAnimationState.value = 'spinning'
-
-  // After the spin duration, transition to fading the icon and then emit dismiss
   setTimeout(() => {
     iconAnimationState.value = 'fading'
-
-    // Emit dismiss. The parent TransitionGroup will handle the notification item's leave animation.
-    // The icon's fade animation (ICON_FADE_DURATION) will run concurrently.
     emit('dismiss', props.notification.id)
-
-    // If you need the icon to *fully* fade out before the notification item itself starts its leave animation,
-    // you would nest another setTimeout here for ICON_FADE_DURATION before emitting.
-    // However, allowing them to overlap slightly with the main item's leave animation is usually smoother.
-    // For example, if the main item's leave is 0.5s and icon fade is 0.3s, it works well.
   }, SPIN_DURATION)
 }
 
 const handleMouseEnter = () => {
   isHovered.value = true
   if (!isPermanent.value && iconAnimationState.value === 'idle') {
-    // Only pause if not permanent and not already dismissing
     pauseNotification(props.notification.id)
   }
 }
@@ -154,7 +184,6 @@ const handleMouseEnter = () => {
 const handleMouseLeave = () => {
   isHovered.value = false
   if (!isPermanent.value && iconAnimationState.value === 'idle') {
-    // Only resume if not permanent and not already dismissing
     resumeNotification(props.notification.id)
   }
 }
@@ -171,10 +200,11 @@ const progressBarStyle = computed(() => {
 
 const iconDynamicClasses = computed(() => {
   return {
-    'animate-spin-controller':
-      iconAnimationState.value === 'spinning' || iconAnimationState.value === 'fading', // Spin class remains during fade to hold rotated state
+    // Using the class name from your previous working version's CSS
+    'animate-spin-one-slow':
+      iconAnimationState.value === 'spinning' || iconAnimationState.value === 'fading',
     'animate-fade-out-controller': iconAnimationState.value === 'fading',
-    'pointer-events-none': iconAnimationState.value !== 'idle', // Disable button clicks once dismissing starts
+    'pointer-events-none': iconAnimationState.value !== 'idle',
   }
 })
 </script>
@@ -208,9 +238,7 @@ const iconDynamicClasses = computed(() => {
             :class="[
               sweepFillEffectiveTheme.mutedTextClass,
               sweepFillEffectiveTheme.focusRingClass,
-              isHovered ||
-              isPermanent ||
-              iconAnimationState !== 'idle' /* Keep X visible during its animation */
+              isHovered || isPermanent || iconAnimationState !== 'idle'
                 ? 'opacity-100 pointer-events-auto'
                 : 'opacity-0 pointer-events-none',
               iconDynamicClasses['pointer-events-none'] ? 'pointer-events-none' : '',
@@ -229,7 +257,7 @@ const iconDynamicClasses = computed(() => {
 <style scoped>
 .progress-fill {
   width: 0%;
-  animation-name: progress-wipe-rtl-kf; /* Added -kf suffix for clarity */
+  animation-name: progress-wipe-rtl-kf;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
 }
@@ -243,12 +271,17 @@ const iconDynamicClasses = computed(() => {
   }
 }
 
-/* Icon Animations */
-.animate-spin-controller {
-  animation: spin-kf 1s ease-out forwards; /* Duration from SPIN_DURATION, 1 iteration is default */
-  /* `forwards` ensures it stays rotated for the fade */
+/* Using the animation name from your previous version for the spin */
+.animate-spin-one-slow {
+  animation-name: spin-one-slow-kf; /* Matches the keyframe name from your previous CSS */
+  animation-duration: 1s; /* Duration from SPIN_DURATION */
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
 }
-@keyframes spin-kf {
+
+@keyframes spin-one-slow-kf {
+  /* Ensure this keyframe name matches */
   0% {
     transform: rotate(0deg);
   }
@@ -269,7 +302,6 @@ const iconDynamicClasses = computed(() => {
   }
 }
 
-/* List transitions (from NotificationContainer) */
 .list-move,
 .list-enter-active,
 .list-leave-active {
