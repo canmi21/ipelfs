@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Notification } from './../composables/useNotifications'
 import { useNotifications } from './../composables/useNotifications'
 import { X as IconX } from 'lucide-vue-next'
+import './../assets/notification.css'
 
 const props = defineProps<{
   notification: Notification
@@ -15,7 +16,7 @@ const isHovered = ref(false)
 type IconAnimationState = 'idle' | 'spinning' | 'fading'
 const iconAnimationState = ref<IconAnimationState>('idle')
 
-const SPIN_DURATION = 100
+const SPIN_DURATION = 100 // 0.1s
 
 // --- Enhanced Dark Mode Detection (respecting localStorage and system preference) ---
 const effectiveIsDark = ref(false)
@@ -33,49 +34,39 @@ const checkAndUpdateEffectiveDarkMode = () => {
     effectiveIsDark.value = true
     if (systemThemeMediaQuery) {
       systemThemeMediaQuery.removeEventListener('change', handleSystemThemeChange)
-      // systemThemeMediaQuery = null; // Keep it to re-attach if localStorage is cleared
     }
   } else if (storedTheme === 'light') {
     effectiveIsDark.value = false
     if (systemThemeMediaQuery) {
       systemThemeMediaQuery.removeEventListener('change', handleSystemThemeChange)
-      // systemThemeMediaQuery = null;
     }
   } else {
-    // System preference (localStorage is null or not 'dark'/'light')
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       if (!systemThemeMediaQuery) {
-        // Initialize and add listener only once or if cleared
         systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-        // Add listener only if it wasn't added before or re-add if necessary
-        // To prevent multiple listeners, we can remove then add, or check if already listening (complex)
-        // For simplicity, we might rely on onUnmounted to clean up.
-        // A robust way is to remove first if re-attaching.
         try {
-          // Removing first in case it was somehow attached before
           systemThemeMediaQuery.removeEventListener('change', handleSystemThemeChange)
-        } catch (_e) {
+        } catch {
           /* ignore if not attached */
         }
         systemThemeMediaQuery.addEventListener('change', handleSystemThemeChange)
       }
       effectiveIsDark.value = systemThemeMediaQuery.matches
     } else {
-      effectiveIsDark.value = false // Fallback for non-browser environments
+      effectiveIsDark.value = false
     }
   }
 }
 
 const handleStorageChange = (event: StorageEvent) => {
   if (event.key === 'theme' || event.key === null) {
-    // event.key is null for localStorage.clear()
     checkAndUpdateEffectiveDarkMode()
   }
 }
 
 onMounted(() => {
-  checkAndUpdateEffectiveDarkMode() // Initial check
-  window.addEventListener('storage', handleStorageChange) // Listen for localStorage changes from other tabs/windows
+  checkAndUpdateEffectiveDarkMode()
+  window.addEventListener('storage', handleStorageChange)
 })
 
 onUnmounted(() => {
@@ -154,7 +145,6 @@ const S_THEME = computed(() => {
   }
 })
 
-// --- Determine current themes based on light/dark mode ---
 const initialBgEffectiveClass = computed(() => {
   return effectiveIsDark.value ? P_THEME.value.bgClass : S_THEME.value.bgClass
 })
@@ -171,7 +161,7 @@ const handleDismiss = () => {
   setTimeout(() => {
     iconAnimationState.value = 'fading'
     emit('dismiss', props.notification.id)
-  }, SPIN_DURATION)
+  }, SPIN_DURATION) // SPIN_DURATION is 100ms
 }
 
 const handleMouseEnter = () => {
@@ -200,7 +190,7 @@ const progressBarStyle = computed(() => {
 
 const iconDynamicClasses = computed(() => {
   return {
-    // Using the class name from your previous working version's CSS
+    // This class is now defined in notification-item.css
     'animate-spin-one-slow':
       iconAnimationState.value === 'spinning' || iconAnimationState.value === 'fading',
     'animate-fade-out-controller': iconAnimationState.value === 'fading',
@@ -211,7 +201,7 @@ const iconDynamicClasses = computed(() => {
 
 <template>
   <div
-    class="notification-item w-full max-w-sm rounded-md shadow-lg pointer-events-auto overflow-hidden relative"
+    class="notification-item w-full max-w-sm rounded-md shadow-lg pointer-events-auto overflow-hidden relative mb-4"
     :class="[initialBgEffectiveClass]"
     role="alert"
     @mouseenter="handleMouseEnter"
@@ -255,53 +245,8 @@ const iconDynamicClasses = computed(() => {
 </template>
 
 <style scoped>
-.progress-fill {
-  width: 0%;
-  animation-name: progress-wipe-rtl-kf;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
-}
-
-@keyframes progress-wipe-rtl-kf {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
-}
-
-/* Using the animation name from your previous version for the spin */
-.animate-spin-one-slow {
-  animation-name: spin-one-slow-kf; /* Matches the keyframe name from your previous CSS */
-  animation-duration: 1s; /* Duration from SPIN_DURATION */
-  animation-timing-function: ease-out;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-}
-
-@keyframes spin-one-slow-kf {
-  /* Ensure this keyframe name matches */
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-fade-out-controller {
-  animation: fade-out-kf 0.3s ease-out forwards; /* Duration from ICON_FADE_DURATION */
-}
-@keyframes fade-out-kf {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
+/* Styles for TransitionGroup in NotificationContainer.vue (parent component) */
+/* Keeping these scoped here as per user's finding that it works best. */
 .list-move,
 .list-enter-active,
 .list-leave-active {
