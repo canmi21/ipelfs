@@ -2,10 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ipelfs</title>
-    <style>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>overview | ipelfs</title> <style>
+      /* Base HTML transition */
       html {
         transition: background-color 0.3s ease, color 0.3s ease;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
@@ -17,20 +16,20 @@
       /* Styles for the <noscript> fallback UI */
       .noscript-overlay {
         position: fixed;
-        inset: 0;
-        background-color: rgba(30, 41, 59, 0.8); /* Fallback overlay background */
+        inset: 0; 
+        background-color: rgba(30, 41, 59, 0.8); 
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 20000; /* Ensure it's on top */
+        z-index: 20000; 
         padding: 1rem;
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
       }
 
       .noscript-modal {
-        background-color: #ffffff; /* Light mode default background */
-        color: #1f2937; /* Light mode default text */
+        background-color: #ffffff; 
+        color: #1f2937; 
         padding: 1.5rem 2rem; 
         border-radius: 0.75rem;
         box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
@@ -45,7 +44,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem; /* Reduced spacing */
+        margin-bottom: 0.5rem; 
       }
 
       .noscript-modal-title-group {
@@ -57,7 +56,7 @@
         width: 2rem; 
         height: 2rem; 
         margin-right: 0.75rem; 
-        color: #D73434; /* Red color for error indication */
+        color: #D73434; /* Red for error indication */
         flex-shrink: 0;
       }
       .noscript-modal .header-icon svg,
@@ -70,7 +69,7 @@
       .noscript-modal .title-text {
         font-size: 1.25rem; 
         font-weight: 600; 
-        color: #D73434; /* Red color for error indication */
+        color: #D73434; /* Red for error indication */
       }
       @media (min-width: 640px) {
         .noscript-modal .title-text {
@@ -103,7 +102,7 @@
       .noscript-modal .message-text {
         display: flex;
         align-items: center;
-        margin-bottom: 0.75rem; /* Reduced spacing */
+        margin-bottom: 0.75rem; 
         color: #374151; 
       }
       .noscript-modal .message-text strong {
@@ -135,7 +134,7 @@
       }
       .noscript-modal .reason-list .reason-arrow {
         margin-right: 0.5rem; 
-        color: #D73434; /* Red color for error indication */
+        color: #D73434; /* Red for error indication */
         flex-shrink: 0;
       }
       .noscript-modal .reason-list code {
@@ -157,10 +156,10 @@
            color: #F87171; /* Lighter red for dark mode */
         }
         .noscript-modal .reason-list li,
-        .noscript-modal .message-text {
-            color: #d1d5db; /* Adjusted for better visibility */
+        .noscript-modal .message-text { /* Ensure list and message text are legible in dark mode */
+            color: #d1d5db; 
         }
-        .noscript-modal .message-text strong {
+        .noscript-modal .message-text strong { /* Ensure strong text is also legible */
             color: #e5e7eb; 
         }
          .noscript-modal .external-link-button {
@@ -191,7 +190,7 @@
         border: none;
         cursor: pointer;
         text-decoration: none; 
-        box-sizing: border-box; /* Fixes potential overflow with padding */
+        box-sizing: border-box; 
       }
       @media (min-width: 640px) {
         .noscript-modal .refresh-button {
@@ -239,7 +238,7 @@
           </div>
 
           <div class="message-text">
-              <strong>Why is JavaScript needed?</strong> </div>
+              <strong>WebUI is currently unavailable.</strong> </div>
 
           <ul class="reason-list">
             <li><span class="reason-arrow">&rarr;</span>Interactive UI elements and smooth animations.</li>
