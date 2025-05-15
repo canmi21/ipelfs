@@ -1,3 +1,209 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* webui/assets/main.css */
+:root {
+  /* --- Main Content Colors --- */
+  --bg-main-content: #ffffff;
+  --text-main-color: #1f2937; /* gray-800 */
+
+  /* --- Sidebar Colors --- */
+  --sidebar-bg: #f3f4f6; /* gray-100 */
+  --sidebar-text-main: #1f2937; /* gray-800 */
+  --sidebar-text-muted: #6b7280; /* gray-500 */
+  --sidebar-item-hover-bg: #e5e7eb; /* gray-200 */
+  --sidebar-item-dark-hover-bg: #374151; /* Intended for dark mode, ensure it's used correctly or remove if Sidebar.vue handles it */
+  --sidebar-border-color: #e5e7eb; /* gray-200 for light mode borders */
+
+  /* --- Icon Colors --- */
+  --icon-muted-color: #6b7280; /* gray-500 */
+  --icon-accent-color: #1c9376; /* Custom Green */
+
+  /* --- Status Colors --- */
+  --status-connected-color: #1c9376; /* Custom Green */
+  --status-connected-orb-glow-start: rgba(28, 147, 118, 0.3);
+  --status-connected-orb-glow-end: rgba(28, 147, 118, 0.6);
+  --status-disconnected-color: #ef4444; /* red-500 */
+  --status-disconnected-orb-glow-start: rgba(239, 68, 68, 0.3);
+  --status-disconnected-orb-glow-end: rgba(239, 68, 68, 0.6);
+
+  /* --- Modal Colors --- */
+  --modal-bg-color: #ffffff;
+  --modal-text-color: #1f2937; /* gray-800 */
+  --modal-text-secondary-color: #4b5563; /* gray-600 */
+
+  /* --- Button Colors --- */
+  --button-primary-bg: #1b9e7d; /* Custom Green, slightly different from accent */
+  --button-primary-hover-bg: #168266; /* Darker Custom Green */
+  --button-primary-focus-ring: #168266; /* Same as hover for focus ring */
+}
+
+.dark {
+  --bg-main-content: #030712; /* almost black (gray-950) */
+  --text-main-color: #f3f4f6; /* gray-100 */
+
+  --sidebar-bg: #111827; /* gray-900 */
+  --sidebar-text-main: #d1d5db; /* gray-300 */
+  --sidebar-text-muted: #9ca3af; /* gray-400 */
+  --sidebar-item-hover-bg: #1f2937; /* gray-800 */
+  /* --sidebar-item-dark-hover-bg is already defined in :root, it will be inherited by .dark unless overridden here */
+  --sidebar-border-color: #374151; /* gray-700 for dark mode borders */
+
+  --icon-muted-color: #9ca3af; /* gray-400 */
+  /* --icon-accent-color can remain the same or be adjusted for dark mode if needed */
+
+  --status-connected-orb-glow-start: rgba(28, 147, 118, 0.4); /* Slightly more opaque for dark */
+  --status-connected-orb-glow-end: rgba(28, 147, 118, 0.7);
+  --status-disconnected-color: #f87171; /* red-400 (lighter red for dark bg) */
+  --status-disconnected-orb-glow-start: rgba(248, 113, 113, 0.4);
+  --status-disconnected-orb-glow-end: rgba(248, 113, 113, 0.7);
+
+  --modal-bg-color: #1f2937; /* gray-800 */
+  --modal-text-color: #f3f4f6; /* gray-100 */
+  --modal-text-secondary-color: #9ca3af; /* gray-400 */
+
+  /* Button colors can remain the same or be adjusted for dark mode if desired */
+  /* Example:
+  --button-primary-bg: #25ae8d;
+  --button-primary-hover-bg: #1dbf99;
+  --button-primary-focus-ring: #1dbf99;
+  */
+}
+
+body {
+  margin: 0;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Open Sans',
+    'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-main-content);
+  color: var(--text-main-color);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease; /* Smooth theme transition */
+}
+
+/* Global Animations & Transitions (from App.vue originally) */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* .animate-spin class can be used globally now */
+
+@keyframes shake-effect {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(2px);
+  }
+}
+/* .animate-shake class can be used globally */
+
+.transition-margin {
+  transition-property: margin-left;
+  /* duration and easing should match sidebar width transition for smoothness */
+  transition-duration: 300ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Router view transition */
+.fade-router-enter-active,
+.fade-router-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-router-enter-from,
+.fade-router-leave-to {
+  opacity: 0;
+}
+
+/* Overlay and Modal transitions */
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
+}
+.overlay-fade-enter-active {
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.overlay-fade-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.modal-pop-enter-from,
+.modal-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.92) translateY(12px);
+}
+.modal-pop-enter-active {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); /* Pop in */
+}
+.modal-pop-leave-active {
+  transition: all 0.2s cubic-bezier(0.55, 0.055, 0.675, 0.19); /* Pop out */
+}
+.modal-pop-enter-to, /* Not strictly needed with `appear` and correct from/to states */
+.modal-pop-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Global Status Orb styles (if Sidebar doesn't scope them) */
+.status-orb {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  animation:
+    pulse-glow 3.2s infinite ease-in-out,
+    pulse-scale 2.5s infinite ease-in-out;
+}
+.orb-connected {
+  background-color: var(--status-connected-color);
+  --orb-glow-color-start: var(--status-connected-orb-glow-start);
+  --orb-glow-color-end: var(--status-connected-orb-glow-end);
+}
+.orb-disconnected {
+  background-color: var(--status-disconnected-color);
+  --orb-glow-color-start: var(--status-disconnected-orb-glow-start);
+  --orb-glow-color-end: var(--status-disconnected-orb-glow-end);
+}
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 4px 0.5px var(--orb-glow-color-start);
+  }
+  50% {
+    box-shadow: 0 0 7px 1.5px var(--orb-glow-color-end);
+  }
+}
+@keyframes pulse-scale {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.88);
+  }
+}
