@@ -30,16 +30,18 @@ const navigateTo = (path: string) => {
 const storedTheme = localStorage.getItem('theme')
 const isDark = useDark({
   valueDark: 'dark',
-  valueLight: '',
-  storageKey: null,
+  valueLight: '', // For light mode, we'll remove the 'dark' class
+  storageKey: null, // We handle storage manually to support 'system'
   initialValue: (() => {
     if (storedTheme === 'dark') return 'dark'
     if (storedTheme === 'light') return 'light'
+    // If no theme is stored, try to use system preference
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       return systemIsDark ? 'dark' : 'light'
     } catch (e) {
       console.error('Failed to detect system color scheme:', e)
+      // Default to dark if system detection fails and no theme is stored
       localStorage.setItem('theme', 'dark')
       return 'dark'
     }
@@ -53,22 +55,26 @@ const currentTheme = ref<'light' | 'dark' | 'system'>(
   storedTheme === 'dark' ? 'dark' : storedTheme === 'light' ? 'light' : 'system',
 )
 
+// Toggles theme: Light -> System (or Dark if system is Dark) -> Dark -> Light
 const handleToggle = () => {
   if (currentTheme.value === 'light') {
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       if (!systemIsDark) {
+        // System is Light, so next logical step is Dark
         currentIcon.value = 'moon'
         currentTheme.value = 'dark'
         isDark.value = true
         localStorage.setItem('theme', 'dark')
       } else {
+        // System is Dark, so go to System preference
         currentIcon.value = 'sun-moon'
         currentTheme.value = 'system'
-        isDark.value = systemIsDark
-        localStorage.removeItem('theme')
+        isDark.value = systemIsDark // Reflect system preference
+        localStorage.removeItem('theme') // System means no explicit override
       }
     } catch (e) {
+      // Fallback if system preference check fails
       console.error('Failed to switch theme based on system preference:', e)
       currentIcon.value = 'moon'
       currentTheme.value = 'dark'
@@ -76,11 +82,13 @@ const handleToggle = () => {
       localStorage.setItem('theme', 'dark')
     }
   } else if (currentTheme.value === 'system') {
+    // Transitioning from System, always go to Dark next
     currentIcon.value = 'moon'
     currentTheme.value = 'dark'
     isDark.value = true
     localStorage.setItem('theme', 'dark')
   } else {
+    // Current theme is 'dark', transition to Light
     currentIcon.value = 'sun'
     currentTheme.value = 'light'
     isDark.value = false
@@ -88,6 +96,7 @@ const handleToggle = () => {
   }
 }
 
+// Apply 'dark' class to HTML element based on isDark state
 watchEffect(() => {
   document.documentElement.classList.toggle('dark', isDark.value)
 })
@@ -103,59 +112,66 @@ const getInitialSidebarState = (): boolean => {
         'Failed to parse sidebarCollapsed from localStorage. Defaulting to expanded.',
         e,
       )
-      return false
+      return false // Default to expanded if parsing fails
     }
   }
-  return false
+  return false // Default to expanded
 }
 
 const isSidebarCollapsed = ref(getInitialSidebarState())
-const showSidebarText = ref(!isSidebarCollapsed.value)
-const showGithubIcon = ref(!isSidebarCollapsed.value)
-const showInlineStatusText = ref(!isSidebarCollapsed.value)
-const sidebarWidthClass = ref(isSidebarCollapsed.value ? 'w-14' : 'w-56')
-const contentMarginClass = ref(isSidebarCollapsed.value ? 'ml-14' : 'ml-56')
-const isAnimating = ref(false)
+const showSidebarText = ref(!isSidebarCollapsed.value) // Text visibility driven by collapsed state
+const showGithubIcon = ref(!isSidebarCollapsed.value) // GitHub icon visibility
+const showInlineStatusText = ref(!isSidebarCollapsed.value) // Status text visibility
+const sidebarWidthClass = ref(isSidebarCollapsed.value ? 'w-14' : 'w-56') // Dynamic sidebar width
+const contentMarginClass = ref(isSidebarCollapsed.value ? 'ml-14' : 'ml-56') // Dynamic content margin
+const isAnimating = ref(false) // Flag to prevent re-triggering animation
 const githubIconCollapseTimer = ref<number | undefined>(undefined)
 const githubIconExpandTimer = ref<number | undefined>(undefined)
 const statusTextExpandTimer = ref<number | undefined>(undefined)
-const mainContentEl = ref<HTMLElement | null>(null)
+const mainContentEl = ref<HTMLElement | null>(null) // Ref for main content element
 
+// Persist sidebar state to localStorage
 watchEffect(() => {
   localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed.value))
 })
 
 // --- Backend Connection State & Dynamic Health Check ---
-const isBackendConnected = ref(true)
-const latencyMs = ref<number | null>(null)
-const healthCheckTimerId = ref<number | undefined>(undefined)
-const currentHealthCheckIntervalMs = ref(1000)
-const offlineStartTime = ref<number | null>(null)
-const isRetryingManualCheck = ref(false)
-const manualRetryButtonTimeoutId = ref<number | undefined>(undefined)
-const triggerShake = ref(false)
-const showRetryFailureIcon = ref(false)
+const isBackendConnected = ref(true) // Assume connected initially
+const latencyMs = ref<number | null>(null) // Latency in milliseconds
+const healthCheckTimerId = ref<number | undefined>(undefined) // Timer ID for health checks
+const currentHealthCheckIntervalMs = ref(1000) // Current interval for health checks
+const offlineStartTime = ref<number | null>(null) // Timestamp when backend went offline
+const isRetryingManualCheck = ref(false) // State for manual retry button
+const manualRetryButtonTimeoutId = ref<number | undefined>(undefined) // Timer for retry button failure state
+const triggerShake = ref(false) // For retry button shake animation
+const showRetryFailureIcon = ref(false) // Show X icon on retry button after failure
 
 // --- JavaScript Error State ---
-const showJavascriptErrorOverlay = ref(false)
-const jsErrorHelpLink = 'https://www.enable-javascript.com/'
+const showJavascriptErrorOverlay = ref(false) // Controls visibility of JS error overlay
+const jsErrorHelpLink = 'https://www.enable-javascript.com/' // Link for JS help
 
+// Utility function to truncate numbers
 function truncate(num: number, decimalPlaces: number): number {
   const factor = Math.pow(10, decimalPlaces)
   return Math.floor(num * factor) / factor
 }
 
+// Computed property to format latency for display
 const formattedLatency = computed(() => {
   const ms = latencyMs.value
-  if (ms === null || ms < 0) return null
+  if (ms === null || ms < 0) return null // Not yet calculated or invalid/error
   if (ms === 0) return '0ms'
+
   const ns = ms * 1_000_000
-  if (ms > 0 && ms < 0.001) return `${Math.floor(ns)}ns`
+  if (ms > 0 && ms < 0.001) return `${Math.floor(ns)}ns` // Nanoseconds for very low latency
+
   if (ms < 1000) {
+    // Milliseconds
     if (ms < 10) return `${truncate(ms, 2).toFixed(2)}ms`
     if (ms < 100) return `${truncate(ms, 1).toFixed(1)}ms`
     return `${Math.floor(ms)}ms`
   } else {
+    // Seconds
     const s = ms / 1000
     if (s < 10) return `${truncate(s, 2).toFixed(2)}s`
     if (s < 100) return `${truncate(s, 1).toFixed(1)}s`
@@ -163,6 +179,7 @@ const formattedLatency = computed(() => {
   }
 })
 
+// Async function to check backend health
 const checkBackendStatus = async () => {
   const requestSentTimestamp = Date.now()
   try {
@@ -172,14 +189,17 @@ const checkBackendStatus = async () => {
       if (data.success === true) {
         isBackendConnected.value = true
         try {
+          // Precise latency calculation using backend timestamp
           const backendTimestampStr = data.data as string
           const datePart = backendTimestampStr.substring(0, 19)
           const fractionalPartMatch = backendTimestampStr.match(/\.(\d+)/)
-          let timezonePart = 'Z'
+          let timezonePart = 'Z' // Assume UTC if not specified
           const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/)
           if (timezoneMatch) timezonePart = timezoneMatch[0]
+
           let backendEpochNs: bigint
           const baseMsBigInt = BigInt(new Date(datePart + timezonePart).getTime())
+
           if (fractionalPartMatch && fractionalPartMatch[1]) {
             const nanoStr = fractionalPartMatch[1].padEnd(9, '0').substring(0, 9)
             backendEpochNs = baseMsBigInt * 1_000_000n + BigInt(nanoStr)
@@ -190,7 +210,7 @@ const checkBackendStatus = async () => {
           latencyMs.value = Number(backendEpochNs - requestSentEpochNs) / 1_000_000.0
         } catch (e) {
           console.error('Error parsing backend timestamp or calculating latency:', e)
-          latencyMs.value = -1
+          latencyMs.value = -1 // Indicate error in latency calculation
         }
       } else {
         isBackendConnected.value = false
@@ -208,16 +228,18 @@ const checkBackendStatus = async () => {
   }
 }
 
+// Performs health check and schedules the next one with exponential backoff
 const performHealthCheckAndScheduleNext = async () => {
   if (healthCheckTimerId.value !== undefined) {
-    clearTimeout(healthCheckTimerId.value)
+    clearTimeout(healthCheckTimerId.value) // Clear existing timer
   }
   await checkBackendStatus()
 
   if (isBackendConnected.value) {
-    currentHealthCheckIntervalMs.value = 1000
+    currentHealthCheckIntervalMs.value = 1000 // Reset to normal interval
     offlineStartTime.value = null
     if (isRetryingManualCheck.value) {
+      // Reset manual retry state if connection restored
       isRetryingManualCheck.value = false
       showRetryFailureIcon.value = false
       if (manualRetryButtonTimeoutId.value !== undefined) {
@@ -227,77 +249,94 @@ const performHealthCheckAndScheduleNext = async () => {
     }
   } else {
     if (offlineStartTime.value === null) {
-      offlineStartTime.value = Date.now()
+      offlineStartTime.value = Date.now() // Record when disconnection started
     }
+    // Exponential backoff for health checks when offline
     const minutesOffline = Math.max(
       0,
       Math.floor((Date.now() - (offlineStartTime.value || Date.now())) / (1000 * 60)),
     )
+    // Cap backoff to avoid excessively long intervals (e.g., max 2^6 * 5s ~ 5 minutes)
     currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, Math.min(minutesOffline, 6))
   }
+  // Schedule next health check
   healthCheckTimerId.value = window.setTimeout(
     performHealthCheckAndScheduleNext,
     currentHealthCheckIntervalMs.value,
   )
 }
 
+// Triggers a manual health check attempt
 const triggerManualHealthCheck = async () => {
-  if (isRetryingManualCheck.value || showRetryFailureIcon.value) return
+  if (isRetryingManualCheck.value || showRetryFailureIcon.value) return // Prevent multiple retries
 
   isRetryingManualCheck.value = true
-  triggerShake.value = false
-  showRetryFailureIcon.value = false
+  triggerShake.value = false // Reset shake animation
+  showRetryFailureIcon.value = false // Hide failure icon
 
+  // Clear existing timers
   if (healthCheckTimerId.value !== undefined) clearTimeout(healthCheckTimerId.value)
   if (manualRetryButtonTimeoutId.value !== undefined) clearTimeout(manualRetryButtonTimeoutId.value)
 
+  // Set a timeout for the retry attempt visual feedback
   manualRetryButtonTimeoutId.value = window.setTimeout(() => {
     if (!isBackendConnected.value) {
+      // If still not connected after timeout
       isRetryingManualCheck.value = false
       showRetryFailureIcon.value = true
-      triggerShake.value = true
+      triggerShake.value = true // Trigger shake animation
       setTimeout(() => {
+        // Hide shake animation
         triggerShake.value = false
         setTimeout(() => {
+          // Hide failure icon
           showRetryFailureIcon.value = false
         }, 700)
       }, 300)
     }
-  }, 3000)
+  }, 3000) // 3-second timeout for feedback
 
-  await performHealthCheckAndScheduleNext()
+  await performHealthCheckAndScheduleNext() // Perform the actual health check
 }
 
+// Opens a URL in a new tab
 const openExternalLink = (url: string) => {
   window.open(url, '_blank', 'noopener noreferrer')
 }
 
+// Reloads the current page
 const refreshPage = () => {
   window.location.reload()
 }
 
+// Component mounted lifecycle hook
 onMounted(() => {
+  // Initial health check and scheduling
   checkBackendStatus().then(() => {
     if (isBackendConnected.value) {
       currentHealthCheckIntervalMs.value = 1000
       offlineStartTime.value = null
     } else {
       offlineStartTime.value = Date.now()
-      const minutesOffline = 0
+      const minutesOffline = 0 // Initial check, consider as 0 minutes offline
       currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, Math.min(minutesOffline, 6))
     }
+    // Schedule the first periodic health check
     healthCheckTimerId.value = window.setTimeout(
       performHealthCheckAndScheduleNext,
       currentHealthCheckIntervalMs.value,
     )
   })
 
+  // Basic check if JavaScript might be disabled (though this code itself is JS)
   if (typeof window.addEventListener === 'undefined') {
     showJavascriptErrorOverlay.value = true
   }
 })
 
+// Component unmounted lifecycle hook
 onUnmounted(() => {
+  // Clear all timers to prevent memory leaks and unwanted execution
   if (healthCheckTimerId.value !== undefined) clearTimeout(healthCheckTimerId.value)
   if (manualRetryButtonTimeoutId.value !== undefined) clearTimeout(manualRetryButtonTimeoutId.value)
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value)
@@ -305,10 +344,12 @@ onUnmounted(() => {
   if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value)
 })
 
+// Handles sidebar toggle animation and state changes
 const handleSidebarToggle = () => {
-  if (isAnimating.value) return
+  if (isAnimating.value) return // Prevent animation spam
   isAnimating.value = true
 
+  // Clear any pending timers for icon/text visibility related to previous animations
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value)
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value)
   if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value)
@@ -317,48 +358,64 @@ const handleSidebarToggle = () => {
   statusTextExpandTimer.value = undefined
 
   const currentlyCollapsed = isSidebarCollapsed.value
-  const animationDuration = 300
-  const expandShowEarlyMs = 50
+  const animationDuration = 300 // Standard animation duration in ms
+  const expandShowEarlyMs = 50 // How early to show text/icons during expand animation
 
   if (!currentlyCollapsed) {
+    // --- Intent: COLLAPSE Sidebar ---
     isSidebarCollapsed.value = true
-    showGithubIcon.value = false
-    showInlineStatusText.value = false
+    showGithubIcon.value = false // Hide GitHub icon (part of text area)
+    showInlineStatusText.value = false // Hide status text (part of text area)
+
+    // Delay hiding general sidebar text for smoother visual transition
     const generalTextHideDelay = Math.max(50, animationDuration - 150)
     setTimeout(() => {
-      if (isSidebarCollapsed.value) showSidebarText.value = false
+      if (isSidebarCollapsed.value) showSidebarText.value = false // Hide only if still collapsing
     }, generalTextHideDelay)
+
     nextTick(() => {
-      sidebarWidthClass.value = 'w-14'
-      contentMarginClass.value = 'ml-14'
+      // Apply width/margin changes after state is updated for transition
+      sidebarWidthClass.value = 'w-14' // Animate sidebar to narrow width
+      contentMarginClass.value = 'ml-14' // Animate content margin
     })
+
     const onCollapseAnimationEnd = () => {
       isAnimating.value = false
     }
+    // Use transitionend event on main content's margin for reliable animation end detection
     if (mainContentEl.value) {
       mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true })
     } else {
-      setTimeout(onCollapseAnimationEnd, animationDuration + 50)
+      setTimeout(onCollapseAnimationEnd, animationDuration + 50) // Fallback timer
     }
   } else {
+    // --- Intent: EXPAND Sidebar ---
     isSidebarCollapsed.value = false
-    sidebarWidthClass.value = 'w-56'
+    sidebarWidthClass.value = 'w-56' // Animate sidebar to wider width (triggers transition)
+
     nextTick(() => {
-      contentMarginClass.value = 'ml-56'
-      const baseTextShowTime = Math.max(0, animationDuration - expandShowEarlyMs - 50)
+      // Adjust margin and schedule text/icon appearance after width change starts
+      contentMarginClass.value = 'ml-56' // Animate content margin
+
+      // Schedule text and icons to appear, timed with the animation
+      const baseTextShowTime = Math.max(0, animationDuration - expandShowEarlyMs - 50) // Main text slightly earlier
       setTimeout(() => {
-        if (!isSidebarCollapsed.value) showSidebarText.value = true
+        if (!isSidebarCollapsed.value) showSidebarText.value = true // Show only if still expanding
       }, baseTextShowTime)
+
       const showIconTime = Math.max(0, animationDuration - expandShowEarlyMs)
       githubIconExpandTimer.value = window.setTimeout(() => {
         if (!isSidebarCollapsed.value) showGithubIcon.value = true
       }, showIconTime)
-      const showStatusTextTime = Math.max(0, animationDuration - expandShowEarlyMs + 20)
+
+      const showStatusTextTime = Math.max(0, animationDuration - expandShowEarlyMs + 20) // Status text slightly later
       statusTextExpandTimer.value = window.setTimeout(() => {
         if (!isSidebarCollapsed.value) showInlineStatusText.value = true
       }, showStatusTextTime)
     })
+
     const onExpandAnimationEnd = () => {
+      // Ensure all elements are definitely visible if they should be post-animation
       if (!isSidebarCollapsed.value) {
         if (!showGithubIcon.value) showGithubIcon.value = true
         if (!showInlineStatusText.value) showInlineStatusText.value = true
@@ -367,9 +424,10 @@ const handleSidebarToggle = () => {
       isAnimating.value = false
     }
     if (mainContentEl.value) {
+      // Watch content margin transition
       mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true })
     } else {
-      setTimeout(onExpandAnimationEnd, animationDuration + 50)
+      setTimeout(onExpandAnimationEnd, animationDuration + 50) // Fallback
     }
   }
 }
@@ -420,7 +478,7 @@ const openRepositoryIssuesPage = () => {
             class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
               'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
-                !isSidebarCollapsed,
+                !isSidebarCollapsed, // Background hover only when expanded
             }"
           >
             <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
@@ -441,7 +499,7 @@ const openRepositoryIssuesPage = () => {
             class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
               'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
-                !isSidebarCollapsed,
+                !isSidebarCollapsed, // Background hover only when expanded
             }"
           >
             <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
@@ -462,7 +520,7 @@ const openRepositoryIssuesPage = () => {
             class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
               'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
-                !isSidebarCollapsed,
+                !isSidebarCollapsed, // Background hover only when expanded
             }"
           >
             <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
@@ -580,31 +638,58 @@ const openRepositoryIssuesPage = () => {
                 <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
+
             <div class="flex items-center mb-5 text-modal-text-secondary">
               <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
             </div>
-            <ul class="space-y-2.5 text-sm sm:text-base text-modal-text-secondary">
+
+            <ul class="space-y-3 text-sm sm:text-base text-modal-text-secondary leading-relaxed">
+              {/* Increased space-y and leading-relaxed */}
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Ensure
-                the <strong>ipelfs service</strong> is running.
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0 mt-1">&rarr;</span>
+                {/* Adjusted mt for better alignment with relaxed leading */}
+                <span
+                  >Ensure the <strong class="font-semibold">ipelfs service</strong> is
+                  running.</span
+                >
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Verify
-                device and server are on the <strong>same network</strong>.
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0 mt-1">&rarr;</span>
+                <span
+                  >Verify device and server are on the
+                  <strong class="font-semibold">same network</strong>.</span
+                >
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Check
-                <strong>firewall settings</strong> for port <code>33330</code>.
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0 mt-1">&rarr;</span>
+                <span
+                  >Check <strong class="font-semibold">firewall settings</strong> for port
+                  <code
+                    class="text-xs font-medium bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded align-baseline mx-0.5 text-modal-code-text dark:text-modal-code-dark-text"
+                    >33330</code
+                  >
+                  is open.</span
+                >
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Confirm
-                backend URL (e.g., <code>http://localhost:33330</code>).
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0 mt-1">&rarr;</span>
+                <span
+                  >Confirm the backend URL (e.g.,
+                  <code
+                    class="text-xs font-medium bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded align-baseline mx-0.5 text-modal-code-text dark:text-modal-code-dark-text"
+                    >http://localhost:33330</code
+                  >) is correct.</span
+                >
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Inspect
-                <strong>developer console</strong> and backend logs.
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0 mt-1">&rarr;</span>
+                <span
+                  >Inspect <strong class="font-semibold">developer console</strong> and backend logs
+                  for errors.</span
+                >
               </li>
             </ul>
+
             <button
               @click="triggerManualHealthCheck"
               :disabled="isRetryingManualCheck || showRetryFailureIcon"
@@ -618,19 +703,17 @@ const openRepositoryIssuesPage = () => {
                 { 'animate-shake': triggerShake },
               ]"
             >
-              <template v-if="showRetryFailureIcon"
-                ><IconX class="w-5 h-5 mr-0 sm:mr-2" /><span class="hidden sm:inline"
-                  >Failed to Connect</span
-                ></template
-              >
-              <template v-else
-                ><RotateCcw
+              <template v-if="showRetryFailureIcon">
+                <IconX class="w-5 h-5 mr-0 sm:mr-2" />
+                <span class="hidden sm:inline">Failed to Connect</span>
+              </template>
+              <template v-else>
+                <RotateCcw
                   class="w-4 h-4 sm:w-5 sm:h-5 mr-2"
                   :class="{ 'animate-spin': isRetryingManualCheck }"
-                /><span>{{
-                  isRetryingManualCheck ? 'Retrying...' : 'Retry Connection'
-                }}</span></template
-              >
+                />
+                <span>{{ isRetryingManualCheck ? 'Retrying...' : 'Retry Connection' }}</span>
+              </template>
             </button>
           </div>
         </Transition>
@@ -674,21 +757,26 @@ const openRepositoryIssuesPage = () => {
             <p class="text-sm sm:text-base text-modal-text-secondary mb-3">
               JavaScript is essential for:
             </p>
-            <ul class="space-y-2 text-sm sm:text-base text-modal-text-secondary">
+            <ul class="space-y-3 text-sm sm:text-base text-modal-text-secondary leading-relaxed">
+              {/* Added leading-relaxed and space-y-3 */}
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-1"
+                  >&rarr;</span
                 >Interactive UI elements and smooth animations.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-1"
+                  >&rarr;</span
                 >Backend communication for live updates.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-1"
+                  >&rarr;</span
                 >Dynamic content rendering and interactions.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-1"
+                  >&rarr;</span
                 >Overall application logic.
               </li>
             </ul>
@@ -712,61 +800,75 @@ const openRepositoryIssuesPage = () => {
 :root {
   /* --- Main Content Colors --- */
   --bg-main-content: #ffffff;
-  --text-main-color: #1f2937;
+  --text-main-color: #1f2937; /* Tailwind gray-800 */
 
   /* --- Sidebar Colors --- */
-  --sidebar-bg: #f3f4f6;
-  --sidebar-text-main: #1f2937;
-  --sidebar-text-muted: #6b7280;
-  --sidebar-item-hover-bg: #e5e7eb;
+  --sidebar-bg: #f3f4f6; /* Tailwind gray-100 */
+  --sidebar-text-main: #1f2937; /* Tailwind gray-800 */
+  --sidebar-text-muted: #6b7280; /* Tailwind gray-500 */
+  --sidebar-item-hover-bg: #e5e7eb; /* Tailwind gray-200 */
   --sidebar-border-color: #e5e7eb; /* For light mode borders */
 
   /* --- Icon Colors --- */
-  --icon-muted-color: #6b7280;
-  --icon-accent-color: #1c9376;
+  --icon-muted-color: #6b7280; /* Tailwind gray-500 */
+  --icon-accent-color: #1c9376; /* Accent Green */
 
   /* --- Status Colors --- */
-  --status-connected-color: #1c9376;
+  --status-connected-color: #1c9376; /* Accent Green */
   --status-connected-orb-glow-start: rgba(28, 147, 118, 0.3);
   --status-connected-orb-glow-end: rgba(28, 147, 118, 0.6);
-  --status-disconnected-color: #ef4444;
+  --status-disconnected-color: #ef4444; /* Tailwind red-500 */
   --status-disconnected-orb-glow-start: rgba(239, 68, 68, 0.3);
   --status-disconnected-orb-glow-end: rgba(239, 68, 68, 0.6);
 
   /* --- Modal Colors --- */
   --modal-bg-color: #ffffff;
-  --modal-text-color: #1f2937;
-  --modal-text-secondary-color: #4b5563;
+  --modal-text-color: #1f2937; /* Tailwind gray-800 */
+  --modal-text-secondary-color: #4b5563; /* Tailwind gray-600 */
+  --modal-code-text-color: #cb2b83; /* A distinct color for code text in light mode */
+  --modal-code-dark-text-color: #e879f9; /* A distinct color for code text in dark mode (like fuchsia-400) */
 
   /* --- Button Colors --- */
-  --button-primary-bg: #1b9e7d;
+  --button-primary-bg: #1b9e7d; /* Original Button Green */
   --button-primary-hover-bg: #168266;
   --button-primary-focus-ring: #168266;
 }
 
 .dark {
-  --bg-main-content: #030712;
-  --text-main-color: #f3f4f6;
+  /* --- Main Content Colors --- */
+  --bg-main-content: #030712; /* Darker for better contrast */
+  --text-main-color: #f3f4f6; /* Tailwind gray-100 */
 
-  --sidebar-bg: #111827;
-  --sidebar-text-main: #d1d5db;
-  --sidebar-text-muted: #9ca3af;
-  --sidebar-item-hover-bg: #1f2937;
+  /* --- Sidebar Colors --- */
+  --sidebar-bg: #111827; /* Tailwind gray-900 */
+  --sidebar-text-main: #d1d5db; /* Tailwind gray-300 */
+  --sidebar-text-muted: #9ca3af; /* Tailwind gray-400 */
+  --sidebar-item-hover-bg: #1f2937; /* Tailwind gray-800 for dark item hover */
   --sidebar-border-color: #374151; /* For dark mode borders (gray-700) */
 
-  --icon-muted-color: #9ca3af;
+  /* --- Icon Colors --- */
+  --icon-muted-color: #9ca3af; /* Tailwind gray-400 */
+  /* --icon-accent-color remains #1C9376 */
 
+  /* --- Status Colors --- */
+  /* --status-connected-color remains #1C9376 */
   --status-connected-orb-glow-start: rgba(28, 147, 118, 0.4);
   --status-connected-orb-glow-end: rgba(28, 147, 118, 0.7);
-  --status-disconnected-color: #f87171;
+  --status-disconnected-color: #f87171; /* Tailwind red-400 */
   --status-disconnected-orb-glow-start: rgba(248, 113, 113, 0.4);
   --status-disconnected-orb-glow-end: rgba(248, 113, 113, 0.7);
 
-  --modal-bg-color: #1f2937;
-  --modal-text-color: #f3f4f6;
-  --modal-text-secondary-color: #9ca3af;
+  /* --- Modal Colors --- */
+  --modal-bg-color: #1f2937; /* Tailwind gray-800 */
+  --modal-text-color: #f3f4f6; /* Tailwind gray-100 */
+  --modal-text-secondary-color: #9ca3af; /* Tailwind gray-400 */
+  /* --modal-code-text-color can be overridden by .dark .text-modal-code-dark-text if needed, or use the dark var directly */
+
+  /* --- Button Colors (can be same or adjusted for dark) --- */
+  /* --button-primary-bg, hover, focus can remain the same */
 }
 
+/* General body style */
 body {
   margin: 0;
   font-family:
@@ -787,6 +889,7 @@ body {
   color: var(--text-main-color);
 }
 
+/* Utility classes for applying CSS variables */
 .bg-sidebar {
   background-color: var(--sidebar-bg);
 }
@@ -804,9 +907,11 @@ body {
   color: var(--icon-accent-color) !important;
 }
 
+/* Sidebar item hover background (used conditionally in template) */
 .hover\:bg-sidebar-item-hover-bg:hover {
   background-color: var(--sidebar-item-hover-bg);
 }
+/* Ensure dark mode uses its specific hover bg for sidebar items */
 .dark .dark\:hover\:bg-sidebar-item-dark-hover-bg:hover {
   background-color: var(--sidebar-item-hover-bg);
 }
@@ -827,6 +932,12 @@ body {
 .text-modal-text-secondary {
   color: var(--modal-text-secondary-color);
 }
+.text-modal-code-text {
+  color: var(--modal-code-text-color);
+}
+.dark .text-modal-code-dark-text {
+  color: var(--modal-code-dark-text-color);
+}
 
 .bg-button-primary {
   background-color: var(--button-primary-bg);
@@ -840,6 +951,7 @@ body {
   box-shadow: 0 0 0 3px var(--button-primary-focus-ring);
 }
 
+/* Status Orb and Pulse Animation */
 .status-orb {
   width: 9px;
   height: 9px;
@@ -879,14 +991,14 @@ body {
 }
 
 .status-connected-text {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem; /* 20px */
+  font-weight: 600; /* semibold */
   color: var(--status-connected-color);
 }
 .status-latency-display-text {
-  font-size: 0.75rem;
-  line-height: 1rem;
+  font-size: 0.75rem; /* 12px */
+  line-height: 1rem; /* 16px */
   color: var(--sidebar-text-muted);
 }
 
@@ -899,6 +1011,7 @@ body {
   white-space: nowrap;
 }
 
+/* Animation for spinning icon (e.g., RotateCcw) */
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -907,6 +1020,7 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+/* Animation for button shake on retry failure */
 @keyframes shake-effect {
   0%,
   100% {
@@ -930,6 +1044,7 @@ body {
   animation: shake-effect 0.4s ease-in-out;
 }
 
+/* Transition for main content margin */
 .transition-margin {
   transition-property: margin-left;
 }
