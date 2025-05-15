@@ -5,7 +5,8 @@ import {
   Sun, Moon, SunMoon,
   PanelRightOpen, PanelRightClose,
   Cuboid, SquareArrowOutUpRight,
-  Server, ServerOff
+  Server, ServerOff,
+  RotateCcw // Added for the retry button
 } from 'lucide-vue-next'
 
 // --- Theme Initialization ---
@@ -79,47 +80,43 @@ watchEffect(() => {
 })
 
 // --- Sidebar Animation State & Logic ---
-
-// Function to get the initial sidebar state from localStorage
 const getInitialSidebarState = (): boolean => {
   const storedState = localStorage.getItem('sidebarCollapsed');
   if (storedState !== null) {
     try {
-      return JSON.parse(storedState); // Parse stored boolean value
+      return JSON.parse(storedState);
     } catch (e) {
       console.error("Failed to parse sidebarCollapsed from localStorage. Defaulting to expanded.", e);
-      return false; // Default to expanded (false) on parse error
+      return false;
     }
   }
   return false; // Default to expanded (false) if no value in localStorage (first visit)
 };
 
-const isSidebarCollapsed = ref(getInitialSidebarState()); // Initialize sidebar state from localStorage or default
+const isSidebarCollapsed = ref(getInitialSidebarState());
 
-// Initialize sidebar UI-dependent refs based on the initial 'isSidebarCollapsed' state.
-// This prevents the flash of expanded state if it should be collapsed initially.
 const showSidebarText = ref(!isSidebarCollapsed.value);
 const showGithubIcon = ref(!isSidebarCollapsed.value);
 const showInlineStatusText = ref(!isSidebarCollapsed.value);
 const sidebarWidthClass = ref(isSidebarCollapsed.value ? 'w-14' : 'w-56');
 const contentMarginClass = ref(isSidebarCollapsed.value ? 'ml-14' : 'ml-64');
 
-// Other refs for animation and timers
 const isAnimating = ref(false);
 const githubIconCollapseTimer = ref<number | undefined>(undefined);
 const githubIconExpandTimer = ref<number | undefined>(undefined);
 const statusTextExpandTimer = ref<number | undefined>(undefined);
 const mainContentEl = ref<HTMLElement | null>(null);
 
-// Watch for changes in sidebar collapsed state and save to localStorage
 watchEffect(() => {
   localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed.value));
 });
 
-// --- Backend Connection State ---
-const isBackendConnected = ref(false);
-const healthCheckInterval = ref<number | undefined>(undefined);
+// --- Backend Connection State & Dynamic Health Check ---
+const isBackendConnected = ref(true); // Assume connected initially to avoid immediate overlay flash
 const latencyMs = ref<number | null>(null);
+const healthCheckTimerId = ref<number | undefined>(undefined);
+const currentHealthCheckIntervalMs = ref(1000); // Initial interval before first check
+const offlineStartTime = ref<number | null>(null);
 
 function truncate(num: number, decimalPlaces: number): number {
   const factor = Math.pow(10, decimalPlaces);
@@ -130,78 +127,51 @@ const formattedLatency = computed(() => {
   const ms = latencyMs.value;
   if (ms === null || ms < 0) return null;
   if (ms === 0) return "0ms";
-
   const ns = ms * 1_000_000;
-  if (ms > 0 && ms < 0.001) {
-      return `${Math.floor(ns)}ns`;
-  }
-
+  if (ms > 0 && ms < 0.001) return `${Math.floor(ns)}ns`;
   if (ms < 1000) {
-    if (ms < 10) {
-      const val = truncate(ms, 2);
-      return `${val.toFixed(2)}ms`;
-    } else if (ms < 100) {
-      const val = truncate(ms, 1);
-      return `${val.toFixed(1)}ms`;
-    } else {
-      return `${Math.floor(ms)}ms`;
-    }
+    if (ms < 10) return `${truncate(ms, 2).toFixed(2)}ms`;
+    if (ms < 100) return `${truncate(ms, 1).toFixed(1)}ms`;
+    return `${Math.floor(ms)}ms`;
   } else {
     const s = ms / 1000;
-    if (s < 10) {
-      const val = truncate(s, 2);
-      return `${val.toFixed(2)}s`;
-    } else if (s < 100) {
-      const val = truncate(s, 1);
-      return `${val.toFixed(1)}s`;
-    } else {
-      return `${Math.floor(s)}s`;
-    }
+    if (s < 10) return `${truncate(s, 2).toFixed(2)}s`;
+    if (s < 100) return `${truncate(s, 1).toFixed(1)}s`;
+    return `${Math.floor(s)}s`;
   }
 });
 
+// Core function to check backend status
 const checkBackendStatus = async () => {
-  const requestSentTimestamp = Date.now(); // Milliseconds
+  const requestSentTimestamp = Date.now();
   try {
     const response = await fetch('http://localhost:33330/v1/ipelfs/healthcheck');
     if (response.ok) {
       const data = await response.json();
-      const newConnectionState = data.success === true;
-
-      if (newConnectionState) {
+      if (data.success === true) {
+        isBackendConnected.value = true;
         try {
           const backendTimestampStr = data.data as string;
-
           const datePart = backendTimestampStr.substring(0, 19);
           const fractionalPartMatch = backendTimestampStr.match(/\.(\d+)/);
           let timezonePart = "Z";
           const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/);
-          if (timezoneMatch) {
-            timezonePart = timezoneMatch[0];
-          }
-
+          if (timezoneMatch) timezonePart = timezoneMatch[0];
+          
           let backendEpochNs: bigint;
           const baseMsBigInt = BigInt(new Date(datePart + timezonePart).getTime());
-
           if (fractionalPartMatch && fractionalPartMatch[1]) {
-              let nanoStr = fractionalPartMatch[1];
-              if (nanoStr.length > 9) nanoStr = nanoStr.substring(0, 9);
-              else if (nanoStr.length < 9) nanoStr = nanoStr.padEnd(9, '0');
-              const nanoseconds = BigInt(nanoStr);
-              backendEpochNs = baseMsBigInt * 1_000_000n + nanoseconds;
+            let nanoStr = fractionalPartMatch[1].padEnd(9, '0').substring(0,9);
+            backendEpochNs = baseMsBigInt * 1_000_000n + BigInt(nanoStr);
           } else {
-              backendEpochNs = baseMsBigInt * 1_000_000n;
+            backendEpochNs = baseMsBigInt * 1_000_000n;
           }
-
           const requestSentEpochNs = BigInt(requestSentTimestamp) * 1_000_000n;
-          const latencyNanos = backendEpochNs - requestSentEpochNs;
-          latencyMs.value = Number(latencyNanos) / 1_000_000.0;
-
+          latencyMs.value = Number(backendEpochNs - requestSentEpochNs) / 1_000_000.0;
         } catch (e) {
           console.error("Error parsing backend timestamp or calculating latency:", e);
           latencyMs.value = null;
         }
-        isBackendConnected.value = true;
       } else {
         isBackendConnected.value = false;
         latencyMs.value = null;
@@ -218,19 +188,48 @@ const checkBackendStatus = async () => {
   }
 };
 
-onMounted(() => {
-  // Sidebar UI elements (showSidebarText, sidebarWidthClass, etc.)
-  // are now initialized directly when their refs are created,
-  // using the correct initial 'isSidebarCollapsed' state from localStorage.
-  // This prevents any flash of incorrect state.
+// Performs health check and schedules the next one with dynamic interval
+const performHealthCheckAndScheduleNext = async () => {
+  if (healthCheckTimerId.value !== undefined) {
+    clearTimeout(healthCheckTimerId.value); // Clear previous timer
+  }
 
-  checkBackendStatus();
-  healthCheckInterval.value = window.setInterval(checkBackendStatus, 1000);
+  await checkBackendStatus(); // Perform the actual check
+
+  // Determine next interval based on connection status
+  if (isBackendConnected.value) {
+    currentHealthCheckIntervalMs.value = 1000; // 1 second if online
+    offlineStartTime.value = null; // Reset offline start time
+  } else {
+    if (offlineStartTime.value === null) {
+      offlineStartTime.value = Date.now(); // Mark when it first went offline
+    }
+    // Calculate minutes offline, ensuring it's at least 0
+    const minutesOffline = Math.max(0, Math.floor((Date.now() - offlineStartTime.value) / (1000 * 60)));
+    // Initial interval 5s, then doubles each minute: 5s * 2^minutesOffline
+    currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, minutesOffline);
+  }
+
+  // Schedule the next check
+  healthCheckTimerId.value = window.setTimeout(performHealthCheckAndScheduleNext, currentHealthCheckIntervalMs.value);
+};
+
+// Manually trigger a health check (e.g., from a button)
+const triggerManualHealthCheck = async () => {
+  if (healthCheckTimerId.value !== undefined) {
+    clearTimeout(healthCheckTimerId.value); // Stop any scheduled check
+  }
+  // Perform an immediate check, which will then schedule the next one
+  await performHealthCheckAndScheduleNext();
+};
+
+onMounted(() => {
+  performHealthCheckAndScheduleNext(); // Start the health check cycle
 });
 
 onUnmounted(() => {
-  if (healthCheckInterval.value !== undefined) {
-    clearInterval(healthCheckInterval.value);
+  if (healthCheckTimerId.value !== undefined) {
+    clearTimeout(healthCheckTimerId.value); // Stop health checks
   }
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
@@ -241,7 +240,6 @@ const handleSidebarToggle = () => {
   if (isAnimating.value) return;
   isAnimating.value = true;
 
-  // Clear all animation timers
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
   if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value);
@@ -249,95 +247,45 @@ const handleSidebarToggle = () => {
   githubIconExpandTimer.value = undefined;
   statusTextExpandTimer.value = undefined;
 
-  const currentlyCollapsed = isSidebarCollapsed.value; // Current state before toggle
+  const currentlyCollapsed = isSidebarCollapsed.value;
   const animationDuration = 300;
   const expandShowEarlyMs = 50;
 
-  // isSidebarCollapsed.value will be toggled below.
-  // The watchEffect for 'isSidebarCollapsed' will automatically save the new state to localStorage.
-
   if (!currentlyCollapsed) { // Intent: COLLAPSE
-    isSidebarCollapsed.value = true; // Update state
+    isSidebarCollapsed.value = true;
     showGithubIcon.value = false;
     showInlineStatusText.value = false;
-
-    nextTick(() => {
-      contentMarginClass.value = 'ml-14';
-    });
-
-    const generalTextHideDelay = animationDuration - 150 > 0 ? animationDuration - 150 : 50;
-    setTimeout(() => {
-         // Check current state in case of rapid toggles or component unmount
-         if (isSidebarCollapsed.value) showSidebarText.value = false;
-    }, generalTextHideDelay);
-
+    nextTick(() => { contentMarginClass.value = 'ml-14'; });
+    const generalTextHideDelay = Math.max(50, animationDuration - 150);
+    setTimeout(() => { if (isSidebarCollapsed.value) showSidebarText.value = false; }, generalTextHideDelay);
     const onCollapseAnimationEnd = () => {
-      if (isSidebarCollapsed.value) { // Ensure state is still collapsed
-        sidebarWidthClass.value = 'w-14';
-      }
+      if (isSidebarCollapsed.value) sidebarWidthClass.value = 'w-14';
       isAnimating.value = false;
     };
-
-    if (mainContentEl.value) {
-        mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true });
-    } else {
-        // Fallback if mainContentEl is not available for transition listening
-        setTimeout(onCollapseAnimationEnd, animationDuration + 50);
-    }
-    sidebarWidthClass.value = 'w-14 anitrunk-width'; // Start width transition
-
+    if (mainContentEl.value) mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true });
+    else setTimeout(onCollapseAnimationEnd, animationDuration + 50);
+    sidebarWidthClass.value = 'w-14 anitrunk-width';
   } else { // Intent: EXPAND
-    isSidebarCollapsed.value = false; // Update state
-    sidebarWidthClass.value = 'w-56'; // Start width transition
-
+    isSidebarCollapsed.value = false;
+    sidebarWidthClass.value = 'w-56';
     nextTick(() => {
       contentMarginClass.value = 'ml-64';
-
-      // General sidebar text (Tabs) shows early
-      setTimeout(() => {
-        // Check current state
-        if(!isSidebarCollapsed.value) showSidebarText.value = true;
-      }, 50);
-
-      // GitHub icon shows with its specific timing
-      const showIconTime = animationDuration - expandShowEarlyMs;
-      if (showIconTime > 0) {
-        githubIconExpandTimer.value = window.setTimeout(() => {
-          // Check current state
-          if (!isSidebarCollapsed.value) showGithubIcon.value = true;
-        }, showIconTime);
-      } else {
-         if (!isSidebarCollapsed.value) showGithubIcon.value = true;
-      }
-
-      // Inline status text also shows with similar timing logic
-      const showStatusTextTime = animationDuration - expandShowEarlyMs + 20;
-       if (showStatusTextTime > 0) {
-        statusTextExpandTimer.value = window.setTimeout(() => {
-          // Check current state
-          if (!isSidebarCollapsed.value) showInlineStatusText.value = true;
-        }, showStatusTextTime);
-      } else {
-         if (!isSidebarCollapsed.value) showInlineStatusText.value = true;
-      }
+      setTimeout(() => { if (!isSidebarCollapsed.value) showSidebarText.value = true; }, 50);
+      const showIconTime = Math.max(0, animationDuration - expandShowEarlyMs);
+      githubIconExpandTimer.value = window.setTimeout(() => { if (!isSidebarCollapsed.value) showGithubIcon.value = true; }, showIconTime);
+      const showStatusTextTime = Math.max(0, animationDuration - expandShowEarlyMs + 20);
+      statusTextExpandTimer.value = window.setTimeout(() => { if (!isSidebarCollapsed.value) showInlineStatusText.value = true; }, showStatusTextTime);
     });
-
     const onExpandAnimationEnd = () => {
-      // Fallback to ensure elements are visible if timers/animation had issues
-      if (!isSidebarCollapsed.value) { // Ensure state is still expanded
+      if (!isSidebarCollapsed.value) {
         if (!showGithubIcon.value) showGithubIcon.value = true;
         if (!showInlineStatusText.value) showInlineStatusText.value = true;
         if (!showSidebarText.value) showSidebarText.value = true;
       }
       isAnimating.value = false;
     };
-
-    if (mainContentEl.value) {
-        mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true });
-    } else {
-        // Fallback if mainContentEl is not available for transition listening
-        setTimeout(onExpandAnimationEnd, animationDuration + 50);
-    }
+    if (mainContentEl.value) mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true });
+    else setTimeout(onExpandAnimationEnd, animationDuration + 50);
   }
 };
 
@@ -345,6 +293,7 @@ const openGitHubLink = () => {
   window.open('https://github.com/canmi21/ipelfs', '_blank', 'noopener noreferrer');
 };
 </script>
+
 <template>
   <div class="relative min-h-screen" style="background-color: var(--bg); color: var(--text);">
     <div
@@ -427,7 +376,7 @@ const openGitHubLink = () => {
                     <span class="status-connected-text">Connected</span>
                 </div>
                 <div class="text-center -mt-1.5"> <span v-if="formattedLatency" class="status-latency-display-text">Latency: {{ formattedLatency }}</span>
-                    <span v-else-if="latencyMs === null && healthCheckInterval" class="status-latency-display-text">Calculating...</span>
+                    <span v-else-if="latencyMs === null && healthCheckTimerId !== undefined" class="status-latency-display-text">Calculating...</span>
                 </div>
             </div>
           </div>
@@ -452,11 +401,70 @@ const openGitHubLink = () => {
         Hello, World!
       </div>
     </div>
+
+    <div
+      v-if="!isBackendConnected"
+      class="fixed inset-0 z-[9999] bg-gray-900 bg-opacity-40 dark:bg-black dark:bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out"
+      aria-modal="true"
+      role="dialog"
+    >
+      <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg transform transition-all duration-300 ease-out scale-100 opacity-100">
+        <button
+          @click="triggerManualHealthCheck"
+          class="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors duration-150"
+          title="Retry Connection"
+          aria-label="Retry Connection"
+        >
+          <RotateCcw class="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+
+        <div class="flex items-center mb-4">
+            <ServerOff class="w-8 h-8 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
+            <h2 class="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400">
+                Connection Lost
+            </h2>
+        </div>
+
+        <p class="mb-2 text-sm sm:text-base text-gray-700 dark:text-gray-300">
+          <strong>The WebUI is currently unavailable</strong>
+        </p>
+
+        <ul class="space-y-2.5 text-sm sm:text-base text-gray-600 dark:text-gray-350">
+          <li class="flex items-start">
+            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+            <span>Ensure the <strong>ipelfs service</strong> is running on your backend server.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+            <span>Verify that this device and the backend server are on the <strong>same network</strong>, or that the backend is publicly accessible and correctly configured.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+            <span>Check your <strong>firewall settings</strong> (on the server or network) to ensure port <code>33330</code> is open and not blocked.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+            <span>Confirm the backend URL (e.g., <code>http://localhost:33330</code>) is correct and the service is listening on the expected address.</span>
+          </li>
+          <li class="flex items-start">
+            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+            <span>Inspect the browser's <strong>developer console</strong> (Ctrl+Shift+J or Cmd+Option+J) and the backend service logs for any specific error messages.</span>
+          </li>
+        </ul>
+         <button
+            @click="triggerManualHealthCheck"
+            class="mt-6 w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 flex items-center justify-center text-sm sm:text-base"
+          >
+            <RotateCcw class="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            Retry Connection
+          </button>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <style>
-/* ... your existing style code ... */
 :root {
   --bg: #ffffff;
   --text: #000000;
@@ -491,38 +499,35 @@ body {
   display: inline-block;
 }
 .orb-connected {
-  background-color: #34d399;
+  background-color: #34d399; /* Tailwind green-400 */
   box-shadow: 0 0 7px 2px #34d399a0;
 }
 .orb-disconnected {
-  background-color: #f87171;
+  background-color: #f87171; /* Tailwind red-400 */
   box-shadow: 0 0 7px 2px #f87171a0;
 }
 
 .status-connected-text {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem; /* leading-5 */
+  font-weight: 600; /* semibold */
   color: var(--sidebar-text-main);
 }
 
 .status-latency-display-text {
-  font-size: 0.75rem;
-  line-height: 1rem;  /* Default line height for xs font */
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1rem;  /* leading-4 */
   color: var(--sidebar-text-muted);
 }
 
-/* For "Disconnected" text and general text sizing in status item if not directly using Tailwind */
 .fixed-status-item-container .font-medium.text-xs {
-    font-weight: 500;
-    font-size: 1rem;
+    font-weight: 500; /* medium */
+    font-size: 1rem; /* Adjusted for your specific style, was text-xs */
     line-height: 1rem;
     color: var(--sidebar-text-main);
 }
 
-.min-w-0 {
-    min-width: 0;
-}
+.min-w-0 { min-width: 0; }
 .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
