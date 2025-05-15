@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import type { Notification } from './../composables/useNotifications'
 import { useNotifications } from './../composables/useNotifications'
 import { X as IconX } from 'lucide-vue-next'
@@ -12,38 +12,57 @@ const emit = defineEmits(['dismiss'])
 const { pauseNotification, resumeNotification } = useNotifications()
 
 const isHovered = ref(false)
-const progressBarKey = ref(0) // Used to re-trigger CSS animation
 
-// --- Themeing ---
-const notificationThemeClasses = computed(() => {
-  const baseClasses = 'border-l-4'
-  // Using explicit hex codes for border colors as requested
-  // Backgrounds are Tailwind's light shades
+// --- Theming ---
+// Primary theme (final color of the notification and text/icon colors)
+const primaryTheme = computed(() => {
   switch (props.notification.type) {
-    case 'success': // Green, using #1c9376
-      return `${baseClasses} bg-green-50 dark:bg-green-800 border-[#1c9376] dark:border-[#1c9376]`
-    case 'warning': // Yellow
-      return `${baseClasses} bg-yellow-50 dark:bg-yellow-800 border-yellow-500 dark:border-yellow-600` // Assuming default yellow is fine
-    case 'error': // Red, using #ef4444
-      return `${baseClasses} bg-red-50 dark:bg-red-800 border-[#ef4444] dark:border-[#ef4444]`
-    case 'info': // Info also defaults to green #1c9376
-    default:
-      return `${baseClasses} bg-green-50 dark:bg-green-800 border-[#1c9376] dark:border-[#1c9376]`
+    case 'success':
+      return {
+        bgClass: 'bg-[#1c9376]',
+        textClass: 'text-white',
+        mutedTextClass: 'text-green-100 hover:text-white',
+        focusRingClass: 'focus:ring-green-200',
+      } // Added comma
+    case 'warning':
+      // Yellow background usually needs darker text for contrast
+      return {
+        bgClass: 'bg-yellow-500',
+        textClass: 'text-yellow-900',
+        mutedTextClass: 'text-yellow-700 hover:text-yellow-900',
+        focusRingClass: 'focus:ring-yellow-800',
+      } // Added comma
+    case 'error':
+      return {
+        bgClass: 'bg-[#ef4444]',
+        textClass: 'text-white',
+        mutedTextClass: 'text-red-100 hover:text-white',
+        focusRingClass: 'focus:ring-red-200',
+      } // Added comma
+    case 'info':
+    default: // Default is green
+      return {
+        bgClass: 'bg-[#1c9376]',
+        textClass: 'text-white',
+        mutedTextClass: 'text-green-100 hover:text-white',
+        focusRingClass: 'focus:ring-green-200',
+      } // Added comma
   }
 })
 
-const progressBarColorClass = computed(() => {
-  // Slightly darker/more opaque version of the border color for progress bar
+// Secondary theme (initial background color that gets "wiped" by the primary color)
+// This color should be subtly different from the primary/final color.
+const secondaryBgClass = computed(() => {
   switch (props.notification.type) {
     case 'success':
-      return 'bg-[#1c9376]/70 dark:bg-[#1c9376]/60'
+      return 'bg-[#20a784]' // A slightly lighter/different green than #1c9376
     case 'warning':
-      return 'bg-yellow-500/70 dark:bg-yellow-600/60'
+      return 'bg-yellow-400' // Lighter yellow than yellow-500
     case 'error':
-      return 'bg-[#ef4444]/70 dark:bg-[#ef4444]/60'
+      return 'bg-red-400' // Lighter red than #ef4444
     case 'info':
     default:
-      return 'bg-[#1c9376]/70 dark:bg-[#1c9376]/60'
+      return 'bg-[#20a784]' // Default to the different green
   }
 })
 
@@ -63,54 +82,38 @@ const handleMouseLeave = () => {
 }
 
 // --- Progress Bar Animation Control ---
-// Watch for pause state changes to control CSS animation play state
 const progressBarStyle = computed(() => ({
   animationDuration: `${props.notification.duration}ms`,
   animationPlayState: props.notification.isPaused ? 'paused' : 'running',
 }))
 
-// When a notification is resumed, its remainingDuration changes.
-// To "restart" CSS animation from a new point with potentially new duration is tricky.
-// The current setup in useNotifications.ts restarts the setTimeout with remainingDuration.
-// The CSS animation will run for its original 'duration'.
-// For a visually accurate CSS progress bar that resumes, we would typically
-// set the animation-duration to remainingDuration AND use a negative animation-delay
-// to fast-forward it. Or, simply re-key the progress bar element to force a re-render
-// and restart of its animation.
-// Let's use the re-keying approach for simplicity if animation needs to visually "jump" on resume.
-// However, merely pausing and resuming the play state of an animation set to the *original* duration
-// is the simplest to implement with CSS. The timer in useNotifications will handle actual dismissal.
-// The visual bar will pause and resume its depletion over the *original* duration.
-
-watch(
-  () => props.notification.isPaused,
-  (paused) => {
-    // This watcher is mainly for if we need to do more complex sync with the progress bar.
-    // For now, `progressBarStyle.animationPlayState` handles it.
-    // If we were to adjust animation duration on resume, we'd do it here by changing a key.
-    if (!paused) {
-      // Potentially re-key to restart animation if remainingDuration significantly changed how it should look
-      // For now, just letting animationPlayState handle it.
-      // progressBarKey.value++; // This would force re-render and restart animation
-    }
-  },
-)
+// This key can be used to force re-render the progress bar if needed,
+// for example, if we wanted the animation to visually "jump" when resuming
+// after a long pause to reflect remainingTime. For now, CSS pause/play is simpler.
+// const progressBarKey = ref(0);
+// watch(() => props.notification.remainingDuration, () => {
+//   progressBarKey.value++;
+// });
 </script>
 
 <template>
   <div
-    class="notification-item w-full max-w-sm rounded-md shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden relative"
-    :class="[notificationThemeClasses]"
+    class="notification-item w-full max-w-sm rounded-md shadow-lg pointer-events-auto overflow-hidden relative"
+    :class="[secondaryBgClass]"
     role="alert"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
-    <div class="p-3">
+    <div
+      class="progress-fill absolute top-0 bottom-0 right-0 h-full"
+      :class="[primaryTheme.bgClass]"
+      :style="progressBarStyle"
+    ></div>
+
+    <div class="relative z-10 p-3">
       <div class="flex items-center">
         <div class="w-0 flex-1">
-          <p
-            class="text-xs font-medium text-notification-text dark:text-notification-dark-text-strong"
-          >
+          <p class="text-xs font-medium" :class="[primaryTheme.textClass]">
             {{ notification.message }}
           </p>
         </div>
@@ -118,8 +121,12 @@ watch(
           <button
             @click="handleDismiss"
             type="button"
-            class="inline-flex items-center justify-center rounded-md text-notification-text-muted dark:text-notification-dark-text-muted hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition-opacity duration-150"
-            :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+            class="inline-flex items-center justify-center rounded-md transition-opacity duration-150 focus:outline-none focus:ring-1 focus:ring-offset-1"
+            :class="[
+              primaryTheme.mutedTextClass,
+              primaryTheme.focusRingClass,
+              isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+            ]"
             aria-label="Close"
           >
             <IconX class="h-4 w-4" aria-hidden="true" />
@@ -127,54 +134,26 @@ watch(
         </div>
       </div>
     </div>
-    <div
-      :key="progressBarKey"
-      class="progress-bar absolute bottom-0 left-0 h-1"
-      :class="[progressBarColorClass]"
-      :style="progressBarStyle"
-    ></div>
   </div>
 </template>
 
 <style scoped>
-.notification-item {
-  /* For dark mode text, ensure sufficient contrast. gray-100 is generally good. */
-  --text-notification-text: #1f2937; /* gray-800 */
-  /* Changed dark text to be whiter for better visibility as per user feedback */
-  --text-notification-dark-text-strong: #ffffff; /* white */
-  --text-notification-text-muted: #6b7280; /* gray-500 */
-  --text-notification-dark-text-muted: #cbd5e1; /* slate-300, lighter than gray-400 for better hover on dark */
-}
+/* Text and Muted Text colors are now driven by primaryTheme computed property and applied via Tailwind classes. */
+/* No need for --text-notification CSS variables here anymore if Tailwind classes cover all cases. */
 
-.text-notification-text {
-  color: var(--text-notification-text);
-}
-/* Applied a different class for potentially stronger dark mode text */
-.dark .text-notification-dark-text-strong {
-  color: var(--text-notification-dark-text-strong);
-}
-
-.text-notification-text-muted {
-  color: var(--text-notification-text-muted);
-}
-.dark .text-notification-dark-text-muted {
-  color: var(--text-notification-dark-text-muted);
-}
-
-.progress-bar {
-  width: 100%; /* Initial width */
-  transform-origin: left; /* Animation from left to right (or use right for right to left) */
-  animation-name: progress-shrink;
+.progress-fill {
+  width: 0%; /* Initial width for the fill starting from the right */
+  animation-name: progress-wipe-rtl;
   animation-timing-function: linear;
-  animation-fill-mode: forwards; /* Retain state at 0% width */
+  animation-fill-mode: forwards; /* Retain state at 100% width */
 }
 
-@keyframes progress-shrink {
+@keyframes progress-wipe-rtl {
   from {
-    width: 100%;
+    width: 0%;
   }
   to {
-    width: 0%;
+    width: 100%;
   }
 }
 

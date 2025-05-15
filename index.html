@@ -1,13 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overview</title> <style>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Insights</title>
+    <style>
       /* Base HTML transition */
       html {
-        transition: background-color 0.3s ease, color 0.3s ease;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          Oxygen,
+          Ubuntu,
+          Cantarell,
+          'Open Sans',
+          'Helvetica Neue',
+          sans-serif;
         line-height: 1.5;
       }
       body {
@@ -16,27 +31,29 @@
       /* Styles for the <noscript> fallback UI */
       .noscript-overlay {
         position: fixed;
-        inset: 0; 
-        background-color: rgba(30, 41, 59, 0.8); 
+        inset: 0;
+        background-color: rgba(30, 41, 59, 0.8);
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 20000; 
+        z-index: 20000;
         padding: 1rem;
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
       }
 
       .noscript-modal {
-        background-color: #ffffff; 
-        color: #1f2937; 
-        padding: 1.5rem 2rem; 
+        background-color: #ffffff;
+        color: #1f2937;
+        padding: 1.5rem 2rem;
         border-radius: 0.75rem;
-        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
         max-width: 512px;
         width: 100%;
-        position: relative; 
-        overflow: hidden; 
+        position: relative;
+        overflow: hidden;
         box-sizing: border-box;
       }
 
@@ -44,7 +61,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem; 
+        margin-bottom: 0.5rem;
       }
 
       .noscript-modal-title-group {
@@ -53,162 +70,164 @@
       }
 
       .noscript-modal .header-icon {
-        width: 2rem; 
-        height: 2rem; 
-        margin-right: 0.75rem; 
-        color: #D73434; /* Red for error indication */
+        width: 2rem;
+        height: 2rem;
+        margin-right: 0.75rem;
+        color: #d73434; /* Red for error indication */
         flex-shrink: 0;
       }
       .noscript-modal .header-icon svg,
       .noscript-modal .external-link-button svg {
         width: 100%;
         height: 100%;
-        stroke-width: 2; 
+        stroke-width: 2;
       }
 
       .noscript-modal .title-text {
-        font-size: 1.25rem; 
-        font-weight: 600; 
-        color: #D73434; /* Red for error indication */
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #d73434; /* Red for error indication */
       }
       @media (min-width: 640px) {
         .noscript-modal .title-text {
-          font-size: 1.5rem; 
+          font-size: 1.5rem;
         }
       }
 
       .noscript-modal .external-link-button {
-        padding: 0.25rem; 
-        color: #9ca3af; 
-        border-radius: 9999px; 
+        padding: 0.25rem;
+        color: #9ca3af;
+        border-radius: 9999px;
         transition: transform 0.2s ease-out;
-        display: inline-block; 
+        display: inline-block;
       }
       .noscript-modal .external-link-button:hover {
-        color: #4b5563; 
+        color: #4b5563;
         transform: scale(1.1);
       }
-      .noscript-modal .external-link-button svg{
-         width: 1.25rem; 
-         height: 1.25rem; 
+      .noscript-modal .external-link-button svg {
+        width: 1.25rem;
+        height: 1.25rem;
       }
-       @media (min-width: 640px) {
-        .noscript-modal .external-link-button svg{
-            width: 1.5rem; 
-            height: 1.5rem; 
+      @media (min-width: 640px) {
+        .noscript-modal .external-link-button svg {
+          width: 1.5rem;
+          height: 1.5rem;
         }
       }
 
       .noscript-modal .message-text {
         display: flex;
         align-items: center;
-        margin-bottom: 0.75rem; 
-        color: #374151; 
+        margin-bottom: 0.75rem;
+        color: #374151;
       }
       .noscript-modal .message-text strong {
-        font-size: 0.875rem; 
+        font-size: 0.875rem;
         font-weight: 600;
       }
-       @media (min-width: 640px) {
+      @media (min-width: 640px) {
         .noscript-modal .message-text strong {
-            font-size: 1rem; 
+          font-size: 1rem;
         }
       }
 
       .noscript-modal .reason-list {
         list-style: none;
         padding-left: 0;
-        margin-bottom: 1.5rem; 
+        margin-bottom: 1.5rem;
       }
       .noscript-modal .reason-list li {
         display: flex;
         align-items: flex-start;
-        font-size: 0.875rem; 
-        color: #4b5563; 
-        margin-bottom: 0.625rem; 
+        font-size: 0.875rem;
+        color: #4b5563;
+        margin-bottom: 0.625rem;
       }
-       @media (min-width: 640px) {
+      @media (min-width: 640px) {
         .noscript-modal .reason-list li {
-            font-size: 1rem; 
+          font-size: 1rem;
         }
       }
       .noscript-modal .reason-list .reason-arrow {
-        margin-right: 0.5rem; 
-        color: #D73434; /* Red for error indication */
+        margin-right: 0.5rem;
+        color: #d73434; /* Red for error indication */
         flex-shrink: 0;
       }
       .noscript-modal .reason-list code {
-        background-color: #e5e7eb; 
+        background-color: #e5e7eb;
         padding: 0.125rem 0.375rem;
         border-radius: 0.25rem;
         font-size: 0.85em;
       }
-      
+
       /* Dark mode specific styles for noscript fallback */
       @media (prefers-color-scheme: dark) {
         .noscript-modal {
-          background-color: #1f2937; 
-          color: #d1d5db; 
+          background-color: #1f2937;
+          color: #d1d5db;
         }
         .noscript-modal .header-icon,
         .noscript-modal .reason-arrow,
         .noscript-modal .title-text {
-           color: #F87171; /* Lighter red for dark mode */
+          color: #f87171; /* Lighter red for dark mode */
         }
         .noscript-modal .reason-list li,
-        .noscript-modal .message-text { /* Ensure list and message text are legible in dark mode */
-            color: #d1d5db; 
+        .noscript-modal .message-text {
+          /* Ensure list and message text are legible in dark mode */
+          color: #d1d5db;
         }
-        .noscript-modal .message-text strong { /* Ensure strong text is also legible */
-            color: #e5e7eb; 
+        .noscript-modal .message-text strong {
+          /* Ensure strong text is also legible */
+          color: #e5e7eb;
         }
-         .noscript-modal .external-link-button {
-            color: #6b7280; 
+        .noscript-modal .external-link-button {
+          color: #6b7280;
         }
         .noscript-modal .external-link-button:hover {
-            color: #9ca3af; 
+          color: #9ca3af;
         }
         .noscript-modal .reason-list code {
-            background-color: #374151; 
-            color: #e5e7eb; 
+          background-color: #374151;
+          color: #e5e7eb;
         }
       }
 
       .noscript-modal .refresh-button {
-        margin-top: 1.5rem; 
+        margin-top: 1.5rem;
         width: 100%;
-        background-color: #1B9E7D; /* Green button */
+        background-color: #1b9e7d; /* Green button */
         color: white;
-        font-weight: 600; 
-        padding: 0.625rem 1rem; 
-        border-radius: 0.5rem; 
+        font-weight: 600;
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
         transition: background-color 0.15s ease-in-out;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.875rem; 
+        font-size: 0.875rem;
         border: none;
         cursor: pointer;
-        text-decoration: none; 
-        box-sizing: border-box; 
+        text-decoration: none;
+        box-sizing: border-box;
       }
       @media (min-width: 640px) {
         .noscript-modal .refresh-button {
-            font-size: 1rem; 
+          font-size: 1rem;
         }
       }
       .noscript-modal .refresh-button:hover {
         background-color: #168266; /* Darker green on hover */
       }
       .noscript-modal .refresh-button svg {
-        width: 1rem; 
-        height: 1rem; 
-        margin-right: 0.5rem; 
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
       }
       @media (min-width: 640px) {
-         .noscript-modal .refresh-button svg {
-            width: 1.25rem; 
-            height: 1.25rem; 
+        .noscript-modal .refresh-button svg {
+          width: 1.25rem;
+          height: 1.25rem;
         }
       }
     </style>
@@ -220,43 +239,93 @@
           <div class="noscript-modal-header">
             <div class="noscript-modal-title-group">
               <div class="header-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/>
-                  <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
-                  <path d="M4 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1"/>
-                  <path d="M8 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
+                  <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                  <path d="M4 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1 1v1a1 1 0 0 0 1 1" />
+                  <path d="M8 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1" />
                 </svg>
               </div>
-              <h2 class="title-text">JavaScript Disabled</h2> </div>
-            <a href="https://www.enable-javascript.com/" target="_blank" rel="noopener noreferrer" class="external-link-button" title="Why is JavaScript needed?">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/>
-                <line x1="10" y1="14" x2="21" y2="3"/>
+              <h2 class="title-text">JavaScript Disabled</h2>
+            </div>
+            <a
+              href="https://www.enable-javascript.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="external-link-button"
+              title="Why is JavaScript needed?"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
             </a>
           </div>
 
           <div class="message-text">
-              <strong>WebUI is currently unavailable.</strong> </div>
+            <strong>WebUI is currently unavailable.</strong>
+          </div>
 
           <ul class="reason-list">
-            <li><span class="reason-arrow">&rarr;</span>Interactive UI elements and smooth animations.</li>
-            <li><span class="reason-arrow">&rarr;</span>Backend communication (GET/POST requests) for live updates.</li>
-            <li><span class="reason-arrow">&rarr;</span>Dynamic content rendering and page interactions.</li>
-            <li><span class="reason-arrow">&rarr;</span>Client-side data processing and input validation.</li>
-            <li><span class="reason-arrow">&rarr;</span>The overall application functionality is built with JavaScript.</li>
+            <li>
+              <span class="reason-arrow">&rarr;</span>Interactive UI elements and smooth animations.
+            </li>
+            <li>
+              <span class="reason-arrow">&rarr;</span>Backend communication (GET/POST requests) for
+              live updates.
+            </li>
+            <li>
+              <span class="reason-arrow">&rarr;</span>Dynamic content rendering and page
+              interactions.
+            </li>
+            <li>
+              <span class="reason-arrow">&rarr;</span>Client-side data processing and input
+              validation.
+            </li>
+            <li>
+              <span class="reason-arrow">&rarr;</span>The overall application functionality is built
+              with JavaScript.
+            </li>
           </ul>
 
-          <a href="." class="refresh-button"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                <path d="M3 3v5h5"/>
+          <a href="." class="refresh-button">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
             </svg>
             Refresh Page
           </a>
         </div>
       </div>
     </noscript>
-    <div id="app"></div> <script type="module" src="/webui/main.ts"></script>
+    <div id="app"></div>
+    <script type="module" src="/webui/main.ts"></script>
   </body>
 </html>
