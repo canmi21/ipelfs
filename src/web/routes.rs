@@ -13,10 +13,14 @@ use crate::web::api::{
     post_transfer_collection,
 };
 
+use crate::utils::ua::get_user_agent_handler;
+
 pub fn build_router() -> Router {
     Router::new()
         .nest("/v1/ipelfs", Router::new()
-            .route("/healthcheck", get(get_healthcheck)) // 添加新的 healthcheck 路由
+            .route("/healthcheck", get(get_healthcheck))
+            .route("/ua", get(get_user_agent_handler))
+            // Volume Related
             .route("/volumes", get(get_volumes))
             .route("/volumes/create", post(post_create_volume))
             .route("/volumes/add", post(post_add_volume))
@@ -24,7 +28,7 @@ pub fn build_router() -> Router {
             .route("/volumes/delete", post(post_delete_volume))
             .route("/volumes/:id/collections", get(get_collections))
             .route("/volumes/:id/collections", post(post_create_collection)) 
-            //Reserved, RESTful use POST to create a collection
+            // Reserved, RESTful use POST to create a collection
             .route("/volumes/:id/collections/create", post(post_create_collection))
             .route("/volumes/:id/collections/delete", post(post_delete_collection))
             .route("/volumes/:from/collections/:id/transfer",post(post_transfer_collection))

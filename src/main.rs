@@ -18,10 +18,10 @@ use tokio::net::TcpListener;
 use tokio::runtime::Runtime;
 use tower_http::cors::{CorsLayer};
 
-// Modules
 mod web;
 mod log;
 mod cli;
+mod utils;
 mod config;
 mod volume;
 

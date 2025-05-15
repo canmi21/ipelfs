@@ -12,6 +12,7 @@ import JavascriptErrorModal from './components/JavascriptErrorModal.vue'
 import NotificationContainer from './components/NotificationContainer.vue'
 
 import { openExternalLink, refreshPage } from './utils/browser'
+import { useBrowserCompatibility } from './composables/useBrowserCompatibility'
 
 // --- Theme (from composable) ---
 // isDark is implicitly handled by useTheme via document.documentElement.classList
@@ -59,6 +60,8 @@ const openRepositoryIssuesPage = () => {
 const handleOpenExternalLink = (url: string) => {
   openExternalLink(url)
 }
+
+useBrowserCompatibility()
 </script>
 
 <template>

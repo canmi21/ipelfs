@@ -17,9 +17,9 @@
 /* Spin animation for the close icon */
 .animate-spin-one-slow {
   animation-name: spin-one-slow-kf;
-  animation-duration: 0.1s; /* Matches SPIN_DURATION = 100ms from script */
+  animation-duration: 0.09s; /* Matches SPIN_DURATION = 100ms from script */
   animation-timing-function: ease-out;
-  animation-iteration-count: 0.9;
+  animation-iteration-count: 0.8;
   animation-fill-mode: forwards;
 }
 
