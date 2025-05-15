@@ -7,9 +7,8 @@ import {
   Cuboid, SquareArrowOutUpRight,
   Server, ServerOff,
   RotateCcw,
-  // TriangleAlert, // Removed as per request
   ExternalLink,
-  X as IconX // Lucide X icon for failure state
+  X as IconX
 } from 'lucide-vue-next'
 
 // --- Theme Initialization ---
@@ -113,7 +112,7 @@ watchEffect(() => {
 });
 
 // --- Backend Connection State & Dynamic Health Check ---
-const isBackendConnected = ref(true);
+const isBackendConnected = ref(true); // Assume connected initially
 const latencyMs = ref<number | null>(null);
 const healthCheckTimerId = ref<number | undefined>(undefined);
 const currentHealthCheckIntervalMs = ref(1000);
@@ -121,7 +120,7 @@ const offlineStartTime = ref<number | null>(null);
 const isRetryingManualCheck = ref(false);
 const manualRetryButtonTimeoutId = ref<number | undefined>(undefined);
 const triggerShake = ref(false);
-const showRetryFailureIcon = ref(false); // To show X icon on retry failure
+const showRetryFailureIcon = ref(false);
 
 function truncate(num: number, decimalPlaces: number): number {
   const factor = Math.pow(10, decimalPlaces);
@@ -202,7 +201,7 @@ const performHealthCheckAndScheduleNext = async () => {
     offlineStartTime.value = null;
     if (isRetryingManualCheck.value) {
         isRetryingManualCheck.value = false;
-        showRetryFailureIcon.value = false; // Ensure failure icon is off on success
+        showRetryFailureIcon.value = false;
         if(manualRetryButtonTimeoutId.value !== undefined) {
             clearTimeout(manualRetryButtonTimeoutId.value);
             manualRetryButtonTimeoutId.value = undefined;
@@ -219,7 +218,7 @@ const performHealthCheckAndScheduleNext = async () => {
 };
 
 const triggerManualHealthCheck = async () => {
-  if (isRetryingManualCheck.value || showRetryFailureIcon.value) return; // Prevent click during retry or failure display
+  if (isRetryingManualCheck.value || showRetryFailureIcon.value) return;
 
   isRetryingManualCheck.value = true;
   triggerShake.value = false;
@@ -233,20 +232,17 @@ const triggerManualHealthCheck = async () => {
   }
 
   manualRetryButtonTimeoutId.value = window.setTimeout(() => {
-    if (!isBackendConnected.value) { // Still disconnected after 3s
-        isRetryingManualCheck.value = false; // Stop "Retrying..." state
-        showRetryFailureIcon.value = true;   // Show X icon and "Failed" text
-        triggerShake.value = true;           // Start shake
+    if (!isBackendConnected.value) {
+        isRetryingManualCheck.value = false;
+        showRetryFailureIcon.value = true;
+        triggerShake.value = true;
         setTimeout(() => {
-            triggerShake.value = false;      // Stop shake class after animation
-            // After shake, keep X for a moment, then revert to normal "Retry Connection"
+            triggerShake.value = false;
             setTimeout(() => {
                 showRetryFailureIcon.value = false;
-            }, 700); // Show X/Failed for 0.7s after shake (total ~1s for failure indication)
-        }, 300); // Shake animation duration (should match CSS: 0.3s)
+            }, 700);
+        }, 300); // Corresponds to shake animation duration
     }
-    // If connected, isRetryingManualCheck is already false (set in performHealthCheckAndScheduleNext)
-    // and the overlay is gone.
   }, 3000);
 
   await performHealthCheckAndScheduleNext();
@@ -257,7 +253,19 @@ const openIssuesPage = () => {
 };
 
 onMounted(() => {
-  performHealthCheckAndScheduleNext();
+  // Perform initial check without delay and then schedule
+  checkBackendStatus().then(() => {
+     // After the very first check, determine the interval and schedule
+    if (isBackendConnected.value) {
+        currentHealthCheckIntervalMs.value = 1000;
+        offlineStartTime.value = null;
+    } else {
+        offlineStartTime.value = Date.now(); // Mark offline time immediately
+        const minutesOffline = 0; // Initially 0 minutes
+        currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, minutesOffline);
+    }
+    healthCheckTimerId.value = window.setTimeout(performHealthCheckAndScheduleNext, currentHealthCheckIntervalMs.value);
+  });
 });
 
 onUnmounted(() => {
@@ -271,6 +279,7 @@ onUnmounted(() => {
 const handleSidebarToggle = () => {
   if (isAnimating.value) return;
   isAnimating.value = true;
+  // ... (rest of sidebar toggle logic is unchanged) ...
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
   if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value);
@@ -331,7 +340,7 @@ const openGitHubLink = () => {
       :class="sidebarWidthClass"
       class="absolute top-0 left-0 h-full bg-gray-200 dark:bg-gray-800 z-10 transition-all ease-in-out duration-300 overflow-hidden"
     >
-      <div class="flex flex-col p-2 h-full">
+       <div class="flex flex-col p-2 h-full">
         <div class="flex-grow w-full">
             <div @click="handleSidebarToggle" class="cursor-pointer mb-4 w-full rounded-md">
               <div class="flex items-center h-12 px-2">
@@ -429,81 +438,86 @@ const openGitHubLink = () => {
       </div>
     </div>
 
-    <div
-      v-if="!isBackendConnected"
-      class="fixed inset-0 z-[9999] bg-gray-900 bg-opacity-40 dark:bg-black dark:bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300 ease-in-out"
-      aria-modal="true"
-      role="dialog"
-    >
-      <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg transform transition-all duration-300 ease-out opacity-100 relative">
-        <div class="flex justify-between items-center mb-4">
-          <div class="flex items-center">
-            <ServerOff class="w-8 h-8 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
-            <h2 class="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400">
-                Connection Lost
-            </h2>
+    <Transition name="overlay-fade">
+      <div
+        v-if="!isBackendConnected"
+        class="fixed inset-0 z-[9999] bg-gray-900 bg-opacity-40 dark:bg-black dark:bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4"
+        aria-modal="true"
+        role="dialog"
+      >
+        <Transition name="modal-pop" appear>
+          <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg relative">
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center">
+                <ServerOff class="w-8 h-8 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
+                <h2 class="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400">
+                    Connection Lost
+                </h2>
+              </div>
+              <button
+                @click="openIssuesPage"
+                class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full transition-transform duration-200 ease-out hover:scale-110"
+                title="Open GitHub Issues"
+                aria-label="Open GitHub Issues for help"
+              >
+                <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            </div>
+
+            <div class="flex items-center mb-5 text-gray-700 dark:text-gray-300">
+                <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
+            </div>
+
+            <ul class="space-y-2.5 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              <li class="flex items-start">
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+                <span>Ensure the <strong>ipelfs service</strong> is running on your backend server.</span>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+                <span>Verify that this device and the backend server are on the <strong>same network</strong>, or that the backend is publicly accessible and correctly configured.</span>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+                <span>Check your <strong>firewall settings</strong> (on the server or network) to ensure port <code>33330</code> is open and not blocked.</span>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+                <span>Confirm the backend URL (e.g., <code>http://localhost:33330</code>) is correct and the service is listening on the expected address.</span>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+                <span>Inspect the browser's <strong>developer console</strong> (Ctrl+Shift+J or Cmd+Option+J) and the backend service logs for any specific error messages.</span>
+              </li>
+            </ul>
+
+            <button
+                @click="triggerManualHealthCheck"
+                :disabled="isRetryingManualCheck || showRetryFailureIcon"
+                class="mt-6 w-full font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                :class="[
+                  isRetryingManualCheck ? 'bg-[#116650] dark:bg-[#116650] text-gray-100 cursor-not-allowed' : // Darker green when retrying
+                  showRetryFailureIcon ? 'bg-red-600 dark:bg-red-700 text-white cursor-not-allowed' : // Red when failed
+                  'bg-[#1B9E7D] hover:bg-[#168266] dark:hover:bg-[#168266] text-white active:bg-[#116650] dark:active:bg-[#116650] focus:ring-[#168266]', // Normal green
+                  { 'animate-shake': triggerShake } // Shake animation class
+                ]"
+            >
+                <template v-if="showRetryFailureIcon">
+                  <IconX class="w-5 h-5 mr-0 sm:mr-2" />
+                  <span class="hidden sm:inline">Failed</span>
+                </template>
+                <template v-else>
+                  <RotateCcw
+                    class="w-4 h-4 sm:w-5 sm:h-5 mr-2"
+                    :class="{ 'animate-spin': isRetryingManualCheck }"
+                  />
+                  <span>{{ isRetryingManualCheck ? 'Retrying...' : 'Retry Connection' }}</span>
+                </template>
+            </button>
           </div>
-          <button
-            @click="openIssuesPage"
-            class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full transition-all duration-200 ease-out hover:scale-110"
-            title="Open GitHub Issues"
-            aria-label="Open GitHub Issues for help"
-          >
-            <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        </div>
-
-        <div class="flex items-center mb-5 text-gray-700 dark:text-gray-300">
-            <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
-        </div>
-
-        <ul class="space-y-2.5 text-sm sm:text-base text-gray-600 dark:text-gray-300">
-          <li class="flex items-start">
-            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-            <span>Ensure the <strong>ipelfs service</strong> is running on your backend server.</span>
-          </li>
-          <li class="flex items-start">
-            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-            <span>Verify that this device and the backend server are on the <strong>same network</strong>, or that the backend is publicly accessible and correctly configured.</span>
-          </li>
-          <li class="flex items-start">
-            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-            <span>Check your <strong>firewall settings</strong> (on the server or network) to ensure port <code>33330</code> is open and not blocked.</span>
-          </li>
-          <li class="flex items-start">
-            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-            <span>Confirm the backend URL (e.g., <code>http://localhost:33330</code>) is correct and the service is listening on the expected address.</span>
-          </li>
-          <li class="flex items-start">
-            <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-            <span>Inspect the browser's <strong>developer console</strong> (Ctrl+Shift+J or Cmd+Option+J) and the backend service logs for any specific error messages.</span>
-          </li>
-        </ul>
-
-         <button
-            @click="triggerManualHealthCheck"
-            :disabled="isRetryingManualCheck || showRetryFailureIcon"
-            class="mt-6 w-full font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-            :class="[
-              isRetryingManualCheck ? 'bg-[#116650] dark:bg-[#116650] text-gray-100 cursor-not-allowed' :
-              showRetryFailureIcon ? 'bg-red-600 dark:bg-red-700 text-white cursor-not-allowed' :
-              'bg-[#1B9E7D] hover:bg-[#168266] dark:hover:bg-[#168266] text-white active:bg-[#116650] dark:active:bg-[#116650] focus:ring-[#1B9E7D]',
-              { 'animate-shake': triggerShake }
-            ]"
-          >
-            <template v-if="showRetryFailureIcon">
-              <IconX class="w-5 h-5 mr-0 sm:mr-2" /> <span class="hidden sm:inline">Failed</span>
-            </template>
-            <template v-else>
-              <RotateCcw
-                class="w-4 h-4 sm:w-5 sm:h-5 mr-2"
-                :class="{ 'animate-spin': isRetryingManualCheck }"
-              />
-              <span>{{ isRetryingManualCheck ? 'Retrying...' : 'Retry Connection' }}</span>
-            </template>
-          </button>
+        </Transition>
       </div>
-    </div>
+    </Transition>
 
   </div>
 </template>
@@ -539,13 +553,44 @@ body { margin: 0; }
 .animate-spin { animation: spin 1s linear infinite; }
 
 /* Animation for button shake on retry failure */
-@keyframes shake-effect { /* Renamed to avoid conflict if 'shake' is a common utility */
+@keyframes shake-effect {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-3px); }
   50% { transform: translateX(3px); }
   75% { transform: translateX(-3px); }
 }
 .animate-shake {
-  animation: shake-effect 0.3s linear; /* Using a more direct shake */
+  animation: shake-effect 0.3s linear;
+}
+
+/* Overlay Fade Transition */
+.overlay-fade-enter-from,
+.overlay-fade-leave-to {
+  opacity: 0;
+}
+.overlay-fade-enter-active {
+  transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1); /* ease-out-cubic */
+}
+.overlay-fade-leave-active {
+  transition: opacity 200ms cubic-bezier(0.4, 0, 1, 1); /* ease-in-cubic */
+}
+
+/* Modal Pop Transition */
+.modal-pop-enter-from,
+.modal-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(10px); /* Start slightly lower and smaller */
+}
+.modal-pop-enter-active {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1); /* ease-out-cubic */
+  /* transition-delay: 50ms; /* Optional: Delay modal pop slightly after overlay starts */
+}
+.modal-pop-leave-active {
+  transition: all 200ms cubic-bezier(0.4, 0, 1, 1); /* ease-in-cubic */
+}
+.modal-pop-enter-to,
+.modal-pop-leave-from {
+  opacity: 1;
+  transform: scale(1) translateY(0);
 }
 </style>
