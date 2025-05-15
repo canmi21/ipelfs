@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ipelfs</title>
     <style>
-      /* Base HTML transition (already present in your file) */
       html {
         transition: background-color 0.3s ease, color 0.3s ease;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
@@ -18,35 +17,35 @@
       /* Styles for the <noscript> fallback UI */
       .noscript-overlay {
         position: fixed;
-        inset: 0; /* Equivalent to top:0, right:0, bottom:0, left:0 */
-        background-color: rgba(30, 41, 59, 0.8); /* Dark semi-transparent overlay */
+        inset: 0;
+        background-color: rgba(30, 41, 59, 0.8); /* Fallback overlay background */
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 20000; /* High z-index to be on top */
+        z-index: 20000; /* Ensure it's on top */
         padding: 1rem;
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
       }
 
       .noscript-modal {
-        background-color: #ffffff; /* Light mode background */
-        color: #1f2937; /* Light mode text */
+        background-color: #ffffff; /* Light mode default background */
+        color: #1f2937; /* Light mode default text */
         padding: 1.5rem 2rem; 
-        border-radius: 0.75rem; /* rounded-xl */
-        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); /* shadow-2xl */
-        max-width: 512px; /* Corresponds to sm:max-w-lg */
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        max-width: 512px;
         width: 100%;
         position: relative; 
         overflow: hidden; 
-        box-sizing: border-box; /* Ensure padding doesn't cause overflow with width:100% children */
+        box-sizing: border-box;
       }
 
       .noscript-modal-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem; /* Reduced spacing */
       }
 
       .noscript-modal-title-group {
@@ -58,22 +57,22 @@
         width: 2rem; 
         height: 2rem; 
         margin-right: 0.75rem; 
-        color: #D73434; /* Changed to specified red */
+        color: #D73434; /* Red color for error indication */
         flex-shrink: 0;
       }
       .noscript-modal .header-icon svg,
       .noscript-modal .external-link-button svg {
         width: 100%;
         height: 100%;
-        stroke-width: 2; /* Consistent stroke width for Lucide SVGs */
+        stroke-width: 2; 
       }
 
       .noscript-modal .title-text {
         font-size: 1.25rem; 
         font-weight: 600; 
-        color: #D73434; /* Changed to specified red */
+        color: #D73434; /* Red color for error indication */
       }
-      @media (min-width: 640px) { /* sm breakpoint */
+      @media (min-width: 640px) {
         .noscript-modal .title-text {
           font-size: 1.5rem; 
         }
@@ -94,7 +93,7 @@
          width: 1.25rem; 
          height: 1.25rem; 
       }
-       @media (min-width: 640px) { /* sm breakpoint */
+       @media (min-width: 640px) {
         .noscript-modal .external-link-button svg{
             width: 1.5rem; 
             height: 1.5rem; 
@@ -104,14 +103,14 @@
       .noscript-modal .message-text {
         display: flex;
         align-items: center;
-        margin-bottom: 1.25rem; 
+        margin-bottom: 0.75rem; /* Reduced spacing */
         color: #374151; 
       }
       .noscript-modal .message-text strong {
         font-size: 0.875rem; 
         font-weight: 600;
       }
-       @media (min-width: 640px) { /* sm breakpoint */
+       @media (min-width: 640px) {
         .noscript-modal .message-text strong {
             font-size: 1rem; 
         }
@@ -129,14 +128,14 @@
         color: #4b5563; 
         margin-bottom: 0.625rem; 
       }
-       @media (min-width: 640px) { /* sm breakpoint */
+       @media (min-width: 640px) {
         .noscript-modal .reason-list li {
             font-size: 1rem; 
         }
       }
       .noscript-modal .reason-list .reason-arrow {
         margin-right: 0.5rem; 
-        color: #F87171; /* Changed to specified red */
+        color: #D73434; /* Red color for error indication */
         flex-shrink: 0;
       }
       .noscript-modal .reason-list code {
@@ -146,7 +145,7 @@
         font-size: 0.85em;
       }
       
-      /* Dark mode styles for noscript */
+      /* Dark mode specific styles for noscript fallback */
       @media (prefers-color-scheme: dark) {
         .noscript-modal {
           background-color: #1f2937; 
@@ -155,20 +154,20 @@
         .noscript-modal .header-icon,
         .noscript-modal .reason-arrow,
         .noscript-modal .title-text {
-           color: #F87171; /* Lighter red for dark mode (like Tailwind red-400) */
+           color: #F87171; /* Lighter red for dark mode */
         }
-        .noscript-modal .reason-list li, /* Apply to list item text directly for dark mode */
-        .noscript-modal .message-text { /* Ensure message text also has good contrast */
-            color: #d1d5db; /* Adjusted for better visibility (like gray-300) */
+        .noscript-modal .reason-list li,
+        .noscript-modal .message-text {
+            color: #d1d5db; /* Adjusted for better visibility */
         }
         .noscript-modal .message-text strong {
-            color: #e5e7eb; /* Even lighter for strong text in dark mode */
+            color: #e5e7eb; 
         }
          .noscript-modal .external-link-button {
-            color: #6b7280; /* dark:text-gray-500 */
+            color: #6b7280; 
         }
         .noscript-modal .external-link-button:hover {
-            color: #9ca3af; /* dark:hover:text-gray-300 */
+            color: #9ca3af; 
         }
         .noscript-modal .reason-list code {
             background-color: #374151; 
@@ -179,7 +178,7 @@
       .noscript-modal .refresh-button {
         margin-top: 1.5rem; 
         width: 100%;
-        background-color: #1B9E7D; 
+        background-color: #1B9E7D; /* Green button */
         color: white;
         font-weight: 600; 
         padding: 0.625rem 1rem; 
@@ -192,22 +191,22 @@
         border: none;
         cursor: pointer;
         text-decoration: none; 
-        box-sizing: border-box; /* Added to fix potential overflow */
+        box-sizing: border-box; /* Fixes potential overflow with padding */
       }
-      @media (min-width: 640px) { /* sm breakpoint */
+      @media (min-width: 640px) {
         .noscript-modal .refresh-button {
             font-size: 1rem; 
         }
       }
       .noscript-modal .refresh-button:hover {
-        background-color: #168266; /* Darker green */
+        background-color: #168266; /* Darker green on hover */
       }
       .noscript-modal .refresh-button svg {
         width: 1rem; 
         height: 1rem; 
         margin-right: 0.5rem; 
       }
-      @media (min-width: 640px) { /* sm breakpoint */
+      @media (min-width: 640px) {
          .noscript-modal .refresh-button svg {
             width: 1.25rem; 
             height: 1.25rem; 
@@ -229,8 +228,7 @@
                   <path d="M8 18a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1 1 1 0 0 1-1-1v-1a1 1 0 0 0-1-1"/>
                 </svg>
               </div>
-              <h2 class="title-text">JavaScript Disabled</h2>
-            </div>
+              <h2 class="title-text">JavaScript Disabled</h2> </div>
             <a href="https://www.enable-javascript.com/" target="_blank" rel="noopener noreferrer" class="external-link-button" title="Why is JavaScript needed?">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -241,8 +239,7 @@
           </div>
 
           <div class="message-text">
-              <strong>Why is JavaScript needed?</strong>
-          </div>
+              <strong>Why is JavaScript needed?</strong> </div>
 
           <ul class="reason-list">
             <li><span class="reason-arrow">&rarr;</span>Interactive UI elements and smooth animations.</li>
@@ -261,7 +258,6 @@
         </div>
       </div>
     </noscript>
-    <div id="app"></div>
-    <script type="module" src="/webui/main.ts"></script>
+    <div id="app"></div> <script type="module" src="/webui/main.ts"></script>
   </body>
 </html>
