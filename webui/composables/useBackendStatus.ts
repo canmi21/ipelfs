@@ -1,4 +1,5 @@
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { useNotifications } from './useNotifications'
 
 function truncate(num: number, decimalPlaces: number): number {
   const factor = Math.pow(10, decimalPlaces)
@@ -6,33 +7,35 @@ function truncate(num: number, decimalPlaces: number): number {
 }
 
 export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipelfs/healthcheck') {
-  const isBackendConnected = ref(true) // Assume connected initially to avoid immediate overlay flash
+  const { addNotification } = useNotifications() // Get notification dispatch method
+
+  const isBackendConnected = ref(true) // Initial assumption: connected, to prevent initial modal flash
+  const hasBeenConnectedAtLeastOnce = ref(false) // Tracks if backend was successfully connected at least once
+
   const latencyMs = ref<number | null>(null)
   const healthCheckTimerId = ref<number | undefined>(undefined)
-  const currentHealthCheckIntervalMs = ref(1000) // Initial interval
+  const currentHealthCheckIntervalMs = ref(1000) // Initial interval for health checks
   const offlineStartTime = ref<number | null>(null)
 
-  // For manual retry button in modal
+  // For manual retry button in ConnectionLostModal
   const isRetryingManualCheck = ref(false)
   const manualRetryButtonTimeoutId = ref<number | undefined>(undefined)
-  const triggerShake = ref(false) // For retry button shake animation
-  const showRetryFailureIcon = ref(false) // To show X icon on retry button
+  const triggerShake = ref(false)
+  const showRetryFailureIcon = ref(false)
 
   const formattedLatency = computed(() => {
     const ms = latencyMs.value
-    if (ms === null || ms < 0) return null // null for not yet checked or error in calculation
-    if (ms === 0) return '0ms' // Unlikely but handle
+    if (ms === null || ms < 0) return null // Not checked yet or error in calculation
+    if (ms === 0) return '0ms' // Unlikely, but handle
 
     const ns = ms * 1_000_000
     if (ms > 0 && ms < 0.001) return `${Math.floor(ns)}ns` // Show nanoseconds for very low latencies
 
     if (ms < 1000) {
-      // Milliseconds
       if (ms < 10) return `${truncate(ms, 2).toFixed(2)}ms`
       if (ms < 100) return `${truncate(ms, 1).toFixed(1)}ms`
       return `${Math.floor(ms)}ms`
     } else {
-      // Seconds
       const s = ms / 1000
       if (s < 10) return `${truncate(s, 2).toFixed(2)}s`
       if (s < 100) return `${truncate(s, 1).toFixed(1)}s`
@@ -43,33 +46,28 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
   const checkBackendStatus = async () => {
     const requestSentTimestamp = Date.now()
     try {
-      const response = await fetch(healthCheckUrl) // Use passed URL
+      const response = await fetch(healthCheckUrl)
       if (response.ok) {
         const data = await response.json()
         if (data.success === true) {
           isBackendConnected.value = true
           try {
-            const backendTimestampStr = data.data as string // e.g., "2024-05-14T12:30:05.123456789Z" or "2024-05-14T12:30:05.123Z" or "2024-05-14T12:30:05Z"
-            // More robust parsing for various sub-second precision and timezone formats
+            const backendTimestampStr = data.data as string
             const datePart = backendTimestampStr.substring(0, 19) // YYYY-MM-DDTHH:mm:ss
-            const fractionalPartMatch = backendTimestampStr.substring(19).match(/\.(\d+)/) // Match fractional seconds
+            const fractionalPartMatch = backendTimestampStr.substring(19).match(/\.(\d+)/)
             let timezonePart = 'Z' // Assume Zulu if no explicit offset
-            const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/) // Match Z or +/-HH:mm or +/-HHmm or +/-HH
+            const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/)
             if (timezoneMatch) timezonePart = timezoneMatch[0]
 
-            let backendEpochNs: bigint
-            // Construct a date string that Date.parse can reliably handle for the base seconds
             const baseDateForParsing = datePart + timezonePart
             const baseMsBigInt = BigInt(new Date(baseDateForParsing).getTime())
-
+            let backendEpochNs: bigint
             if (fractionalPartMatch && fractionalPartMatch[1]) {
-              // Pad/truncate nanoseconds to ensure 9 digits
-              const nanoStr = fractionalPartMatch[1].padEnd(9, '0').substring(0, 9)
+              const nanoStr = fractionalPartMatch[1].padEnd(9, '0').substring(0, 9) // Ensure 9 digits for nanoseconds
               backendEpochNs = baseMsBigInt * 1_000_000n + BigInt(nanoStr)
             } else {
-              backendEpochNs = baseMsBigInt * 1_000_000n // No fractional seconds
+              backendEpochNs = baseMsBigInt * 1_000_000n
             }
-
             const requestSentEpochNs = BigInt(requestSentTimestamp) * 1_000_000n
             latencyMs.value = Number(backendEpochNs - requestSentEpochNs) / 1_000_000.0
           } catch (e) {
@@ -96,7 +94,9 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
     if (healthCheckTimerId.value !== undefined) {
       clearTimeout(healthCheckTimerId.value)
     }
-    await checkBackendStatus()
+    await checkBackendStatus() // isBackendConnected is updated here
+
+    // Notification logic is handled by the watch on isBackendConnected below
 
     if (isBackendConnected.value) {
       currentHealthCheckIntervalMs.value = 1000 // Reset to frequent polling when connected
@@ -119,7 +119,7 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
         0,
         Math.floor((Date.now() - (offlineStartTime.value || Date.now())) / (1000 * 60)),
       )
-      // Max interval: 5000 * 2^6 = 5000 * 64 = 320000ms (approx 5.3 minutes)
+      // Max interval: 5000 * 2^6 = 320,000ms (approx 5.3 minutes)
       currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, Math.min(minutesOffline, 6))
     }
 
@@ -129,50 +129,72 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
     )
   }
 
+  // Watch for connection status changes to trigger notifications
+  watch(isBackendConnected, (newValue, oldValue) => {
+    if (newValue === true) {
+      // Currently online
+      if (oldValue === false) {
+        // Transitioned from offline to online (reconnected)
+        addNotification({
+          message: 'Successfully reconnected to the backend!',
+          type: 'success',
+          duration: 2100,
+        })
+      }
+      hasBeenConnectedAtLeastOnce.value = true // Mark as connected at least once
+    } else {
+      // Currently offline (newValue === false)
+      if (oldValue === true && hasBeenConnectedAtLeastOnce.value) {
+        // Transitioned from online to offline, AND was previously online
+        addNotification({
+          message: 'Backend connection lost. Attempting to reconnect...',
+          type: 'error',
+          duration: 5000,
+        })
+      }
+    }
+  })
+
   const triggerManualHealthCheck = async () => {
     if (isRetryingManualCheck.value || showRetryFailureIcon.value) return // Prevent multiple rapid clicks
 
     isRetryingManualCheck.value = true
-    triggerShake.value = false // Reset shake
-    showRetryFailureIcon.value = false // Reset failure icon
+    triggerShake.value = false // Reset shake animation flag
+    showRetryFailureIcon.value = false // Reset failure icon flag
 
     // Clear existing timers to avoid interference
     if (healthCheckTimerId.value !== undefined) clearTimeout(healthCheckTimerId.value)
     if (manualRetryButtonTimeoutId.value !== undefined)
       clearTimeout(manualRetryButtonTimeoutId.value)
 
-    // Set a timeout for the retry button visual feedback (e.g., stop spinning, show failure)
+    // Set a timeout for the retry button visual feedback
     manualRetryButtonTimeoutId.value = window.setTimeout(() => {
       if (!isBackendConnected.value) {
         // If still not connected after timeout
         isRetryingManualCheck.value = false
         showRetryFailureIcon.value = true
-        triggerShake.value = true // Trigger shake animation
+        triggerShake.value = true
         setTimeout(() => {
-          // Hide shake animation
           triggerShake.value = false
           setTimeout(() => {
-            // Reset icon after a bit
             showRetryFailureIcon.value = false
-          }, 700) // Duration for icon to show before resetting (if still disconnected)
-        }, 300) // Duration of shake
+          }, 700)
+        }, 300)
       }
-      // If connected, performHealthCheckAndScheduleNext will reset these flags.
-    }, 3000) // Timeout for manual retry attempt visual feedback
-
+    }, 3000)
     await performHealthCheckAndScheduleNext() // This will run checkBackendStatus
   }
 
   onMounted(() => {
-    // Perform an initial check immediately, then schedule regular checks
+    // Perform initial health check
     checkBackendStatus().then(() => {
+      // Subsequent scheduling based on the first check's outcome
       if (isBackendConnected.value) {
         currentHealthCheckIntervalMs.value = 1000
         offlineStartTime.value = null
       } else {
         offlineStartTime.value = Date.now()
-        const minutesOffline = 0 // Start with 0 minutes offline for backoff calculation
-        currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, Math.min(minutesOffline, 6))
+        currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, 0) // Initial 5s backoff
       }
       healthCheckTimerId.value = window.setTimeout(
         performHealthCheckAndScheduleNext,
@@ -191,11 +213,12 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
     isBackendConnected,
     latencyMs,
     formattedLatency,
-    healthCheckTimerId, // expose for sidebar status display
+    healthCheckTimerId, // Exposed for potential display in UI (e.g., sidebar status)
     triggerManualHealthCheck,
-    // For modal button state
+    // States for modal button UI
     isRetryingManualCheck,
     triggerShake,
     showRetryFailureIcon,
+    // hasBeenConnectedAtLeastOnce, // Optionally expose this state if needed elsewhere
   }
 }
