@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 // Import your view components
-import HomeView from '../views/HomeView.vue' // Import HomeView
+import InsightsView from '../views/InsightsView.vue'
 import VolumesView from '../views/VolumesView.vue'
 import CollectionsView from '../views/CollectionsView.vue'
 import ActivityView from '../views/ActivityView.vue'
@@ -9,8 +9,8 @@ import ActivityView from '../views/ActivityView.vue'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/', // This is relative to the base '/ipelfs/'
-    name: 'Home', // Changed name
-    component: HomeView, // Component is now HomeView
+    name: 'Insights', // Changed name
+    component: InsightsView, // Component is now InsightsView
     // Redirect removed
   },
   {

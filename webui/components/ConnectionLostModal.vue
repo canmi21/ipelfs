@@ -50,25 +50,33 @@ const handleOpenIssues = () => {
             <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
           </div>
           <ul class="space-y-2.5 text-sm sm:text-base text-modal-text-secondary">
-            <li class="flex items-start">
-              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Ensure
-              the ipelfs service is running.
+            <li class="flex items-baseline">
+              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+              <span>Ensure the <strong>ipelfs service</strong> is <strong>running</strong>.</span>
             </li>
-            <li class="flex items-start">
-              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Verify
-              device and server are on the same network.
+            <li class="flex items-baseline">
+              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+              <span
+                >Verify <strong>device and server</strong> are on the
+                <strong>same network</strong>.</span
+              >
             </li>
-            <li class="flex items-start">
-              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Check
-              firewall settings for port 33330.
+            <li class="flex items-baseline">
+              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+              <span>Check <strong>firewall settings</strong> for <strong>port 33330</strong>.</span>
             </li>
-            <li class="flex items-start">
-              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Confirm
-              backend URL (e.g., http://localhost:33330).
+            <li class="flex items-baseline">
+              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+              <span
+                >Confirm <strong>backend URL</strong> (e.g.,
+                <strong>http://localhost:33330</strong>).</span
+              >
             </li>
-            <li class="flex items-start">
-              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Inspect
-              developer console and backend logs.
+            <li class="flex items-baseline">
+              <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
+              <span
+                >Inspect <strong>developer console</strong> and <strong>backend logs</strong>.</span
+              >
             </li>
           </ul>
           <button

@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import {
-  Server,
-  DatabaseZap,
-  FileClock,
-  LandPlot, // Import the new LandPlot icon
-} from 'lucide-vue-next'
+import { Server, DatabaseZap, FileClock, LandPlot } from 'lucide-vue-next'
 
 // Props received from the parent Sidebar component
 const props = defineProps<{
