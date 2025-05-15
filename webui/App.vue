@@ -7,8 +7,9 @@ import {
   Cuboid, SquareArrowOutUpRight,
   Server, ServerOff,
   RotateCcw,
-  TriangleAlert,
-  ExternalLink // Added for the GitHub issues link
+  // TriangleAlert, // Removed as per request
+  ExternalLink,
+  X as IconX // Lucide X icon for failure state
 } from 'lucide-vue-next'
 
 // --- Theme Initialization ---
@@ -119,7 +120,8 @@ const currentHealthCheckIntervalMs = ref(1000);
 const offlineStartTime = ref<number | null>(null);
 const isRetryingManualCheck = ref(false);
 const manualRetryButtonTimeoutId = ref<number | undefined>(undefined);
-const triggerShake = ref(false); // For button shake animation
+const triggerShake = ref(false);
+const showRetryFailureIcon = ref(false); // To show X icon on retry failure
 
 function truncate(num: number, decimalPlaces: number): number {
   const factor = Math.pow(10, decimalPlaces);
@@ -193,63 +195,63 @@ const performHealthCheckAndScheduleNext = async () => {
   if (healthCheckTimerId.value !== undefined) {
     clearTimeout(healthCheckTimerId.value);
   }
-  await checkBackendStatus(); // Perform the actual check
+  await checkBackendStatus();
 
   if (isBackendConnected.value) {
-    currentHealthCheckIntervalMs.value = 1000; // 1 second if online
-    offlineStartTime.value = null; // Reset offline start time
-    if (isRetryingManualCheck.value) { // If manual retry led to success
-        isRetryingManualCheck.value = false; // Reset button state
+    currentHealthCheckIntervalMs.value = 1000;
+    offlineStartTime.value = null;
+    if (isRetryingManualCheck.value) {
+        isRetryingManualCheck.value = false;
+        showRetryFailureIcon.value = false; // Ensure failure icon is off on success
         if(manualRetryButtonTimeoutId.value !== undefined) {
-            clearTimeout(manualRetryButtonTimeoutId.value); // Clear the 3s visual timeout
+            clearTimeout(manualRetryButtonTimeoutId.value);
             manualRetryButtonTimeoutId.value = undefined;
         }
     }
-  } else { // If still disconnected
+  } else {
     if (offlineStartTime.value === null) {
-      offlineStartTime.value = Date.now(); // Mark when it first went offline
+      offlineStartTime.value = Date.now();
     }
     const minutesOffline = Math.max(0, Math.floor((Date.now() - (offlineStartTime.value || Date.now())) / (1000 * 60)));
     currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, minutesOffline);
   }
-  // Schedule the next regular check
   healthCheckTimerId.value = window.setTimeout(performHealthCheckAndScheduleNext, currentHealthCheckIntervalMs.value);
 };
 
 const triggerManualHealthCheck = async () => {
-  if (isRetryingManualCheck.value) return; // Prevent multiple clicks
+  if (isRetryingManualCheck.value || showRetryFailureIcon.value) return; // Prevent click during retry or failure display
 
   isRetryingManualCheck.value = true;
-  triggerShake.value = false; // Reset shake state before new attempt
+  triggerShake.value = false;
+  showRetryFailureIcon.value = false;
 
-  if (healthCheckTimerId.value !== undefined) { // Clear general ongoing health check timer
+  if (healthCheckTimerId.value !== undefined) {
     clearTimeout(healthCheckTimerId.value);
   }
-  if (manualRetryButtonTimeoutId.value !== undefined) { // Clear previous button visual timer
+  if (manualRetryButtonTimeoutId.value !== undefined) {
     clearTimeout(manualRetryButtonTimeoutId.value);
   }
 
-  // Timer to reset button visual state (stop spinner, enable button)
-  // and trigger shake if still disconnected after 3s.
   manualRetryButtonTimeoutId.value = window.setTimeout(() => {
-    if (!isBackendConnected.value) { // Still disconnected after 3s of retrying
-        isRetryingManualCheck.value = false;
-        triggerShake.value = true; // Trigger shake animation
-        // Reset shake class after animation duration (e.g., 400ms)
-        setTimeout(() => { triggerShake.value = false; }, 400);
+    if (!isBackendConnected.value) { // Still disconnected after 3s
+        isRetryingManualCheck.value = false; // Stop "Retrying..." state
+        showRetryFailureIcon.value = true;   // Show X icon and "Failed" text
+        triggerShake.value = true;           // Start shake
+        setTimeout(() => {
+            triggerShake.value = false;      // Stop shake class after animation
+            // After shake, keep X for a moment, then revert to normal "Retry Connection"
+            setTimeout(() => {
+                showRetryFailureIcon.value = false;
+            }, 700); // Show X/Failed for 0.7s after shake (total ~1s for failure indication)
+        }, 300); // Shake animation duration (should match CSS: 0.3s)
     }
-    // If it connected, isRetryingManualCheck would have been set to false already
-    // by performHealthCheckAndScheduleNext, and this timeout's callback might not even change it,
-    // or the component might be hidden.
+    // If connected, isRetryingManualCheck is already false (set in performHealthCheckAndScheduleNext)
+    // and the overlay is gone.
   }, 3000);
 
-  await performHealthCheckAndScheduleNext(); // Perform check and schedule next regular one
-  // If connection succeeded, performHealthCheckAndScheduleNext sets isRetryingManualCheck to false
-  // and clears manualRetryButtonTimeoutId.
-  // If connection failed, the timeout above will handle resetting button and shake.
+  await performHealthCheckAndScheduleNext();
 };
 
-// Method to open GitHub issues page
 const openIssuesPage = () => {
   window.open('https://github.com/canmi21/ipelfs/issues', '_blank', 'noopener noreferrer');
 };
@@ -434,28 +436,28 @@ const openGitHubLink = () => {
       role="dialog"
     >
       <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg transform transition-all duration-300 ease-out opacity-100 relative">
-        <button
-          @click="openIssuesPage"
-          class="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-all duration-150 ease-in-out hover:scale-110 active:scale-100"
-          title="Open GitHub Issues"
-          aria-label="Open GitHub Issues for help"
-        >
-          <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
-        <div class="flex items-center mb-4">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center">
             <ServerOff class="w-8 h-8 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
             <h2 class="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400">
                 Connection Lost
             </h2>
+          </div>
+          <button
+            @click="openIssuesPage"
+            class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full transition-all duration-200 ease-out hover:scale-110"
+            title="Open GitHub Issues"
+            aria-label="Open GitHub Issues for help"
+          >
+            <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
         </div>
 
         <div class="flex items-center mb-5 text-gray-700 dark:text-gray-300">
-            <TriangleAlert class="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0" />
             <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
         </div>
 
-        <ul class="space-y-2.5 text-sm sm:text-base text-gray-600 dark:text-gray-350">
+        <ul class="space-y-2.5 text-sm sm:text-base text-gray-600 dark:text-gray-300">
           <li class="flex items-start">
             <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
             <span>Ensure the <strong>ipelfs service</strong> is running on your backend server.</span>
@@ -477,21 +479,28 @@ const openGitHubLink = () => {
             <span>Inspect the browser's <strong>developer console</strong> (Ctrl+Shift+J or Cmd+Option+J) and the backend service logs for any specific error messages.</span>
           </li>
         </ul>
+
          <button
             @click="triggerManualHealthCheck"
-            :disabled="isRetryingManualCheck"
-            class="mt-6 w-full font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
-            :class="{
-              'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white active:bg-blue-800 dark:active:bg-blue-700': !isRetryingManualCheck, // No scale, just color change
-              'bg-blue-700 dark:bg-blue-600 text-blue-100 cursor-not-allowed': isRetryingManualCheck,
-              'animate-shake': triggerShake // Apply shake animation
-            }"
+            :disabled="isRetryingManualCheck || showRetryFailureIcon"
+            class="mt-6 w-full font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            :class="[
+              isRetryingManualCheck ? 'bg-[#116650] dark:bg-[#116650] text-gray-100 cursor-not-allowed' :
+              showRetryFailureIcon ? 'bg-red-600 dark:bg-red-700 text-white cursor-not-allowed' :
+              'bg-[#1B9E7D] hover:bg-[#168266] dark:hover:bg-[#168266] text-white active:bg-[#116650] dark:active:bg-[#116650] focus:ring-[#1B9E7D]',
+              { 'animate-shake': triggerShake }
+            ]"
           >
-            <RotateCcw
-              class="w-4 h-4 sm:w-5 sm:h-5 mr-2"
-              :class="{ 'animate-spin': isRetryingManualCheck }"
-            />
-            {{ isRetryingManualCheck ? 'Retrying...' : 'Retry Connection' }}
+            <template v-if="showRetryFailureIcon">
+              <IconX class="w-5 h-5 mr-0 sm:mr-2" /> <span class="hidden sm:inline">Failed</span>
+            </template>
+            <template v-else>
+              <RotateCcw
+                class="w-4 h-4 sm:w-5 sm:h-5 mr-2"
+                :class="{ 'animate-spin': isRetryingManualCheck }"
+              />
+              <span>{{ isRetryingManualCheck ? 'Retrying...' : 'Retry Connection' }}</span>
+            </template>
           </button>
       </div>
     </div>
@@ -530,12 +539,13 @@ body { margin: 0; }
 .animate-spin { animation: spin 1s linear infinite; }
 
 /* Animation for button shake on retry failure */
-@keyframes shake {
+@keyframes shake-effect { /* Renamed to avoid conflict if 'shake' is a common utility */
   0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); } /* Adjusted for a bit more noticeable shake */
-  20%, 40%, 60%, 80% { transform: translateX(4px); }
+  25% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+  75% { transform: translateX(-3px); }
 }
 .animate-shake {
-  animation: shake 0.4s ease-in-out;
+  animation: shake-effect 0.3s linear; /* Using a more direct shake */
 }
 </style>
