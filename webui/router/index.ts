@@ -1,16 +1,17 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 // Import your view components
+import HomeView from '../views/HomeView.vue' // Import HomeView
 import VolumesView from '../views/VolumesView.vue'
 import CollectionsView from '../views/CollectionsView.vue'
 import ActivityView from '../views/ActivityView.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
-    // Default path under /ipelfs/ will redirect to /ipelfs/volumes
-    path: '/',
-    name: 'HomeBaseRedirect', // Or a more descriptive name like 'IpelfsRoot'
-    redirect: '/volumes',
+    path: '/', // This is relative to the base '/ipelfs/'
+    name: 'Home', // Changed name
+    component: HomeView, // Component is now HomeView
+    // Redirect removed
   },
   {
     path: '/volumes', // Accessible at /ipelfs/volumes

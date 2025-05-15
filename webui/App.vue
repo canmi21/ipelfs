@@ -6,7 +6,7 @@ import { useBackendStatus } from './composables/useBackendStatus'
 import { useJavascriptErrorHandler } from './composables/useJavascriptErrorHandler'
 
 import ThemeToggle from './components/ThemeToggle.vue'
-import SidebarComponent from './components/LeftSidebar.vue' // Renamed to avoid conflict with composable
+import SidebarComponent from './components/LeftSidebar.vue'
 import ConnectionLostModal from './components/ConnectionLostModal.vue'
 import JavascriptErrorModal from './components/JavascriptErrorModal.vue'
 
@@ -123,10 +123,5 @@ const handleOpenExternalLink = (url: string) => {
 
   This App.vue should ideally have NO <style> block or only very specific,
   non-global styles if absolutely necessary. Keeping it clean.
-*/
-/*
-  If you have styles that are truly specific only to the App.vue layout shell itself,
-  and not to any component or globally, they could go here with <style scoped>.
-  However, based on your original file, most of it was global.
 */
 </style>
