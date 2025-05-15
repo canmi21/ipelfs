@@ -12,17 +12,17 @@ import {
 const storedTheme = localStorage.getItem('theme')
 const isDark = useDark({
   valueDark: 'dark',
-  valueLight: '',
-  storageKey: null,
+  valueLight: '', // Value for light mode (class removed by .toggle('dark', false))
+  storageKey: null, // Manual localStorage handling for theme
   initialValue: (() => {
     if (storedTheme === 'dark') return 'dark'
-    if (storedTheme === 'light') return 'light'
+    if (storedTheme === 'light') return 'light' // Ensure 'light' is returned for BasicColorSchema
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      return systemIsDark ? 'dark' : 'light'
+      return systemIsDark ? 'dark' : 'light' // Ensure 'light' for BasicColorSchema
     } catch (e) {
       console.error("Failed to detect system color scheme:", e);
-      localStorage.setItem('theme', 'dark') 
+      localStorage.setItem('theme', 'dark')
       return 'dark'
     }
   })()
@@ -51,22 +51,22 @@ const handleToggle = () => {
       } else {
         currentIcon.value = 'sun-moon'
         currentTheme.value = 'system'
-        isDark.value = systemIsDark
-        localStorage.removeItem('theme')
+        isDark.value = systemIsDark // Sync with system
+        localStorage.removeItem('theme') // Remove to follow system
       }
     } catch (e) {
       console.error("Failed to switch theme based on system preference:", e);
-      currentIcon.value = 'moon' 
+      currentIcon.value = 'moon'
       currentTheme.value = 'dark'
       isDark.value = true
-      localStorage.setItem('theme', 'dark')
+      localStorage.setItem('theme', 'dark') // Fallback to dark on error
     }
   } else if (currentTheme.value === 'system') {
      currentIcon.value = 'moon'
      currentTheme.value = 'dark'
      isDark.value = true
      localStorage.setItem('theme', 'dark')
-  } else { 
+  } else { // currentTheme is 'dark'
     currentIcon.value = 'sun'
     currentTheme.value = 'light'
     isDark.value = false
@@ -79,19 +79,42 @@ watchEffect(() => {
 })
 
 // --- Sidebar Animation State & Logic ---
-const isSidebarCollapsed = ref(false)
-const showSidebarText = ref(true) // For general sidebar text like Tab 1, Tab 2
-const sidebarWidthClass = ref('w-56')
-const contentMarginClass = ref('ml-64')
-const isAnimating = ref(false)
-const showGithubIcon = ref(true);
+
+// Function to get the initial sidebar state from localStorage
+const getInitialSidebarState = (): boolean => {
+  const storedState = localStorage.getItem('sidebarCollapsed');
+  if (storedState !== null) {
+    try {
+      return JSON.parse(storedState); // Parse stored boolean value
+    } catch (e) {
+      console.error("Failed to parse sidebarCollapsed from localStorage. Defaulting to expanded.", e);
+      return false; // Default to expanded (false) on parse error
+    }
+  }
+  return false; // Default to expanded (false) if no value in localStorage (first visit)
+};
+
+const isSidebarCollapsed = ref(getInitialSidebarState()); // Initialize sidebar state from localStorage or default
+
+// Initialize sidebar UI-dependent refs based on the initial 'isSidebarCollapsed' state.
+// This prevents the flash of expanded state if it should be collapsed initially.
+const showSidebarText = ref(!isSidebarCollapsed.value);
+const showGithubIcon = ref(!isSidebarCollapsed.value);
+const showInlineStatusText = ref(!isSidebarCollapsed.value);
+const sidebarWidthClass = ref(isSidebarCollapsed.value ? 'w-14' : 'w-56');
+const contentMarginClass = ref(isSidebarCollapsed.value ? 'ml-14' : 'ml-64');
+
+// Other refs for animation and timers
+const isAnimating = ref(false);
 const githubIconCollapseTimer = ref<number | undefined>(undefined);
 const githubIconExpandTimer = ref<number | undefined>(undefined);
-const showInlineStatusText = ref(true); // Dedicated ref for bottom status text
 const statusTextExpandTimer = ref<number | undefined>(undefined);
+const mainContentEl = ref<HTMLElement | null>(null);
 
-
-const mainContentEl = ref<HTMLElement | null>(null)
+// Watch for changes in sidebar collapsed state and save to localStorage
+watchEffect(() => {
+  localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed.value));
+});
 
 // --- Backend Connection State ---
 const isBackendConnected = ref(false);
@@ -109,29 +132,29 @@ const formattedLatency = computed(() => {
   if (ms === 0) return "0ms";
 
   const ns = ms * 1_000_000;
-  if (ms > 0 && ms < 0.001) { 
+  if (ms > 0 && ms < 0.001) {
       return `${Math.floor(ns)}ns`;
   }
 
-  if (ms < 1000) { 
-    if (ms < 10) { 
+  if (ms < 1000) {
+    if (ms < 10) {
       const val = truncate(ms, 2);
       return `${val.toFixed(2)}ms`;
-    } else if (ms < 100) { 
+    } else if (ms < 100) {
       const val = truncate(ms, 1);
       return `${val.toFixed(1)}ms`;
-    } else { 
+    } else {
       return `${Math.floor(ms)}ms`;
     }
-  } else { 
+  } else {
     const s = ms / 1000;
-    if (s < 10) { 
+    if (s < 10) {
       const val = truncate(s, 2);
       return `${val.toFixed(2)}s`;
-    } else if (s < 100) { 
+    } else if (s < 100) {
       const val = truncate(s, 1);
       return `${val.toFixed(1)}s`;
-    } else { 
+    } else {
       return `${Math.floor(s)}s`;
     }
   }
@@ -147,30 +170,29 @@ const checkBackendStatus = async () => {
 
       if (newConnectionState) {
         try {
-          const backendTimestampStr = data.data as string; // e.g., "2025-05-15T01:26:27.828466497+08:00"
-          
-          const datePart = backendTimestampStr.substring(0, 19); // "2025-05-15T01:26:27"
+          const backendTimestampStr = data.data as string;
+
+          const datePart = backendTimestampStr.substring(0, 19);
           const fractionalPartMatch = backendTimestampStr.match(/\.(\d+)/);
-          // Gracefully find timezone part, handling 'Z' or +/-HH:mm
-          let timezonePart = "Z"; // Default to UTC if no explicit offset found after fractional seconds
+          let timezonePart = "Z";
           const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/);
           if (timezoneMatch) {
             timezonePart = timezoneMatch[0];
           }
-          
+
           let backendEpochNs: bigint;
           const baseMsBigInt = BigInt(new Date(datePart + timezonePart).getTime());
 
           if (fractionalPartMatch && fractionalPartMatch[1]) {
-              let nanoStr = fractionalPartMatch[1]; 
+              let nanoStr = fractionalPartMatch[1];
               if (nanoStr.length > 9) nanoStr = nanoStr.substring(0, 9);
               else if (nanoStr.length < 9) nanoStr = nanoStr.padEnd(9, '0');
               const nanoseconds = BigInt(nanoStr);
               backendEpochNs = baseMsBigInt * 1_000_000n + nanoseconds;
           } else {
-              backendEpochNs = baseMsBigInt * 1_000_000n; 
+              backendEpochNs = baseMsBigInt * 1_000_000n;
           }
-          
+
           const requestSentEpochNs = BigInt(requestSentTimestamp) * 1_000_000n;
           const latencyNanos = backendEpochNs - requestSentEpochNs;
           latencyMs.value = Number(latencyNanos) / 1_000_000.0;
@@ -180,16 +202,16 @@ const checkBackendStatus = async () => {
           latencyMs.value = null;
         }
         isBackendConnected.value = true;
-      } else { 
+      } else {
         isBackendConnected.value = false;
         latencyMs.value = null;
       }
-    } else { 
+    } else {
       console.warn(`Health check received non-ok status: ${response.status}`);
       isBackendConnected.value = false;
       latencyMs.value = null;
     }
-  } catch (error) { 
+  } catch (error) {
     console.error("Health check request failed:", error);
     isBackendConnected.value = false;
     latencyMs.value = null;
@@ -197,12 +219,10 @@ const checkBackendStatus = async () => {
 };
 
 onMounted(() => {
-  const initialSidebarState = isSidebarCollapsed.value;
-  showSidebarText.value = !initialSidebarState;
-  showGithubIcon.value = !initialSidebarState;
-  showInlineStatusText.value = !initialSidebarState; // Initialize based on sidebar state
-  sidebarWidthClass.value = initialSidebarState ? 'w-14' : 'w-56';
-  contentMarginClass.value = initialSidebarState ? 'ml-14' : 'ml-64';
+  // Sidebar UI elements (showSidebarText, sidebarWidthClass, etc.)
+  // are now initialized directly when their refs are created,
+  // using the correct initial 'isSidebarCollapsed' state from localStorage.
+  // This prevents any flash of incorrect state.
 
   checkBackendStatus();
   healthCheckInterval.value = window.setInterval(checkBackendStatus, 1000);
@@ -229,57 +249,61 @@ const handleSidebarToggle = () => {
   githubIconExpandTimer.value = undefined;
   statusTextExpandTimer.value = undefined;
 
-
-  const currentlyCollapsed = isSidebarCollapsed.value;
+  const currentlyCollapsed = isSidebarCollapsed.value; // Current state before toggle
   const animationDuration = 300;
-  const expandShowEarlyMs = 50; // How early to show elements during expansion
+  const expandShowEarlyMs = 50;
+
+  // isSidebarCollapsed.value will be toggled below.
+  // The watchEffect for 'isSidebarCollapsed' will automatically save the new state to localStorage.
 
   if (!currentlyCollapsed) { // Intent: COLLAPSE
-    isSidebarCollapsed.value = true;
-    showGithubIcon.value = false; // Hide GitHub icon immediately
-    showInlineStatusText.value = false; // Hide inline status text immediately
+    isSidebarCollapsed.value = true; // Update state
+    showGithubIcon.value = false;
+    showInlineStatusText.value = false;
 
     nextTick(() => {
       contentMarginClass.value = 'ml-14';
     });
 
-    // General sidebar text (Tabs) hides later in the animation
     const generalTextHideDelay = animationDuration - 150 > 0 ? animationDuration - 150 : 50;
     setTimeout(() => {
+         // Check current state in case of rapid toggles or component unmount
          if (isSidebarCollapsed.value) showSidebarText.value = false;
     }, generalTextHideDelay);
 
     const onCollapseAnimationEnd = () => {
-      if (isSidebarCollapsed.value) {
-        // showSidebarText.value = false; // Already handled by timeout
+      if (isSidebarCollapsed.value) { // Ensure state is still collapsed
         sidebarWidthClass.value = 'w-14';
       }
       isAnimating.value = false;
     };
-    
+
     if (mainContentEl.value) {
         mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true });
     } else {
+        // Fallback if mainContentEl is not available for transition listening
         setTimeout(onCollapseAnimationEnd, animationDuration + 50);
     }
-    sidebarWidthClass.value = 'w-14 anitrunk-width';
+    sidebarWidthClass.value = 'w-14 anitrunk-width'; // Start width transition
 
   } else { // Intent: EXPAND
-    isSidebarCollapsed.value = false;
-    sidebarWidthClass.value = 'w-56'; // Start expanding width
+    isSidebarCollapsed.value = false; // Update state
+    sidebarWidthClass.value = 'w-56'; // Start width transition
 
     nextTick(() => {
       contentMarginClass.value = 'ml-64';
-      
+
       // General sidebar text (Tabs) shows early
       setTimeout(() => {
-        if(!isSidebarCollapsed.value) showSidebarText.value = true; 
+        // Check current state
+        if(!isSidebarCollapsed.value) showSidebarText.value = true;
       }, 50);
 
       // GitHub icon shows with its specific timing
       const showIconTime = animationDuration - expandShowEarlyMs;
       if (showIconTime > 0) {
         githubIconExpandTimer.value = window.setTimeout(() => {
+          // Check current state
           if (!isSidebarCollapsed.value) showGithubIcon.value = true;
         }, showIconTime);
       } else {
@@ -287,10 +311,10 @@ const handleSidebarToggle = () => {
       }
 
       // Inline status text also shows with similar timing logic
-      // (can use same delay as icon or adjust if needed)
-      const showStatusTextTime = animationDuration - expandShowEarlyMs + 20; // e.g. slightly after icon
+      const showStatusTextTime = animationDuration - expandShowEarlyMs + 20;
        if (showStatusTextTime > 0) {
         statusTextExpandTimer.value = window.setTimeout(() => {
+          // Check current state
           if (!isSidebarCollapsed.value) showInlineStatusText.value = true;
         }, showStatusTextTime);
       } else {
@@ -299,19 +323,20 @@ const handleSidebarToggle = () => {
     });
 
     const onExpandAnimationEnd = () => {
-      // Fallback to ensure elements are visible if timers somehow failed or animation ended prematurely
-      if (!isSidebarCollapsed.value) {
+      // Fallback to ensure elements are visible if timers/animation had issues
+      if (!isSidebarCollapsed.value) { // Ensure state is still expanded
         if (!showGithubIcon.value) showGithubIcon.value = true;
         if (!showInlineStatusText.value) showInlineStatusText.value = true;
         if (!showSidebarText.value) showSidebarText.value = true;
       }
       isAnimating.value = false;
     };
-    
+
     if (mainContentEl.value) {
         mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true });
     } else {
-        setTimeout(onExpandAnimationEnd, animationDuration + 50); 
+        // Fallback if mainContentEl is not available for transition listening
+        setTimeout(onExpandAnimationEnd, animationDuration + 50);
     }
   }
 };
@@ -320,14 +345,13 @@ const openGitHubLink = () => {
   window.open('https://github.com/canmi21/ipelfs', '_blank', 'noopener noreferrer');
 };
 </script>
-
 <template>
   <div class="relative min-h-screen" style="background-color: var(--bg); color: var(--text);">
     <div
       :class="sidebarWidthClass"
       class="absolute top-0 left-0 h-full bg-gray-200 dark:bg-gray-800 z-10 transition-all ease-in-out duration-300 overflow-hidden"
     >
-      <div class="flex flex-col p-2 h-full"> 
+      <div class="flex flex-col p-2 h-full">
         <div class="flex-grow w-full">
             <div @click="handleSidebarToggle" class="cursor-pointer mb-4 w-full rounded-md">
               <div class="flex items-center h-12 px-2">
@@ -369,10 +393,10 @@ const openGitHubLink = () => {
             </ul>
         </div>
       </div>
-      
+
       <div
         v-show="showGithubIcon"
-        class="absolute top-4 right-4 cursor-pointer" 
+        class="absolute top-4 right-4 cursor-pointer"
         title="Open GitHub Repository"
         @click="openGitHubLink"
       >
@@ -380,7 +404,7 @@ const openGitHubLink = () => {
       </div>
 
       <div class="fixed-status-item-container absolute bottom-4 left-2 right-2">
-        <div class="flex items-center h-10 px-2 rounded-md"> 
+        <div class="flex items-center h-10 px-2 rounded-md">
           <component
             :is="isBackendConnected ? Server : ServerOff"
             class="w-6 h-6 flex-shrink-0"
@@ -389,8 +413,8 @@ const openGitHubLink = () => {
               'text-red-600 dark:text-red-500': !isBackendConnected
             }"
           />
-          <div 
-            v-if="showInlineStatusText" 
+          <div
+            v-if="showInlineStatusText"
             class="status-text-wrapper ml-3 flex-grow min-w-0 flex justify-center items-center"
           >
             <div v-if="!isBackendConnected" class="flex items-center">
@@ -432,17 +456,18 @@ const openGitHubLink = () => {
 </template>
 
 <style>
+/* ... your existing style code ... */
 :root {
   --bg: #ffffff;
   --text: #000000;
-  --sidebar-text-main: #1f2937; 
-  --sidebar-text-muted: #6b7280; 
+  --sidebar-text-main: #1f2937;
+  --sidebar-text-muted: #6b7280;
 }
 .dark {
   --bg: #111827;
   --text: #ffffff;
-  --sidebar-text-main: #d1d5db; 
-  --sidebar-text-muted: #9ca3af; 
+  --sidebar-text-main: #d1d5db;
+  --sidebar-text-muted: #9ca3af;
 }
 body {
   margin: 0;
@@ -455,7 +480,7 @@ body {
   transform: scale(1.1);
 }
 
-.anitrunk-width { 
+.anitrunk-width {
   transition-property: width;
 }
 
@@ -466,25 +491,25 @@ body {
   display: inline-block;
 }
 .orb-connected {
-  background-color: #34d399; 
+  background-color: #34d399;
   box-shadow: 0 0 7px 2px #34d399a0;
 }
 .orb-disconnected {
-  background-color: #f87171; 
+  background-color: #f87171;
   box-shadow: 0 0 7px 2px #f87171a0;
 }
 
 .status-connected-text {
-  font-size: 0.875rem; 
-  line-height: 1.25rem; 
-  font-weight: 600; 
-  color: var(--sidebar-text-main); 
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: var(--sidebar-text-main);
 }
 
 .status-latency-display-text {
-  font-size: 0.75rem; 
+  font-size: 0.75rem;
   line-height: 1rem;  /* Default line height for xs font */
-  color: var(--sidebar-text-muted); 
+  color: var(--sidebar-text-muted);
 }
 
 /* For "Disconnected" text and general text sizing in status item if not directly using Tailwind */
@@ -492,7 +517,7 @@ body {
     font-weight: 500;
     font-size: 1rem;
     line-height: 1rem;
-    color: var(--sidebar-text-main); 
+    color: var(--sidebar-text-main);
 }
 
 .min-w-0 {
