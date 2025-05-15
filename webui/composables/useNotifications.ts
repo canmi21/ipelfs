@@ -1,47 +1,94 @@
+// webui/composables/useNotifications.ts
 import { ref, readonly } from 'vue'
 
 export interface Notification {
   id: string
   message: string
   type?: 'info' | 'success' | 'warning' | 'error'
-  duration?: number // in milliseconds
+  duration: number // Original total duration in milliseconds
+  remainingDuration: number // Time left in milliseconds
+  startTime?: number // Timestamp when the current countdown started/resumed
+  isPaused: boolean
+  timerId?: number
 }
 
 const notifications = ref<Notification[]>([])
-const notificationTimeouts = new Map<string, number>()
-
 let nextId = 0
 
 export function useNotifications() {
-  const addNotification = (notificationDetails: Omit<Notification, 'id'>) => {
+  const addNotification = (
+    notificationDetails: Omit<
+      Notification,
+      'id' | 'remainingDuration' | 'isPaused' | 'duration'
+    > & { duration?: number },
+  ) => {
     const id = `notification-${nextId++}`
     const duration = notificationDetails.duration ?? 5000 // Default duration 5 seconds
 
-    notifications.value.push({
+    const newNotification: Notification = {
       ...notificationDetails,
       id,
-      duration, // Store actual duration used
-    })
+      duration,
+      remainingDuration: duration,
+      isPaused: false,
+      startTime: Date.now(),
+    }
 
-    const timeoutId = window.setTimeout(() => {
+    newNotification.timerId = window.setTimeout(() => {
       dismissNotification(id)
     }, duration)
-    notificationTimeouts.set(id, timeoutId)
 
+    notifications.value.push(newNotification)
     return id
   }
 
   const dismissNotification = (id: string) => {
-    notifications.value = notifications.value.filter((n) => n.id !== id)
-    if (notificationTimeouts.has(id)) {
-      clearTimeout(notificationTimeouts.get(id))
-      notificationTimeouts.delete(id)
+    const notificationIndex = notifications.value.findIndex((n) => n.id === id)
+    if (notificationIndex > -1) {
+      const notification = notifications.value[notificationIndex]
+      if (notification.timerId) {
+        clearTimeout(notification.timerId)
+      }
+      notifications.value.splice(notificationIndex, 1)
+    }
+  }
+
+  const pauseNotification = (id: string) => {
+    const notification = notifications.value.find((n) => n.id === id)
+    if (notification && !notification.isPaused) {
+      clearTimeout(notification.timerId)
+      const elapsed = Date.now() - (notification.startTime || Date.now())
+      notification.remainingDuration = Math.max(0, notification.remainingDuration - elapsed)
+      notification.isPaused = true
+      // Force reactivity for computed properties in NotificationItem if needed
+      const index = notifications.value.findIndex((n) => n.id === id)
+      if (index !== -1) {
+        notifications.value.splice(index, 1, { ...notification })
+      }
+    }
+  }
+
+  const resumeNotification = (id: string) => {
+    const notification = notifications.value.find((n) => n.id === id)
+    if (notification && notification.isPaused) {
+      notification.startTime = Date.now()
+      notification.isPaused = false
+      notification.timerId = window.setTimeout(() => {
+        dismissNotification(id)
+      }, notification.remainingDuration)
+      // Force reactivity
+      const index = notifications.value.findIndex((n) => n.id === id)
+      if (index !== -1) {
+        notifications.value.splice(index, 1, { ...notification })
+      }
     }
   }
 
   return {
-    notifications: readonly(notifications), // Expose as readonly to prevent external modification
+    notifications: readonly(notifications),
     addNotification,
     dismissNotification,
+    pauseNotification,
+    resumeNotification,
   }
 }
