@@ -1,13 +1,12 @@
-// webui/composables/useNotifications.ts
 import { ref, readonly } from 'vue'
 
 export interface Notification {
   id: string
   message: string
   type?: 'info' | 'success' | 'warning' | 'error'
-  duration: number // Original total duration in milliseconds
-  remainingDuration: number // Time left in milliseconds
-  startTime?: number // Timestamp when the current countdown started/resumed
+  duration: number // Original total duration in milliseconds. 0 means permanent.
+  remainingDuration: number // Time left. For permanent, this could be Infinity or not used for timers.
+  startTime?: number
   isPaused: boolean
   timerId?: number
 }
@@ -23,20 +22,24 @@ export function useNotifications() {
     > & { duration?: number },
   ) => {
     const id = `notification-${nextId++}`
-    const duration = notificationDetails.duration ?? 5000 // Default duration 5 seconds
+    // If duration is explicitly 0, it's permanent. Otherwise, default to 5000ms if undefined.
+    const duration = notificationDetails.duration === 0 ? 0 : (notificationDetails.duration ?? 5000)
+    const isPermanent = duration === 0
 
     const newNotification: Notification = {
       ...notificationDetails,
       id,
       duration,
-      remainingDuration: duration,
+      remainingDuration: isPermanent ? Infinity : duration, // Use Infinity for permanent, or actual duration
       isPaused: false,
-      startTime: Date.now(),
+      startTime: Date.now(), // Set start time for all notifications
     }
 
-    newNotification.timerId = window.setTimeout(() => {
-      dismissNotification(id)
-    }, duration)
+    if (!isPermanent) {
+      newNotification.timerId = window.setTimeout(() => {
+        dismissNotification(id)
+      }, duration)
+    }
 
     notifications.value.push(newNotification)
     return id
@@ -55,12 +58,13 @@ export function useNotifications() {
 
   const pauseNotification = (id: string) => {
     const notification = notifications.value.find((n) => n.id === id)
-    if (notification && !notification.isPaused) {
+    // Only pause if not permanent and not already paused
+    if (notification && notification.duration !== 0 && !notification.isPaused) {
       clearTimeout(notification.timerId)
       const elapsed = Date.now() - (notification.startTime || Date.now())
       notification.remainingDuration = Math.max(0, notification.remainingDuration - elapsed)
       notification.isPaused = true
-      // Force reactivity for computed properties in NotificationItem if needed
+      // Force reactivity for computed properties in NotificationItem
       const index = notifications.value.findIndex((n) => n.id === id)
       if (index !== -1) {
         notifications.value.splice(index, 1, { ...notification })
@@ -70,12 +74,20 @@ export function useNotifications() {
 
   const resumeNotification = (id: string) => {
     const notification = notifications.value.find((n) => n.id === id)
-    if (notification && notification.isPaused) {
+    // Only resume if not permanent and is paused
+    if (notification && notification.duration !== 0 && notification.isPaused) {
       notification.startTime = Date.now()
       notification.isPaused = false
-      notification.timerId = window.setTimeout(() => {
+      // Only set timeout if remainingDuration is finite and positive
+      if (isFinite(notification.remainingDuration) && notification.remainingDuration > 0) {
+        notification.timerId = window.setTimeout(() => {
+          dismissNotification(id)
+        }, notification.remainingDuration)
+      } else if (notification.remainingDuration <= 0) {
+        // If somehow remaining duration is zero or less, dismiss immediately
         dismissNotification(id)
-      }, notification.remainingDuration)
+        return // Exit early
+      }
       // Force reactivity
       const index = notifications.value.findIndex((n) => n.id === id)
       if (index !== -1) {

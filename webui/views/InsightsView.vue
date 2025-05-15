@@ -1,24 +1,40 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useNotifications } from './../composables/useNotifications'
+import { useNotifications } from './../composables/useNotifications' // Corrected path
 
 const { addNotification } = useNotifications()
 
 onMounted(() => {
+  const notificationDuration = 30000 // 30 seconds
+
+  // Send an 'info' (default green) notification
   addNotification({
-    message: 'Hello from InsightsView!',
-    type: 'info', // Optional: 'success', 'warning', 'error'
-    duration: 5000, // Optional: duration in milliseconds
+    message: 'Welcome to Insights! This is an info (default green) notification.',
+    type: 'info',
+    duration: notificationDuration,
+  })
+
+  // Send a 'success' (green) notification
+  addNotification({
+    message: 'Successfully loaded initial data. This is a success notification.',
+    type: 'success',
+    duration: notificationDuration,
+  })
+
+  // Send a 'warning' (yellow) notification
+  addNotification({
+    message: 'Attention: Some metrics are nearing their thresholds. This is a warning.',
+    type: 'warning',
+    duration: notificationDuration,
+  })
+
+  // Send an 'error' (red) notification
+  addNotification({
+    message: 'Critical Error: Failed to connect to a data source. This is an error.',
+    type: 'error',
+    duration: notificationDuration,
   })
 })
-
-// Example function to trigger another notification, e.g., from a button click
-// const sendAnotherNotification = () => {
-//   addNotification({
-//     message: 'This is another notification!',
-//     type: 'success',
-//   });
-// };
 </script>
 
 <template>
@@ -27,8 +43,7 @@ onMounted(() => {
       Insights View
     </h1>
     <p class="text-main-color-muted dark:text-dark-main-color-muted">
-      This page will display various insights. A notification "Hello from InsightsView!" should
-      appear on load.
+      This page will display various insights. Multiple notifications should appear on load.
     </p>
   </div>
 </template>
@@ -40,14 +55,14 @@ onMounted(() => {
   color: var(--text-main-color);
 }
 .dark .text-dark-main-color {
-  color: var(
-    --text-main-color
-  ); /* This should be your dark mode text color, e.g., --dark-text-main-color */
+  /* Ensure this variable is correctly defined in your main.css for dark mode text */
+  color: var(--text-main-color-dark, var(--text-main-color));
 }
 .text-main-color-muted {
   color: var(--sidebar-text-muted); /* Example variable, use appropriate one */
 }
 .dark .text-dark-main-color-muted {
-  color: var(--sidebar-text-muted); /* Example variable, use appropriate dark one */
+  /* Ensure this variable is correctly defined for dark mode muted text */
+  color: var(--sidebar-text-muted-dark, var(--sidebar-text-muted));
 }
 </style>
