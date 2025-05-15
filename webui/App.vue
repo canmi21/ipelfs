@@ -318,38 +318,43 @@ const handleSidebarToggle = () => {
     showGithubIcon.value = false
     showInlineStatusText.value = false
 
-    const generalTextHideDelay = Math.max(50, animationDuration - 150)
+    const generalTextHideDelay = Math.max(50, animationDuration - 150) // Ensure text hides before or as animation ends
     setTimeout(() => {
       if (isSidebarCollapsed.value) showSidebarText.value = false
     }, generalTextHideDelay)
 
     nextTick(() => {
-      contentMarginClass.value = 'ml-14'
+      // Apply width/margin changes after state is updated
       sidebarWidthClass.value = 'w-14'
+      contentMarginClass.value = 'ml-14'
     })
 
     const onCollapseAnimationEnd = () => {
       isAnimating.value = false
     }
+    // Use transitionend event on the sidebar itself for more reliable animation end detection for width
+    // Or use mainContentEl if its margin transition is the one to watch
     if (mainContentEl.value) {
+      // Assuming margin transition is the primary visual cue
       mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true })
     } else {
-      setTimeout(onCollapseAnimationEnd, animationDuration + 50)
+      setTimeout(onCollapseAnimationEnd, animationDuration + 50) // Fallback timer
     }
   } else {
     // --- Intent: EXPAND ---
     isSidebarCollapsed.value = false
+    // sidebarWidthClass must change first to trigger the transition
     sidebarWidthClass.value = 'w-56'
 
     nextTick(() => {
+      // Then adjust margin and schedule text appearance
       contentMarginClass.value = 'ml-56'
 
-      setTimeout(
-        () => {
-          if (!isSidebarCollapsed.value) showSidebarText.value = true
-        },
-        Math.max(0, animationDuration - expandShowEarlyMs - 50),
-      )
+      // Schedule text and icons to appear, timed with the animation
+      const baseTextShowTime = Math.max(0, animationDuration - expandShowEarlyMs - 50)
+      setTimeout(() => {
+        if (!isSidebarCollapsed.value) showSidebarText.value = true
+      }, baseTextShowTime)
 
       const showIconTime = Math.max(0, animationDuration - expandShowEarlyMs)
       githubIconExpandTimer.value = window.setTimeout(() => {
@@ -363,6 +368,7 @@ const handleSidebarToggle = () => {
     })
 
     const onExpandAnimationEnd = () => {
+      // Ensure all elements are definitely visible if they should be
       if (!isSidebarCollapsed.value) {
         if (!showGithubIcon.value) showGithubIcon.value = true
         if (!showInlineStatusText.value) showInlineStatusText.value = true
@@ -371,9 +377,10 @@ const handleSidebarToggle = () => {
       isAnimating.value = false
     }
     if (mainContentEl.value) {
+      // Watch content margin transition
       mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true })
     } else {
-      setTimeout(onExpandAnimationEnd, animationDuration + 50)
+      setTimeout(onExpandAnimationEnd, animationDuration + 50) // Fallback
     }
   }
 }
@@ -392,10 +399,13 @@ const openRepositoryIssuesPage = () => {
       :class="sidebarWidthClass"
       class="fixed top-0 left-0 h-full bg-sidebar z-30 transition-all ease-in-out duration-300 overflow-hidden flex flex-col"
     >
-      <div class="flex items-center justify-between p-2 pr-3 mt-0.5 mb-1 shrink-0">
+      <div
+        class="h-14 shrink-0 flex items-center"
+        :class="[isSidebarCollapsed ? 'justify-center w-14' : 'justify-between px-3']"
+      >
         <div
           @click="handleSidebarToggle"
-          class="cursor-pointer p-2 rounded-md group"
+          class="cursor-pointer p-1.5 rounded-md group"
           title="Toggle Sidebar"
         >
           <component
@@ -404,10 +414,10 @@ const openRepositoryIssuesPage = () => {
           />
         </div>
         <div
-          v-show="showGithubIcon && !isSidebarCollapsed"
+          v-if="!isSidebarCollapsed && showGithubIcon"
+          @click="openExternalLink('https://github.com/canmi21/ipelfs')"
           class="cursor-pointer p-1.5 rounded-md group"
           title="Open GitHub Repository"
-          @click="openExternalLink('https://github.com/canmi21/ipelfs')"
         >
           <SquareArrowOutUpRight
             class="w-5 h-5 text-icon-muted group-hover:text-icon-accent transform transition-all duration-150 group-hover:scale-110"
@@ -415,67 +425,61 @@ const openRepositoryIssuesPage = () => {
         </div>
       </div>
 
-      <nav class="flex-grow px-2">
+      <nav class="flex-grow pt-1">
         <ul class="space-y-1">
           <li
-            class="cursor-pointer group rounded-md transition-colors duration-150 flex items-center h-10 px-2"
+            class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
-              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg': true, // Always apply hover bg for li
-              'justify-center': isSidebarCollapsed,
+              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg': true,
             }"
           >
-            <Server
-              class="w-6 h-6 flex-shrink-0 text-icon-muted transition-all duration-150 transform"
-              :class="{
-                'group-hover:text-icon-accent': true, // Always change icon color on li hover
-                'group-hover:scale-110': isSidebarCollapsed, // Scale only when collapsed
-              }"
-            />
+            <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
+              <Server
+                class="w-6 h-6 text-icon-muted transition-all duration-150 transform group-hover:text-icon-accent"
+                :class="{ 'group-hover:scale-110': isSidebarCollapsed }"
+              />
+            </div>
             <span
               v-if="showSidebarText"
-              class="ml-3 text-base font-medium text-sidebar-main group-hover:text-icon-accent transition-colors duration-150 truncate"
+              class="pl-1 pr-2 text-base font-medium text-sidebar-main group-hover:text-icon-accent transition-colors duration-150 truncate"
             >
               Volumes
             </span>
           </li>
           <li
-            class="cursor-pointer group rounded-md transition-colors duration-150 flex items-center h-10 px-2"
+            class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
               'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg': true,
-              'justify-center': isSidebarCollapsed,
             }"
           >
-            <DatabaseZap
-              class="w-6 h-6 flex-shrink-0 text-icon-muted transition-all duration-150 transform"
-              :class="{
-                'group-hover:text-icon-accent': true,
-                'group-hover:scale-110': isSidebarCollapsed,
-              }"
-            />
+            <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
+              <DatabaseZap
+                class="w-6 h-6 text-icon-muted transition-all duration-150 transform group-hover:text-icon-accent"
+                :class="{ 'group-hover:scale-110': isSidebarCollapsed }"
+              />
+            </div>
             <span
               v-if="showSidebarText"
-              class="ml-3 text-base font-medium text-sidebar-main group-hover:text-icon-accent transition-colors duration-150 truncate"
+              class="pl-1 pr-2 text-base font-medium text-sidebar-main group-hover:text-icon-accent transition-colors duration-150 truncate"
             >
               Collections
             </span>
           </li>
           <li
-            class="cursor-pointer group rounded-md transition-colors duration-150 flex items-center h-10 px-2"
+            class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
               'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg': true,
-              'justify-center': isSidebarCollapsed,
             }"
           >
-            <FileClock
-              class="w-6 h-6 flex-shrink-0 text-icon-muted transition-all duration-150 transform"
-              :class="{
-                'group-hover:text-icon-accent': true,
-                'group-hover:scale-110': isSidebarCollapsed,
-              }"
-            />
+            <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
+              <FileClock
+                class="w-6 h-6 text-icon-muted transition-all duration-150 transform group-hover:text-icon-accent"
+                :class="{ 'group-hover:scale-110': isSidebarCollapsed }"
+              />
+            </div>
             <span
               v-if="showSidebarText"
-              class="ml-3 text-base font-medium text-sidebar-main group-hover:text-icon-accent transition-colors duration-150 truncate"
+              class="pl-1 pr-2 text-base font-medium text-sidebar-main group-hover:text-icon-accent transition-colors duration-150 truncate"
             >
               Activity
             </span>
@@ -483,22 +487,21 @@ const openRepositoryIssuesPage = () => {
         </ul>
       </nav>
 
-      <div class="fixed-status-item-container p-2 mt-auto shrink-0">
-        <div
-          class="flex items-center h-10 px-2 rounded-md cursor-default"
-          :class="{ 'justify-center': isSidebarCollapsed }"
-        >
-          <component
-            :is="isBackendConnected ? Server : ServerOff"
-            class="w-6 h-6 flex-shrink-0 transition-colors duration-150"
-            :class="{
-              'text-status-connected': isBackendConnected,
-              'text-status-disconnected': !isBackendConnected,
-            }"
-          />
+      <div class="mt-auto shrink-0 mx-2 mb-2">
+        <div class="flex items-center h-11 rounded-md cursor-default">
+          <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
+            <component
+              :is="isBackendConnected ? Server : ServerOff"
+              class="w-6 h-6 flex-shrink-0 transition-colors duration-150"
+              :class="{
+                'text-status-connected': isBackendConnected,
+                'text-status-disconnected': !isBackendConnected,
+              }"
+            />
+          </div>
           <div
             v-if="showInlineStatusText && !isSidebarCollapsed"
-            class="status-text-wrapper ml-3 flex-grow min-w-0 flex justify-center items-center"
+            class="pl-1 pr-2 status-text-wrapper flex-grow min-w-0 flex justify-center items-center"
           >
             <div v-if="!isBackendConnected" class="flex items-center">
               <span class="status-orb orb-disconnected mr-1.5 flex-shrink-0"></span>
@@ -533,7 +536,7 @@ const openRepositoryIssuesPage = () => {
     </div>
 
     <div
-      class="absolute top-4 right-4 z-40 cursor-pointer p-2 rounded-md group"
+      class="absolute top-4 right-4 z-40 cursor-pointer p-1.5 rounded-md group"
       @click="handleToggle"
       title="Toggle Theme"
     >
@@ -717,31 +720,31 @@ const openRepositoryIssuesPage = () => {
 <style>
 :root {
   /* --- Main Content Colors --- */
-  --bg-main-content: #ffffff; /* Light mode main background */
-  --text-main-color: #1f2937; /* Tailwind gray-800 for light mode text */
+  --bg-main-content: #ffffff;
+  --text-main-color: #1f2937;
 
   /* --- Sidebar Colors --- */
-  --sidebar-bg: #f3f4f6; /* Tailwind gray-100 */
-  --sidebar-text-main: #1f2937; /* Tailwind gray-800 */
-  --sidebar-text-muted: #6b7280; /* Tailwind gray-500 */
-  --sidebar-item-hover-bg: #e5e7eb; /* Tailwind gray-200 for LI hover */
+  --sidebar-bg: #f3f4f6;
+  --sidebar-text-main: #1f2937;
+  --sidebar-text-muted: #6b7280;
+  --sidebar-item-hover-bg: #e5e7eb;
 
   /* --- Icon Colors --- */
-  --icon-muted-color: #6b7280; /* Tailwind gray-500 */
-  --icon-accent-color: #1c9376; /* Your specified green for icon hover/active */
+  --icon-muted-color: #6b7280;
+  --icon-accent-color: #1c9376;
 
   /* --- Status Colors --- */
   --status-connected-color: #1c9376;
   --status-connected-orb-glow-start: rgba(28, 147, 118, 0.3);
   --status-connected-orb-glow-end: rgba(28, 147, 118, 0.6);
-  --status-disconnected-color: #ef4444; /* Tailwind red-500 */
+  --status-disconnected-color: #ef4444;
   --status-disconnected-orb-glow-start: rgba(239, 68, 68, 0.3);
   --status-disconnected-orb-glow-end: rgba(239, 68, 68, 0.6);
 
   /* --- Modal Colors --- */
   --modal-bg-color: #ffffff;
   --modal-text-color: #1f2937;
-  --modal-text-secondary-color: #4b5563; /* gray-600 */
+  --modal-text-secondary-color: #4b5563;
 
   /* --- Button Colors --- */
   --button-primary-bg: #1b9e7d;
@@ -750,38 +753,27 @@ const openRepositoryIssuesPage = () => {
 }
 
 .dark {
-  /* --- Main Content Colors --- */
-  --bg-main-content: #030712; /* Darker than gray-900 for more contrast */
-  --text-main-color: #f3f4f6; /* Tailwind gray-100 */
+  --bg-main-content: #030712;
+  --text-main-color: #f3f4f6;
 
-  /* --- Sidebar Colors --- */
-  --sidebar-bg: #111827; /* Tailwind gray-900 */
-  --sidebar-text-main: #d1d5db; /* Tailwind gray-300 */
-  --sidebar-text-muted: #9ca3af; /* Tailwind gray-400 */
-  --sidebar-item-hover-bg: #1f2937; /* Tailwind gray-800 for LI hover */
+  --sidebar-bg: #111827;
+  --sidebar-text-main: #d1d5db;
+  --sidebar-text-muted: #9ca3af;
+  --sidebar-item-hover-bg: #1f2937; /* Darker hover for sidebar items */
 
-  /* --- Icon Colors --- */
-  --icon-muted-color: #9ca3af; /* Tailwind gray-400 */
-  /* --icon-accent-color remains #1C9376 */
+  --icon-muted-color: #9ca3af;
 
-  /* --- Status Colors --- */
-  /* --status-connected-color remains #1C9376 */
   --status-connected-orb-glow-start: rgba(28, 147, 118, 0.4);
   --status-connected-orb-glow-end: rgba(28, 147, 118, 0.7);
-  --status-disconnected-color: #f87171; /* Tailwind red-400 */
+  --status-disconnected-color: #f87171;
   --status-disconnected-orb-glow-start: rgba(248, 113, 113, 0.4);
   --status-disconnected-orb-glow-end: rgba(248, 113, 113, 0.7);
 
-  /* --- Modal Colors --- */
-  --modal-bg-color: #1f2937; /* gray-800 */
-  --modal-text-color: #f3f4f6; /* gray-100 */
-  --modal-text-secondary-color: #9ca3af; /* gray-400 */
-
-  /* --- Button Colors --- */
-  /* --button-primary-bg, hover, focus can remain same or be adjusted if needed for dark */
+  --modal-bg-color: #1f2937;
+  --modal-text-color: #f3f4f6;
+  --modal-text-secondary-color: #9ca3af;
 }
 
-/* General body style */
 body {
   margin: 0;
   font-family:
@@ -802,7 +794,6 @@ body {
   color: var(--text-main-color);
 }
 
-/* Applying CSS variables through Tailwind-like classes for convenience */
 .bg-sidebar {
   background-color: var(--sidebar-bg);
 }
@@ -815,7 +806,7 @@ body {
 .group-hover\:text-icon-accent:hover,
 .group:hover .group-hover\:text-icon-accent {
   color: var(--icon-accent-color) !important;
-} /* Ensure specificity */
+}
 
 .hover\:bg-sidebar-item-hover-bg:hover {
   background-color: var(--sidebar-item-hover-bg);
@@ -848,10 +839,11 @@ body {
   background-color: var(--button-primary-hover-bg);
 }
 .focus\:ring-button-primary-focus:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
   box-shadow: 0 0 0 3px var(--button-primary-focus-ring);
-} /* Example focus ring */
+}
 
-/* Status Orb and Pulse Animation */
 .status-orb {
   width: 9px;
   height: 9px;
