@@ -6,21 +6,22 @@ import {
   PanelRightOpen, PanelRightClose,
   Cuboid, SquareArrowOutUpRight,
   Server, ServerOff,
-  RotateCcw // Added for the retry button
+  RotateCcw,
+  TriangleAlert // Added for the offline message
 } from 'lucide-vue-next'
 
 // --- Theme Initialization ---
 const storedTheme = localStorage.getItem('theme')
 const isDark = useDark({
   valueDark: 'dark',
-  valueLight: '', // Value for light mode (class removed by .toggle('dark', false))
-  storageKey: null, // Manual localStorage handling for theme
+  valueLight: '',
+  storageKey: null,
   initialValue: (() => {
     if (storedTheme === 'dark') return 'dark'
-    if (storedTheme === 'light') return 'light' // Ensure 'light' is returned for BasicColorSchema
+    if (storedTheme === 'light') return 'light'
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      return systemIsDark ? 'dark' : 'light' // Ensure 'light' for BasicColorSchema
+      return systemIsDark ? 'dark' : 'light'
     } catch (e) {
       console.error("Failed to detect system color scheme:", e);
       localStorage.setItem('theme', 'dark')
@@ -52,15 +53,15 @@ const handleToggle = () => {
       } else {
         currentIcon.value = 'sun-moon'
         currentTheme.value = 'system'
-        isDark.value = systemIsDark // Sync with system
-        localStorage.removeItem('theme') // Remove to follow system
+        isDark.value = systemIsDark
+        localStorage.removeItem('theme')
       }
     } catch (e) {
       console.error("Failed to switch theme based on system preference:", e);
       currentIcon.value = 'moon'
       currentTheme.value = 'dark'
       isDark.value = true
-      localStorage.setItem('theme', 'dark') // Fallback to dark on error
+      localStorage.setItem('theme', 'dark')
     }
   } else if (currentTheme.value === 'system') {
      currentIcon.value = 'moon'
@@ -90,17 +91,15 @@ const getInitialSidebarState = (): boolean => {
       return false;
     }
   }
-  return false; // Default to expanded (false) if no value in localStorage (first visit)
+  return false;
 };
 
 const isSidebarCollapsed = ref(getInitialSidebarState());
-
 const showSidebarText = ref(!isSidebarCollapsed.value);
 const showGithubIcon = ref(!isSidebarCollapsed.value);
 const showInlineStatusText = ref(!isSidebarCollapsed.value);
 const sidebarWidthClass = ref(isSidebarCollapsed.value ? 'w-14' : 'w-56');
 const contentMarginClass = ref(isSidebarCollapsed.value ? 'ml-14' : 'ml-64');
-
 const isAnimating = ref(false);
 const githubIconCollapseTimer = ref<number | undefined>(undefined);
 const githubIconExpandTimer = ref<number | undefined>(undefined);
@@ -112,11 +111,13 @@ watchEffect(() => {
 });
 
 // --- Backend Connection State & Dynamic Health Check ---
-const isBackendConnected = ref(true); // Assume connected initially to avoid immediate overlay flash
+const isBackendConnected = ref(true);
 const latencyMs = ref<number | null>(null);
 const healthCheckTimerId = ref<number | undefined>(undefined);
-const currentHealthCheckIntervalMs = ref(1000); // Initial interval before first check
+const currentHealthCheckIntervalMs = ref(1000);
 const offlineStartTime = ref<number | null>(null);
+const isRetryingManualCheck = ref(false); // State for the manual retry button
+const manualRetryButtonTimeoutId = ref<number | undefined>(undefined); // Timer for manual retry button visual state
 
 function truncate(num: number, decimalPlaces: number): number {
   const factor = Math.pow(10, decimalPlaces);
@@ -141,7 +142,6 @@ const formattedLatency = computed(() => {
   }
 });
 
-// Core function to check backend status
 const checkBackendStatus = async () => {
   const requestSentTimestamp = Date.now();
   try {
@@ -157,7 +157,6 @@ const checkBackendStatus = async () => {
           let timezonePart = "Z";
           const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/);
           if (timezoneMatch) timezonePart = timezoneMatch[0];
-          
           let backendEpochNs: bigint;
           const baseMsBigInt = BigInt(new Date(datePart + timezonePart).getTime());
           if (fractionalPartMatch && fractionalPartMatch[1]) {
@@ -188,49 +187,61 @@ const checkBackendStatus = async () => {
   }
 };
 
-// Performs health check and schedules the next one with dynamic interval
 const performHealthCheckAndScheduleNext = async () => {
   if (healthCheckTimerId.value !== undefined) {
-    clearTimeout(healthCheckTimerId.value); // Clear previous timer
+    clearTimeout(healthCheckTimerId.value);
   }
-
-  await checkBackendStatus(); // Perform the actual check
-
-  // Determine next interval based on connection status
+  await checkBackendStatus();
   if (isBackendConnected.value) {
-    currentHealthCheckIntervalMs.value = 1000; // 1 second if online
-    offlineStartTime.value = null; // Reset offline start time
+    currentHealthCheckIntervalMs.value = 1000;
+    offlineStartTime.value = null;
+    if (isRetryingManualCheck.value) { // If manual retry led to success, reset button state
+        isRetryingManualCheck.value = false;
+        if(manualRetryButtonTimeoutId.value !== undefined) clearTimeout(manualRetryButtonTimeoutId.value);
+    }
   } else {
     if (offlineStartTime.value === null) {
-      offlineStartTime.value = Date.now(); // Mark when it first went offline
+      offlineStartTime.value = Date.now();
     }
-    // Calculate minutes offline, ensuring it's at least 0
     const minutesOffline = Math.max(0, Math.floor((Date.now() - offlineStartTime.value) / (1000 * 60)));
-    // Initial interval 5s, then doubles each minute: 5s * 2^minutesOffline
     currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, minutesOffline);
   }
-
-  // Schedule the next check
   healthCheckTimerId.value = window.setTimeout(performHealthCheckAndScheduleNext, currentHealthCheckIntervalMs.value);
 };
 
-// Manually trigger a health check (e.g., from a button)
 const triggerManualHealthCheck = async () => {
-  if (healthCheckTimerId.value !== undefined) {
-    clearTimeout(healthCheckTimerId.value); // Stop any scheduled check
+  if (isRetryingManualCheck.value) return; // Already retrying
+
+  isRetryingManualCheck.value = true;
+  if (healthCheckTimerId.value !== undefined) { // Clear general health check timer
+    clearTimeout(healthCheckTimerId.value);
   }
-  // Perform an immediate check, which will then schedule the next one
-  await performHealthCheckAndScheduleNext();
+  if (manualRetryButtonTimeoutId.value !== undefined) { // Clear previous button visual timer
+    clearTimeout(manualRetryButtonTimeoutId.value);
+  }
+
+  // Timer to reset button visual state if still disconnected after 3s
+  manualRetryButtonTimeoutId.value = window.setTimeout(() => {
+    // This check is important: only reset if we are still in retrying visual state
+    // and backend is still disconnected. If backend connected, overlay is gone.
+    if (!isBackendConnected.value) {
+        isRetryingManualCheck.value = false;
+    }
+  }, 3000);
+
+  await performHealthCheckAndScheduleNext(); // Perform check and schedule next regular one
+  // If performHealthCheckAndScheduleNext resulted in isBackendConnected = true,
+  // the 'isRetryingManualCheck' will be set to false inside it.
+  // If not, the 3s timeout above will handle resetting the button's visuals.
 };
 
 onMounted(() => {
-  performHealthCheckAndScheduleNext(); // Start the health check cycle
+  performHealthCheckAndScheduleNext();
 });
 
 onUnmounted(() => {
-  if (healthCheckTimerId.value !== undefined) {
-    clearTimeout(healthCheckTimerId.value); // Stop health checks
-  }
+  if (healthCheckTimerId.value !== undefined) clearTimeout(healthCheckTimerId.value);
+  if (manualRetryButtonTimeoutId.value !== undefined) clearTimeout(manualRetryButtonTimeoutId.value); // Clear button timer
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
   if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value);
@@ -239,7 +250,6 @@ onUnmounted(() => {
 const handleSidebarToggle = () => {
   if (isAnimating.value) return;
   isAnimating.value = true;
-
   if (githubIconCollapseTimer.value !== undefined) clearTimeout(githubIconCollapseTimer.value);
   if (githubIconExpandTimer.value !== undefined) clearTimeout(githubIconExpandTimer.value);
   if (statusTextExpandTimer.value !== undefined) clearTimeout(statusTextExpandTimer.value);
@@ -310,7 +320,6 @@ const openGitHubLink = () => {
                   />
               </div>
             </div>
-
             <ul class="space-y-1 w-full">
               <li
                   class="cursor-pointer rounded-md"
@@ -342,7 +351,6 @@ const openGitHubLink = () => {
             </ul>
         </div>
       </div>
-
       <div
         v-show="showGithubIcon"
         class="absolute top-4 right-4 cursor-pointer"
@@ -351,7 +359,6 @@ const openGitHubLink = () => {
       >
         <SquareArrowOutUpRight class="w-6 h-6 text-black dark:text-white icon-hover" />
       </div>
-
       <div class="fixed-status-item-container absolute bottom-4 left-2 right-2">
         <div class="flex items-center h-10 px-2 rounded-md">
           <component
@@ -370,7 +377,6 @@ const openGitHubLink = () => {
                 <span class="status-orb orb-disconnected mr-1.5 flex-shrink-0"></span>
                 <span class="font-medium text-xs truncate">Disconnected</span>
             </div>
-
             <div v-if="isBackendConnected" class="flex flex-col items-center">
                 <div class="flex items-center"> <span class="status-orb orb-connected mr-1.5 flex-shrink-0"></span>
                     <span class="status-connected-text">Connected</span>
@@ -408,16 +414,7 @@ const openGitHubLink = () => {
       aria-modal="true"
       role="dialog"
     >
-      <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg transform transition-all duration-300 ease-out scale-100 opacity-100">
-        <button
-          @click="triggerManualHealthCheck"
-          class="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors duration-150"
-          title="Retry Connection"
-          aria-label="Retry Connection"
-        >
-          <RotateCcw class="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-
+      <div class="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg transform transition-all duration-300 ease-out opacity-100">
         <div class="flex items-center mb-4">
             <ServerOff class="w-8 h-8 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
             <h2 class="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400">
@@ -425,9 +422,9 @@ const openGitHubLink = () => {
             </h2>
         </div>
 
-        <p class="mb-2 text-sm sm:text-base text-gray-700 dark:text-gray-300">
-          <strong>The WebUI is currently unavailable</strong>
-        </p>
+        <div class="flex items-center mb-5 text-gray-700 dark:text-gray-300">
+            <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
+        </div>
 
         <ul class="space-y-2.5 text-sm sm:text-base text-gray-600 dark:text-gray-350">
           <li class="flex items-start">
@@ -453,10 +450,18 @@ const openGitHubLink = () => {
         </ul>
          <button
             @click="triggerManualHealthCheck"
-            class="mt-6 w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 flex items-center justify-center text-sm sm:text-base"
+            :disabled="isRetryingManualCheck"
+            class="mt-6 w-full font-semibold py-2.5 px-4 rounded-lg transition-all duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+            :class="{
+              'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white hover:scale-105 active:scale-100': !isRetryingManualCheck,
+              'bg-blue-700 dark:bg-blue-600 text-blue-100 cursor-not-allowed': isRetryingManualCheck
+            }"
           >
-            <RotateCcw class="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            Retry Connection
+            <RotateCcw
+              class="w-4 h-4 sm:w-5 sm:h-5 mr-2"
+              :class="{ 'animate-spin': isRetryingManualCheck }"
+            />
+            {{ isRetryingManualCheck ? 'Retrying...' : 'Retry Connection' }}
           </button>
       </div>
     </div>
@@ -477,60 +482,20 @@ const openGitHubLink = () => {
   --sidebar-text-main: #d1d5db;
   --sidebar-text-muted: #9ca3af;
 }
-body {
-  margin: 0;
-}
-
-.icon-hover {
-  transition: transform 0.2s ease-out;
-}
-.icon-hover:hover {
-  transform: scale(1.1);
-}
-
-.anitrunk-width {
-  transition-property: width;
-}
-
-.status-orb {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.orb-connected {
-  background-color: #34d399; /* Tailwind green-400 */
-  box-shadow: 0 0 7px 2px #34d399a0;
-}
-.orb-disconnected {
-  background-color: #f87171; /* Tailwind red-400 */
-  box-shadow: 0 0 7px 2px #f87171a0;
-}
-
-.status-connected-text {
-  font-size: 0.875rem; /* text-sm */
-  line-height: 1.25rem; /* leading-5 */
-  font-weight: 600; /* semibold */
-  color: var(--sidebar-text-main);
-}
-
-.status-latency-display-text {
-  font-size: 0.75rem; /* text-xs */
-  line-height: 1rem;  /* leading-4 */
-  color: var(--sidebar-text-muted);
-}
-
-.fixed-status-item-container .font-medium.text-xs {
-    font-weight: 500; /* medium */
-    font-size: 1rem; /* Adjusted for your specific style, was text-xs */
-    line-height: 1rem;
-    color: var(--sidebar-text-main);
-}
-
+body { margin: 0; }
+.icon-hover { transition: transform 0.2s ease-out; }
+.icon-hover:hover { transform: scale(1.1); }
+.anitrunk-width { transition-property: width; }
+.status-orb { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.orb-connected { background-color: #34d399; box-shadow: 0 0 7px 2px #34d399a0; }
+.orb-disconnected { background-color: #f87171; box-shadow: 0 0 7px 2px #f87171a0; }
+.status-connected-text { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; color: var(--sidebar-text-main); }
+.status-latency-display-text { font-size: 0.75rem; line-height: 1rem;  color: var(--sidebar-text-muted); }
+.fixed-status-item-container .font-medium.text-xs { font-weight: 500; font-size: 1rem; line-height: 1rem; color: var(--sidebar-text-main); }
 .min-w-0 { min-width: 0; }
-.truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Ensure animate-spin is available if not using Tailwind's JIT/full CSS */
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 1s linear infinite; }
 </style>
