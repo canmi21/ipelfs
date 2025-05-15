@@ -51,11 +51,12 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
         const data = await response.json()
         if (data.success === true) {
           isBackendConnected.value = true
+          // hasBeenConnectedAtLeastOnce will be updated via watch or onMounted after this check
           try {
             const backendTimestampStr = data.data as string
-            const datePart = backendTimestampStr.substring(0, 19) // YYYY-MM-DDTHH:mm:ss
+            const datePart = backendTimestampStr.substring(0, 19)
             const fractionalPartMatch = backendTimestampStr.substring(19).match(/\.(\d+)/)
-            let timezonePart = 'Z' // Assume Zulu if no explicit offset
+            let timezonePart = 'Z'
             const timezoneMatch = backendTimestampStr.substring(19).match(/[Z+-].*$/)
             if (timezoneMatch) timezonePart = timezoneMatch[0]
 
@@ -63,7 +64,7 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
             const baseMsBigInt = BigInt(new Date(baseDateForParsing).getTime())
             let backendEpochNs: bigint
             if (fractionalPartMatch && fractionalPartMatch[1]) {
-              const nanoStr = fractionalPartMatch[1].padEnd(9, '0').substring(0, 9) // Ensure 9 digits for nanoseconds
+              const nanoStr = fractionalPartMatch[1].padEnd(9, '0').substring(0, 9)
               backendEpochNs = baseMsBigInt * 1_000_000n + BigInt(nanoStr)
             } else {
               backendEpochNs = baseMsBigInt * 1_000_000n
@@ -96,13 +97,10 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
     }
     await checkBackendStatus() // isBackendConnected is updated here
 
-    // Notification logic is handled by the watch on isBackendConnected below
-
     if (isBackendConnected.value) {
       currentHealthCheckIntervalMs.value = 1000 // Reset to frequent polling when connected
       offlineStartTime.value = null
       if (isRetryingManualCheck.value) {
-        // If manual retry succeeded
         isRetryingManualCheck.value = false
         showRetryFailureIcon.value = false
         if (manualRetryButtonTimeoutId.value !== undefined) {
@@ -114,13 +112,11 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
       if (offlineStartTime.value === null) {
         offlineStartTime.value = Date.now()
       }
-      // Exponential backoff for polling when offline
       const minutesOffline = Math.max(
         0,
         Math.floor((Date.now() - (offlineStartTime.value || Date.now())) / (1000 * 60)),
       )
-      // Max interval: 5000 * 2^6 = 320,000ms (approx 5.3 minutes)
-      currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, Math.min(minutesOffline, 6))
+      currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, Math.min(minutesOffline, 6)) // Max interval: ~5.3 minutes
     }
 
     healthCheckTimerId.value = window.setTimeout(
@@ -129,7 +125,6 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
     )
   }
 
-  // Watch for connection status changes to trigger notifications
   watch(isBackendConnected, (newValue, oldValue) => {
     if (newValue === true) {
       // Currently online
@@ -141,15 +136,15 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
           duration: 2100,
         })
       }
-      hasBeenConnectedAtLeastOnce.value = true // Mark as connected at least once
+      hasBeenConnectedAtLeastOnce.value = true // Always mark if currently connected
     } else {
       // Currently offline (newValue === false)
       if (oldValue === true && hasBeenConnectedAtLeastOnce.value) {
-        // Transitioned from online to offline, AND was previously online
+        // Transitioned from online to offline, AND was previously online at some point
         addNotification({
-          message: 'Backend connection lost. Attempting to reconnect...',
+          message: 'Backend connection lost.',
           type: 'error',
-          duration: 5000,
+          duration: 2100,
         })
       }
     }
@@ -159,15 +154,13 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
     if (isRetryingManualCheck.value || showRetryFailureIcon.value) return // Prevent multiple rapid clicks
 
     isRetryingManualCheck.value = true
-    triggerShake.value = false // Reset shake animation flag
-    showRetryFailureIcon.value = false // Reset failure icon flag
+    triggerShake.value = false
+    showRetryFailureIcon.value = false
 
-    // Clear existing timers to avoid interference
     if (healthCheckTimerId.value !== undefined) clearTimeout(healthCheckTimerId.value)
     if (manualRetryButtonTimeoutId.value !== undefined)
       clearTimeout(manualRetryButtonTimeoutId.value)
 
-    // Set a timeout for the retry button visual feedback
     manualRetryButtonTimeoutId.value = window.setTimeout(() => {
       if (!isBackendConnected.value) {
         // If still not connected after timeout
@@ -186,13 +179,20 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
   }
 
   onMounted(() => {
-    // Perform initial health check
     checkBackendStatus().then(() => {
+      // After the first check, if we are connected, ensure hasBeenConnectedAtLeastOnce is true.
+      // The watch will also run and set this, but setting it here directly after the first
+      // successful check is a safeguard.
+      if (isBackendConnected.value) {
+        hasBeenConnectedAtLeastOnce.value = true
+      }
+
       // Subsequent scheduling based on the first check's outcome
       if (isBackendConnected.value) {
         currentHealthCheckIntervalMs.value = 1000
         offlineStartTime.value = null
       } else {
+        // If starting offline, the watch ensures no "connection lost" if hasBeenConnectedAtLeastOnce is false
         offlineStartTime.value = Date.now()
         currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, 0) // Initial 5s backoff
       }
@@ -213,12 +213,11 @@ export function useBackendStatus(healthCheckUrl = 'http://localhost:33330/v1/ipe
     isBackendConnected,
     latencyMs,
     formattedLatency,
-    healthCheckTimerId, // Exposed for potential display in UI (e.g., sidebar status)
+    healthCheckTimerId, // Exposed for potential display in UI
     triggerManualHealthCheck,
-    // States for modal button UI
-    isRetryingManualCheck,
+    isRetryingManualCheck, // States for modal button UI
     triggerShake,
     showRetryFailureIcon,
-    // hasBeenConnectedAtLeastOnce, // Optionally expose this state if needed elsewhere
+    // hasBeenConnectedAtLeastOnce, // Optionally expose this state
   }
 }
