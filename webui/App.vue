@@ -7,14 +7,14 @@ import {
   SunMoon,
   PanelRightOpen,
   PanelRightClose,
-  Cuboid,
   SquareArrowOutUpRight,
   Server,
   ServerOff,
   RotateCcw,
   ExternalLink,
   X as IconX,
-  FileJson2, // Added for JS Error Overlay
+  DatabaseZap,
+  FileClock,
 } from 'lucide-vue-next'
 
 // --- Theme Initialization ---
@@ -390,8 +390,8 @@ const openRepositoryIssuesPage = () => {
               :class="{ 'hover:bg-gray-300 dark:hover:bg-gray-700': showSidebarText }"
             >
               <div class="flex items-center h-10 px-2">
-                <Cuboid class="w-6 h-6 flex-shrink-0" :class="{ 'icon-hover': !showSidebarText }" />
-                <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 1</span>
+                <Server class="w-6 h-6 flex-shrink-0" :class="{ 'icon-hover': !showSidebarText }" />
+                <span v-if="showSidebarText" class="text-lg truncate ml-3">Volumes</span>
               </div>
             </li>
             <li
@@ -399,8 +399,11 @@ const openRepositoryIssuesPage = () => {
               :class="{ 'hover:bg-gray-300 dark:hover:bg-gray-700': showSidebarText }"
             >
               <div class="flex items-center h-10 px-2">
-                <Cuboid class="w-6 h-6 flex-shrink-0" :class="{ 'icon-hover': !showSidebarText }" />
-                <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 2</span>
+                <DatabaseZap
+                  class="w-6 h-6 flex-shrink-0"
+                  :class="{ 'icon-hover': !showSidebarText }"
+                />
+                <span v-if="showSidebarText" class="text-lg truncate ml-3">Collections</span>
               </div>
             </li>
             <li
@@ -408,8 +411,11 @@ const openRepositoryIssuesPage = () => {
               :class="{ 'hover:bg-gray-300 dark:hover:bg-gray-700': showSidebarText }"
             >
               <div class="flex items-center h-10 px-2">
-                <Cuboid class="w-6 h-6 flex-shrink-0" :class="{ 'icon-hover': !showSidebarText }" />
-                <span v-if="showSidebarText" class="text-lg truncate ml-3">Tab 3</span>
+                <FileClock
+                  class="w-6 h-6 flex-shrink-0"
+                  :class="{ 'icon-hover': !showSidebarText }"
+                />
+                <span v-if="showSidebarText" class="text-lg truncate ml-3">Activity</span>
               </div>
             </li>
           </ul>
