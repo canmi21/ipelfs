@@ -9,6 +9,7 @@ import ThemeToggle from './components/ThemeToggle.vue'
 import SidebarComponent from './components/LeftSidebar.vue'
 import ConnectionLostModal from './components/ConnectionLostModal.vue'
 import JavascriptErrorModal from './components/JavascriptErrorModal.vue'
+import NotificationContainer from './components/NotificationContainer.vue'
 
 import { openExternalLink, refreshPage } from './utils/browser'
 
@@ -80,6 +81,8 @@ const handleOpenExternalLink = (url: string) => {
     />
 
     <ThemeToggle />
+
+    <NotificationContainer />
 
     <div
       ref="mainContentEl"
