@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDark } from '@vueuse/core'
 import { ref, watchEffect, nextTick, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router' // Import useRouter
 import {
   Sun,
   Moon,
@@ -17,6 +18,13 @@ import {
   FileClock,
   FileJson2,
 } from 'lucide-vue-next'
+
+// --- Router ---
+const router = useRouter() // Initialize router instance
+
+const navigateTo = (path: string) => {
+  router.push(path) // Use router.push for navigation
+}
 
 // --- Theme Initialization ---
 const storedTheme = localStorage.getItem('theme')
@@ -182,7 +190,7 @@ const checkBackendStatus = async () => {
           latencyMs.value = Number(backendEpochNs - requestSentEpochNs) / 1_000_000.0
         } catch (e) {
           console.error('Error parsing backend timestamp or calculating latency:', e)
-          latencyMs.value = -1 // Indicate error
+          latencyMs.value = -1
         }
       } else {
         isBackendConnected.value = false
@@ -276,7 +284,7 @@ onMounted(() => {
     } else {
       offlineStartTime.value = Date.now()
       const minutesOffline = 0
-      currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, minutesOffline)
+      currentHealthCheckIntervalMs.value = 5000 * Math.pow(2, Math.min(minutesOffline, 6))
     }
     healthCheckTimerId.value = window.setTimeout(
       performHealthCheckAndScheduleNext,
@@ -313,62 +321,44 @@ const handleSidebarToggle = () => {
   const expandShowEarlyMs = 50
 
   if (!currentlyCollapsed) {
-    // --- Intent: COLLAPSE ---
     isSidebarCollapsed.value = true
     showGithubIcon.value = false
     showInlineStatusText.value = false
-
-    const generalTextHideDelay = Math.max(50, animationDuration - 150) // Ensure text hides before or as animation ends
+    const generalTextHideDelay = Math.max(50, animationDuration - 150)
     setTimeout(() => {
       if (isSidebarCollapsed.value) showSidebarText.value = false
     }, generalTextHideDelay)
-
     nextTick(() => {
-      // Apply width/margin changes after state is updated
       sidebarWidthClass.value = 'w-14'
       contentMarginClass.value = 'ml-14'
     })
-
     const onCollapseAnimationEnd = () => {
       isAnimating.value = false
     }
-    // Use transitionend event on the sidebar itself for more reliable animation end detection for width
-    // Or use mainContentEl if its margin transition is the one to watch
     if (mainContentEl.value) {
-      // Assuming margin transition is the primary visual cue
       mainContentEl.value.addEventListener('transitionend', onCollapseAnimationEnd, { once: true })
     } else {
-      setTimeout(onCollapseAnimationEnd, animationDuration + 50) // Fallback timer
+      setTimeout(onCollapseAnimationEnd, animationDuration + 50)
     }
   } else {
-    // --- Intent: EXPAND ---
     isSidebarCollapsed.value = false
-    // sidebarWidthClass must change first to trigger the transition
     sidebarWidthClass.value = 'w-56'
-
     nextTick(() => {
-      // Then adjust margin and schedule text appearance
       contentMarginClass.value = 'ml-56'
-
-      // Schedule text and icons to appear, timed with the animation
       const baseTextShowTime = Math.max(0, animationDuration - expandShowEarlyMs - 50)
       setTimeout(() => {
         if (!isSidebarCollapsed.value) showSidebarText.value = true
       }, baseTextShowTime)
-
       const showIconTime = Math.max(0, animationDuration - expandShowEarlyMs)
       githubIconExpandTimer.value = window.setTimeout(() => {
         if (!isSidebarCollapsed.value) showGithubIcon.value = true
       }, showIconTime)
-
       const showStatusTextTime = Math.max(0, animationDuration - expandShowEarlyMs + 20)
       statusTextExpandTimer.value = window.setTimeout(() => {
         if (!isSidebarCollapsed.value) showInlineStatusText.value = true
       }, showStatusTextTime)
     })
-
     const onExpandAnimationEnd = () => {
-      // Ensure all elements are definitely visible if they should be
       if (!isSidebarCollapsed.value) {
         if (!showGithubIcon.value) showGithubIcon.value = true
         if (!showInlineStatusText.value) showInlineStatusText.value = true
@@ -377,10 +367,9 @@ const handleSidebarToggle = () => {
       isAnimating.value = false
     }
     if (mainContentEl.value) {
-      // Watch content margin transition
       mainContentEl.value.addEventListener('transitionend', onExpandAnimationEnd, { once: true })
     } else {
-      setTimeout(onExpandAnimationEnd, animationDuration + 50) // Fallback
+      setTimeout(onExpandAnimationEnd, animationDuration + 50)
     }
   }
 }
@@ -399,24 +388,23 @@ const openRepositoryIssuesPage = () => {
       :class="sidebarWidthClass"
       class="fixed top-0 left-0 h-full bg-sidebar z-30 transition-all ease-in-out duration-300 overflow-hidden flex flex-col"
     >
-      <div
-        class="h-14 shrink-0 flex items-center"
-        :class="[isSidebarCollapsed ? 'justify-center w-14' : 'justify-between px-3']"
-      >
-        <div
-          @click="handleSidebarToggle"
-          class="cursor-pointer p-1.5 rounded-md group"
-          title="Toggle Sidebar"
-        >
-          <component
-            :is="isSidebarCollapsed ? PanelRightClose : PanelRightOpen"
-            class="w-6 h-6 text-icon-muted group-hover:text-icon-accent transform transition-all duration-150 group-hover:scale-110"
-          />
+      <div class="h-14 shrink-0 flex items-center border-b border-sidebar-border">
+        <div class="w-14 h-14 flex-shrink-0 flex items-center justify-center">
+          <div
+            @click="handleSidebarToggle"
+            class="cursor-pointer p-1.5 rounded-md group"
+            title="Toggle Sidebar"
+          >
+            <component
+              :is="isSidebarCollapsed ? PanelRightClose : PanelRightOpen"
+              class="w-6 h-6 text-icon-muted group-hover:text-icon-accent transform transition-all duration-150 group-hover:scale-110"
+            />
+          </div>
         </div>
         <div
           v-if="!isSidebarCollapsed && showGithubIcon"
           @click="openExternalLink('https://github.com/canmi21/ipelfs')"
-          class="cursor-pointer p-1.5 rounded-md group"
+          class="cursor-pointer p-1.5 rounded-md group ml-auto mr-3"
           title="Open GitHub Repository"
         >
           <SquareArrowOutUpRight
@@ -425,12 +413,14 @@ const openRepositoryIssuesPage = () => {
         </div>
       </div>
 
-      <nav class="flex-grow pt-1">
+      <nav class="flex-grow pt-2">
         <ul class="space-y-1">
           <li
+            @click="navigateTo('/volumes')"
             class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
-              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg': true,
+              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
+                !isSidebarCollapsed,
             }"
           >
             <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
@@ -447,9 +437,11 @@ const openRepositoryIssuesPage = () => {
             </span>
           </li>
           <li
+            @click="navigateTo('/collections')"
             class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
-              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg': true,
+              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
+                !isSidebarCollapsed,
             }"
           >
             <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
@@ -466,9 +458,11 @@ const openRepositoryIssuesPage = () => {
             </span>
           </li>
           <li
+            @click="navigateTo('/activity')"
             class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
             :class="{
-              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg': true,
+              'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
+                !isSidebarCollapsed,
             }"
           >
             <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
@@ -487,7 +481,7 @@ const openRepositoryIssuesPage = () => {
         </ul>
       </nav>
 
-      <div class="mt-auto shrink-0 mx-2 mb-2">
+      <div class="mt-auto shrink-0 mx-2 mb-2 border-t border-sidebar-border pt-2">
         <div class="flex items-center h-11 rounded-md cursor-default">
           <div class="w-10 h-11 flex-shrink-0 flex items-center justify-center">
             <component
@@ -549,12 +543,14 @@ const openRepositoryIssuesPage = () => {
     <div
       ref="mainContentEl"
       :class="contentMarginClass"
-      class="relative z-20 transition-margin ease-in-out duration-300 flex items-center justify-center min-h-screen"
+      class="relative z-20 transition-margin ease-in-out duration-300 min-h-screen overflow-y-auto"
       :style="{ backgroundColor: 'var(--bg-main-content)' }"
     >
-      <div class="text-xl text-center" :style="{ color: 'var(--text-main-color)' }">
-        Hello, World!
-      </div>
+      <router-view v-slot="{ Component }">
+        <transition name="fade-router" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </div>
 
     <Transition name="overlay-fade">
@@ -584,34 +580,31 @@ const openRepositoryIssuesPage = () => {
                 <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
-
             <div class="flex items-center mb-5 text-modal-text-secondary">
               <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
             </div>
-
             <ul class="space-y-2.5 text-sm sm:text-base text-modal-text-secondary">
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-                <span>Ensure the <strong>ipelfs service</strong> is running.</span>
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Ensure
+                the <strong>ipelfs service</strong> is running.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-                <span>Verify device and server are on the <strong>same network</strong>.</span>
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Verify
+                device and server are on the <strong>same network</strong>.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-                <span>Check <strong>firewall settings</strong> for port <code>33330</code>.</span>
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Check
+                <strong>firewall settings</strong> for port <code>33330</code>.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-                <span>Confirm backend URL (e.g., <code>http://localhost:33330</code>).</span>
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Confirm
+                backend URL (e.g., <code>http://localhost:33330</code>).
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>
-                <span>Inspect <strong>developer console</strong> and backend logs.</span>
+                <span class="mr-2 text-red-500 dark:text-red-400 flex-shrink-0">&rarr;</span>Inspect
+                <strong>developer console</strong> and backend logs.
               </li>
             </ul>
-
             <button
               @click="triggerManualHealthCheck"
               :disabled="isRetryingManualCheck || showRetryFailureIcon"
@@ -625,17 +618,19 @@ const openRepositoryIssuesPage = () => {
                 { 'animate-shake': triggerShake },
               ]"
             >
-              <template v-if="showRetryFailureIcon">
-                <IconX class="w-5 h-5 mr-0 sm:mr-2" />
-                <span class="hidden sm:inline">Failed to Connect</span>
-              </template>
-              <template v-else>
-                <RotateCcw
+              <template v-if="showRetryFailureIcon"
+                ><IconX class="w-5 h-5 mr-0 sm:mr-2" /><span class="hidden sm:inline"
+                  >Failed to Connect</span
+                ></template
+              >
+              <template v-else
+                ><RotateCcw
                   class="w-4 h-4 sm:w-5 sm:h-5 mr-2"
                   :class="{ 'animate-spin': isRetryingManualCheck }"
-                />
-                <span>{{ isRetryingManualCheck ? 'Retrying...' : 'Retry Connection' }}</span>
-              </template>
+                /><span>{{
+                  isRetryingManualCheck ? 'Retrying...' : 'Retry Connection'
+                }}</span></template
+              >
             </button>
           </div>
         </Transition>
@@ -671,44 +666,40 @@ const openRepositoryIssuesPage = () => {
                 <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
-
             <div class="flex items-center mb-5 text-modal-text-secondary">
               <strong class="text-sm sm:text-base"
                 >The WebUI requires JavaScript to function.</strong
               >
             </div>
-
             <p class="text-sm sm:text-base text-modal-text-secondary mb-3">
               JavaScript is essential for:
             </p>
             <ul class="space-y-2 text-sm sm:text-base text-modal-text-secondary">
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span>
-                <span>Interactive UI elements and smooth animations.</span>
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                >Interactive UI elements and smooth animations.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span>
-                <span>Backend communication for live updates.</span>
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                >Backend communication for live updates.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span>
-                <span>Dynamic content rendering and interactions.</span>
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                >Dynamic content rendering and interactions.
               </li>
               <li class="flex items-start">
-                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span>
-                <span>Overall application logic.</span>
+                <span class="mr-2 text-orange-500 dark:text-orange-400 flex-shrink-0">&rarr;</span
+                >Overall application logic.
               </li>
             </ul>
             <p class="text-sm sm:text-base text-modal-text-secondary mt-4">
               Please enable JavaScript in your browser settings and refresh the page.
             </p>
-
             <button
               @click="refreshPage"
               class="mt-6 w-full bg-button-primary hover:bg-button-primary-hover text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-button-primary-focus"
             >
-              <RotateCcw class="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Refresh Page
+              <RotateCcw class="w-4 h-4 sm:w-5 sm:h-5 mr-2" />Refresh Page
             </button>
           </div>
         </Transition>
@@ -728,6 +719,7 @@ const openRepositoryIssuesPage = () => {
   --sidebar-text-main: #1f2937;
   --sidebar-text-muted: #6b7280;
   --sidebar-item-hover-bg: #e5e7eb;
+  --sidebar-border-color: #e5e7eb; /* For light mode borders */
 
   /* --- Icon Colors --- */
   --icon-muted-color: #6b7280;
@@ -759,7 +751,8 @@ const openRepositoryIssuesPage = () => {
   --sidebar-bg: #111827;
   --sidebar-text-main: #d1d5db;
   --sidebar-text-muted: #9ca3af;
-  --sidebar-item-hover-bg: #1f2937; /* Darker hover for sidebar items */
+  --sidebar-item-hover-bg: #1f2937;
+  --sidebar-border-color: #374151; /* For dark mode borders (gray-700) */
 
   --icon-muted-color: #9ca3af;
 
@@ -800,10 +793,13 @@ body {
 .text-sidebar-main {
   color: var(--sidebar-text-main);
 }
+.border-sidebar-border {
+  border-color: var(--sidebar-border-color);
+} /* For sidebar internal borders */
+
 .text-icon-muted {
   color: var(--icon-muted-color);
 }
-.group-hover\:text-icon-accent:hover,
 .group:hover .group-hover\:text-icon-accent {
   color: var(--icon-accent-color) !important;
 }
@@ -863,7 +859,6 @@ body {
   --orb-glow-color-start: var(--status-disconnected-orb-glow-start);
   --orb-glow-color-end: var(--status-disconnected-orb-glow-end);
 }
-
 @keyframes pulse-glow {
   0%,
   100% {
@@ -912,7 +907,6 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
-
 @keyframes shake-effect {
   0%,
   100% {
@@ -940,6 +934,17 @@ body {
   transition-property: margin-left;
 }
 
+/* Router view transition */
+.fade-router-enter-active,
+.fade-router-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-router-enter-from,
+.fade-router-leave-to {
+  opacity: 0;
+}
+
+/* Overlay and Modal transitions (existing) */
 .overlay-fade-enter-from,
 .overlay-fade-leave-to {
   opacity: 0;
@@ -950,7 +955,6 @@ body {
 .overlay-fade-leave-active {
   transition: opacity 0.2s cubic-bezier(0.4, 0, 1, 1);
 }
-
 .modal-pop-enter-from,
 .modal-pop-leave-to {
   opacity: 0;
