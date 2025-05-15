@@ -16,10 +16,10 @@ const isDark = useDark({
   storageKey: null,
   initialValue: (() => {
     if (storedTheme === 'dark') return 'dark'
-    if (storedTheme === 'light') return ''
+    if (storedTheme === 'light') return 'light'
     try {
       const systemIsDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      return systemIsDark ? 'dark' : ''
+      return systemIsDark ? 'dark' : 'light'
     } catch (e) {
       console.error("Failed to detect system color scheme:", e);
       localStorage.setItem('theme', 'dark') 
