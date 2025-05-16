@@ -7,7 +7,6 @@ const props = defineProps<{
   navigateTo: (path: string) => void
 }>()
 
-// Helper for nav items, assuming you might have more or want to manage them centrally later
 const navItems = [
   { path: '/', icon: LandPlot, label: 'Insights', id: 'insights' },
   { path: '/volumes', icon: Server, label: 'Volumes', id: 'volumes' },
@@ -39,7 +38,7 @@ const navItems = [
         >
           <component
             :is="item.icon"
-            class="w-6 h-6 text-icon-muted transition-all duration-150 transform group-hover/navicon:text-icon-accent group-focus-visible/navicon:text-icon-accent"
+            class="w-6 h-6 text-[var(--icon-muted-color)] transition-all duration-150 transform group-hover/navicon:text-[var(--icon-accent-color)] group-focus-visible/navicon:text-[var(--icon-accent-color)]"
             :class="{
               'group-hover/navicon:scale-110 group-focus-visible/navicon:scale-110':
                 props.isSidebarCollapsed,
@@ -48,7 +47,7 @@ const navItems = [
         </div>
         <span
           v-if="props.showSidebarText"
-          class="pl-1 pr-2 text-base font-medium text-sidebar-main transition-colors duration-150 truncate select-none pointer-events-none group-hover:text-icon-accent"
+          class="pl-1 pr-2 text-base font-medium text-sidebar-main transition-colors duration-150 truncate select-none pointer-events-none group-hover:text-[var(--icon-accent-color)]"
         >
           {{ item.label }}
         </span>
@@ -61,13 +60,10 @@ const navItems = [
 .text-sidebar-main {
   color: var(--sidebar-text-main);
 }
-.text-icon-muted {
-  color: var(--icon-muted-color);
-}
-/* Icon color on hover/focus is now handled by group-hover/navicon and group-focus-visible/navicon */
-/* The :deep(svg) approach for direct children is an alternative if group variants are complex */
+/* .text-icon-muted is no longer needed as a separate class here if color is applied directly */
 
 /* For text hover when LI is hovered (expanded sidebar) */
+/* This selector targets the text span when the LI (group) is hovered */
 .group:hover .text-sidebar-main {
   color: var(--icon-accent-color);
 }
