@@ -1,21 +1,27 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import VolumeItem from './../components/VolumeItem.vue'
 import { useGlobalSwitches, type SwitchConfig } from './../composables/useGlobalSwitches'
 import { useRoute } from 'vue-router'
 import { LayoutGrid, LayoutList } from 'lucide-vue-next'
+import { useVolumes } from './../composables/useVolumes'
 
 type LayoutMode = 'grid' | 'list'
 const layoutMode = ref<LayoutMode>('grid')
 
-const volumes = ref(
-  Array.from({ length: 8 }, (_, i) => ({
-    id: i + 1,
-    name: `Storage Volume ${i + 1}`,
-    description: `This is a sample description for volume no. ${i + 1}.`,
-    type: i % 2 === 0 ? 'SSD' : 'HDD Archive',
-  })),
-)
+const { volumesList, isLoading: isLoadingVolumes, error: volumesError, fetchVolumes } = useVolumes()
+
+const itemsToDisplay = computed(() => {
+  return volumesList.value.map((vol, index) => ({
+    id: vol.id,
+    name: vol.path.split('/').pop() || `Volume ${index + 1}`,
+    description: `${vol.path}`, // Use path as description
+  }))
+})
+
+onMounted(() => {
+  fetchVolumes()
+})
 
 const { registerSwitch, unregisterSwitch } = useGlobalSwitches()
 const route = useRoute()
@@ -63,7 +69,7 @@ const listContainerClasses = computed(() => {
   if (layoutMode.value === 'grid') {
     return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6'
   } else {
-    return 'flex flex-col gap-4' // Using gap-4 for list view
+    return 'flex flex-col gap-4'
   }
 })
 </script>
@@ -72,17 +78,51 @@ const listContainerClasses = computed(() => {
   <div class="p-4 md:p-6">
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
       <div>
-        <h1 class="text-2xl md:text-3xl font-semibold" :style="{ color: 'var(--text-main-color)' }">
+        <h1 class="text-xl md:text-1xl font-semibold" :style="{ color: 'var(--text-main-color)' }">
           Volumes
+          <span v-if="!isLoadingVolumes && itemsToDisplay.length > 0"
+            >({{ itemsToDisplay.length }})</span
+          >
         </h1>
+        <p
+          v-if="isLoadingVolumes"
+          class="mt-1 text-sm"
+          :style="{ color: 'var(--sidebar-text-muted)' }"
+        >
+          Loading volumes data...
+        </p>
+        <p v-if="volumesError" class="mt-1 text-sm text-red-500 dark:text-red-400">
+          Error loading volumes: {{ volumesError }}
+        </p>
       </div>
       <div class="mt-4 sm:mt-0"></div>
     </div>
 
     <Transition name="layout-fade" mode="out-in">
       <div :key="layoutMode" :class="listContainerClasses">
+        <div
+          v-if="isLoadingVolumes"
+          class="col-span-full text-center py-10"
+          :style="{ color: 'var(--sidebar-text-muted)' }"
+        >
+          Loading...
+        </div>
+        <div
+          v-else-if="volumesError"
+          class="col-span-full text-center py-10 text-red-500 dark:text-red-400"
+        >
+          Failed to load volumes. Please try again later.
+        </div>
+        <div
+          v-else-if="itemsToDisplay.length === 0"
+          class="col-span-full text-center py-10"
+          :style="{ color: 'var(--sidebar-text-muted)' }"
+        >
+          No volumes found.
+        </div>
         <VolumeItem
-          v-for="volume in volumes"
+          v-else
+          v-for="volume in itemsToDisplay"
           :key="volume.id"
           :item="volume"
           :layout-mode="layoutMode"
@@ -93,10 +133,9 @@ const listContainerClasses = computed(() => {
 </template>
 
 <style scoped>
-/* For the entire list container when layoutMode changes */
 .layout-fade-enter-active,
 .layout-fade-leave-active {
-  transition: opacity 0.21s ease-in-out;
+  transition: opacity 0.15s ease-in-out;
 }
 .layout-fade-enter-from,
 .layout-fade-leave-to {

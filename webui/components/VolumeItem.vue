@@ -2,17 +2,16 @@
 import { Package } from 'lucide-vue-next'
 
 defineProps<{
-  item: { id: number; name: string; description?: string; type?: string }
+  item: { id: string; name: string; description?: string; type?: string }
   layoutMode: 'grid' | 'list'
 }>()
 </script>
 
 <template>
   <div
-    class="rounded-lg shadow transition-all duration-200 ease-in-out hover:shadow-xl"
+    class="group rounded-lg shadow transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.021] border border-[var(--sidebar-border-color)] hover:border-[var(--icon-accent-color)]"
     :style="{
       backgroundColor: 'var(--sidebar-bg)',
-      border: `1px solid var(--sidebar-border-color)`,
     }"
     :class="{
       'p-4 flex flex-col items-start text-left': layoutMode === 'grid',
@@ -26,7 +25,9 @@ defineProps<{
         'w-12 h-12': layoutMode === 'list',
       }"
     >
-      <Package class="text-slate-500 dark:text-slate-400 w-8 h-8" />
+      <Package
+        class="w-8 h-8 text-[var(--icon-muted-color)] transition-colors duration-170 ease-in-out group-hover:text-[var(--icon-accent-color)]"
+      />
     </div>
 
     <div class="flex-grow min-w-0" :class="{ 'w-full': layoutMode === 'grid' }">
