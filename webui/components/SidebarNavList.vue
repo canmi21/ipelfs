@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Server, DatabaseZap, FileClock, LandPlot } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -14,21 +15,21 @@ const navItems = [
   { path: '/activity', icon: FileClock, label: 'Activity', id: 'activity' },
 ]
 
-const focusRingClassesBase =
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2'
-const focusRingOffsetSidebarBg =
-  'focus-visible:ring-offset-[var(--sidebar-bg)] dark:focus-visible:ring-offset-[var(--sidebar-bg-dark,var(--sidebar-bg))]'
+// 不再需要 focusRingClassesBase 和 focusRingOffsetSidebarBg 常量
+// const focusRingClassesBase = ...
+// const focusRingOffsetSidebarBg = ...
 
-// Updated handleNavigation: removed 'source' parameter
 const handleNavigation = (path: string) => {
   if (typeof props.navigateTo === 'function') {
     props.navigateTo(path)
-  } else {
-    // If you want to keep a non-console error for a production build scenario,
-    // you might consider a more robust error handling or rely on TypeScript's prop validation.
-    // For now, if props.navigateTo is not a function, it will silently do nothing here.
   }
 }
+
+// 计算用于内联样式的偏移颜色变量
+const sidebarBgOffsetStyle = computed(() => ({
+  '--focus-ring-offset-color': 'var(--sidebar-bg)',
+  // --sidebar-bg 应该已经在 main.css 中为 .dark 定义了深色版本
+}))
 </script>
 
 <template>
@@ -42,12 +43,11 @@ const handleNavigation = (path: string) => {
         :aria-label="item.label"
         class="flex items-center h-11 mx-2 rounded-md"
         :class="{
-          'group cursor-pointer': !props.isSidebarCollapsed,
-          [focusRingClassesBase]: !props.isSidebarCollapsed,
-          [focusRingOffsetSidebarBg]: !props.isSidebarCollapsed,
+          'group cursor-pointer focusable-ui-element': !props.isSidebarCollapsed, // 应用全局焦点类到 LI
           'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
             !props.isSidebarCollapsed && props.showSidebarText,
         }"
+        :style="!props.isSidebarCollapsed ? sidebarBgOffsetStyle : null"
         @click="!props.isSidebarCollapsed ? handleNavigation(item.path) : undefined"
         @keydown.enter="!props.isSidebarCollapsed ? handleNavigation(item.path) : undefined"
         @keydown.space.prevent="!props.isSidebarCollapsed ? handleNavigation(item.path) : undefined"
@@ -58,12 +58,11 @@ const handleNavigation = (path: string) => {
           :aria-label="props.isSidebarCollapsed ? item.label : undefined"
           class="flex-shrink-0 flex items-center justify-center rounded-md"
           :class="{
-            'w-10 h-10 group/navicon cursor-pointer': props.isSidebarCollapsed,
-            [focusRingClassesBase]: props.isSidebarCollapsed,
-            [focusRingOffsetSidebarBg]: props.isSidebarCollapsed,
+            'w-10 h-10 group/navicon cursor-pointer focusable-ui-element': props.isSidebarCollapsed, // 应用全局焦点类到图标 DIV
             'w-10 h-11': !props.isSidebarCollapsed,
             'w-10 h-10': props.isSidebarCollapsed,
           }"
+          :style="props.isSidebarCollapsed ? sidebarBgOffsetStyle : null"
           @click="props.isSidebarCollapsed ? handleNavigation(item.path) : undefined"
           @keydown.enter="props.isSidebarCollapsed ? handleNavigation(item.path) : undefined"
           @keydown.space.prevent="
@@ -103,6 +102,7 @@ const handleNavigation = (path: string) => {
   color: var(--sidebar-text-main);
 }
 .group.hover\:bg-sidebar-item-hover-bg:hover {
+  /* Ensure :is() or similar if Tailwind JIT doesn't like this selector with .group */
   background-color: var(--sidebar-item-hover-bg);
 }
 .dark .group.dark\:hover\:bg-sidebar-item-dark-hover-bg:hover {

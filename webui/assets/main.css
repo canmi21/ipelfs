@@ -238,3 +238,24 @@ body {
   */
   transform: translateX(15px); /* 15px is suitable here */
 }
+
+.focusable-ui-element:focus-visible {
+  outline: 2px solid transparent; /* 移除默认轮廓” */
+  outline-offset: 2px; /* 的偏移配合 */
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset-width: 2px; /* Tailwind 的 ring-offset-2 对应的值 */
+
+  --focus-ring-color: #a8b2c2; /* 类似 Slate 400 for light mode */
+
+  --focus-ring-offset-color: var(--bg-main-content);
+
+  box-shadow:
+    0 0 0 var(--focus-ring-offset-width) var(--focus-ring-offset-color),
+    0 0 0 calc(var(--focus-ring-width) + var(--focus-ring-offset-width)) var(--focus-ring-color);
+}
+
+.dark .focusable-ui-element:focus-visible {
+  --focus-ring-color: #7f8c9b;
+  --focus-ring-offset-color: var(--bg-main-content);
+}
