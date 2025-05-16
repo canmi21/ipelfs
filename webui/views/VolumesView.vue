@@ -96,7 +96,7 @@ const listContainerClasses = computed(() => {
 /* For the entire list container when layoutMode changes */
 .layout-fade-enter-active,
 .layout-fade-leave-active {
-  transition: opacity 0.15s ease-in-out;
+  transition: opacity 0.21s ease-in-out;
 }
 .layout-fade-enter-from,
 .layout-fade-leave-to {

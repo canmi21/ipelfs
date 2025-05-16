@@ -1,32 +1,35 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { nextTick } from 'vue'
 
-// Import your view components
-import InsightsView from '../views/InsightsView.vue'
+import HomeView from '../views/HomeView.vue' // Insights
 import VolumesView from '../views/VolumesView.vue'
 import CollectionsView from '../views/CollectionsView.vue'
 import ActivityView from '../views/ActivityView.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: '/', // This is relative to the base '/ipelfs/'
-    name: 'Insights', // Changed name
-    component: InsightsView, // Component is now InsightsView
-    // Redirect removed
+    path: '/',
+    name: 'Insights',
+    component: HomeView,
+    meta: { title: `Insights` },
   },
   {
-    path: '/volumes', // Accessible at /ipelfs/volumes
+    path: '/volumes',
     name: 'Volumes',
     component: VolumesView,
+    meta: { title: `Volumes` },
   },
   {
-    path: '/collections', // Accessible at /ipelfs/collections
+    path: '/collections',
     name: 'Collections',
     component: CollectionsView,
+    meta: { title: `Collections` },
   },
   {
-    path: '/activity', // Accessible at /ipelfs/activity
+    path: '/activity',
     name: 'Activity',
     component: ActivityView,
+    meta: { title: `Activity` },
   },
   // Catch-all route for 404s under /ipelfs/ (optional)
   // {
@@ -37,12 +40,18 @@ const routes: Array<RouteRecordRaw> = [
 ]
 
 const router = createRouter({
-  // Set the base URL for the application. All routes will be prefixed with /ipelfs/
   history: createWebHistory('/ipelfs/'),
   routes,
-  // Optional: Add active class for router links if you use <router-link> later
-  // linkActiveClass: 'active-nav-link',
-  // linkExactActiveClass: 'exact-active-nav-link',
+})
+
+router.afterEach((to) => {
+  nextTick(() => {
+    if (to.meta && to.meta.title) {
+      document.title = to.meta.title as string
+    } else {
+      document.title = 'ipelfs'
+    }
+  })
 })
 
 export default router

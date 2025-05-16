@@ -64,13 +64,16 @@ const openGitHubRepoAction = () => {
             :on-toggle="handleSidebarToggleAction"
           />
         </div>
-        <div v-if="!props.isSidebarCollapsed && props.showGithubIcon" class="ml-auto mr-3">
-          <ActionSwitch
-            :icon-component="githubLinkSwitchState.iconComponent"
-            :title="githubLinkSwitchState.title"
-            :on-toggle="openGitHubRepoAction"
-          />
-        </div>
+
+        <Transition name="fade-sidebar-element">
+          <div v-if="!props.isSidebarCollapsed && props.showGithubIcon" class="ml-auto mr-3">
+            <ActionSwitch
+              :icon-component="githubLinkSwitchState.iconComponent"
+              :title="githubLinkSwitchState.title"
+              :on-toggle="openGitHubRepoAction"
+            />
+          </div>
+        </Transition>
       </div>
       <div class="border-b border-sidebar-border mx-2"></div>
     </div>
@@ -88,52 +91,55 @@ const openGitHubRepoAction = () => {
             :is="props.isBackendConnected ? Server : ServerOff"
             class="w-6 h-6 flex-shrink-0 transition-colors duration-150"
             :class="{
-              // 这些类名现在由 sidebar.css 定义
               'text-status-connected': props.isBackendConnected,
               'text-status-disconnected': !props.isBackendConnected,
             }"
           />
         </div>
-        <div
-          v-if="props.showInlineStatusText && !props.isSidebarCollapsed"
-          class="pl-1 pr-2 status-text-wrapper flex-grow min-w-0 flex justify-center items-center"
-        >
-          <div v-if="!props.isBackendConnected" class="flex items-center">
-            <span class="status-orb orb-disconnected mr-1.5 flex-shrink-0"></span>
-            <span class="font-medium text-sm truncate text-status-disconnected">Disconnected</span>
-          </div>
-          <div v-if="props.isBackendConnected" class="flex flex-col items-center">
-            <div class="flex items-center">
-              <span class="status-orb orb-connected mr-1.5 flex-shrink-0"></span>
-              <span class="status-connected-text">Connected</span>
-            </div>
-            <div class="text-center -mt-1">
-              <span v-if="props.formattedLatency" class="status-latency-display-text">
-                Latency: {{ props.formattedLatency }}
-              </span>
-              <span
-                v-else-if="props.latencyMs === null && props.healthCheckTimerId !== undefined"
-                class="status-latency-display-text"
+
+        <Transition name="fade-sidebar-element">
+          <div
+            v-if="props.showInlineStatusText && !props.isSidebarCollapsed"
+            class="pl-1 pr-2 status-text-wrapper flex-grow min-w-0 flex justify-center items-center"
+          >
+            <div v-if="!props.isBackendConnected" class="flex items-center">
+              <span class="status-orb orb-disconnected mr-1.5 flex-shrink-0"></span>
+              <span class="font-medium text-sm truncate text-status-disconnected"
+                >Disconnected</span
               >
-                Calculating...
-              </span>
-              <span
-                v-else-if="props.latencyMs === -1"
-                class="status-latency-display-text text-red-500 dark:text-red-400"
-              >
-                Error
-              </span>
+            </div>
+            <div v-if="props.isBackendConnected" class="flex flex-col items-center">
+              <div class="flex items-center">
+                <span class="status-orb orb-connected mr-1.5 flex-shrink-0"></span>
+                <span class="status-connected-text">Connected</span>
+              </div>
+              <div class="text-center -mt-1">
+                <span v-if="props.formattedLatency" class="status-latency-display-text">
+                  Latency: {{ props.formattedLatency }}
+                </span>
+                <span
+                  v-else-if="props.latencyMs === null && props.healthCheckTimerId !== undefined"
+                  class="status-latency-display-text"
+                >
+                  Calculating...
+                </span>
+                <span
+                  v-else-if="props.latencyMs === -1"
+                  class="status-latency-display-text text-red-500 dark:text-red-400"
+                >
+                  Error
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        </Transition>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* "重要的" CSS 或特定于组件内部结构的样式保留在这里 */
-/* 例如，状态小圆点的动画 */
+/* ... (保留原有的 .status-orb 和相关动画样式) ... */
 .status-orb {
   width: 9px;
   height: 9px;
@@ -170,5 +176,15 @@ const openGitHubRepoAction = () => {
   50% {
     transform: scale(0.88);
   }
+}
+
+.fade-sidebar-element-enter-active,
+.fade-sidebar-element-leave-active {
+  transition: opacity 0.07s ease-in-out;
+}
+
+.fade-sidebar-element-enter-from,
+.fade-sidebar-element-leave-to {
+  opacity: 0;
 }
 </style>

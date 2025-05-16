@@ -53,7 +53,3 @@ defineProps<{
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Styles specific to VolumeItem if needed beyond Tailwind classes */
-</style>
