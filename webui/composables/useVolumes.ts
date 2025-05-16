@@ -1,4 +1,3 @@
-// webui/composables/useVolumes.ts
 import { ref } from 'vue'
 import { buildApiUrl } from './../config/api'
 
