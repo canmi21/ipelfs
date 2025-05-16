@@ -14,6 +14,7 @@ use crate::web::api::{
 };
 
 use crate::utils::ua::get_user_agent_handler;
+use crate::volume::info::get_volume_info_handler;
 
 pub fn build_router() -> Router {
     Router::new()
@@ -26,6 +27,7 @@ pub fn build_router() -> Router {
             .route("/volumes/add", post(post_add_volume))
             .route("/volumes/remove", post(post_remove_volume))
             .route("/volumes/delete", post(post_delete_volume))
+            .route("/volumes/:id/info", get(get_volume_info_handler))
             .route("/volumes/:id/collections", get(get_collections))
             .route("/volumes/:id/collections", post(post_create_collection)) 
             // Reserved, RESTful use POST to create a collection
