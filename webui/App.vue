@@ -1,3 +1,4 @@
+// webui/App.vue
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 
@@ -14,7 +15,7 @@ import { openExternalLink, refreshPage } from './utils/browser'
 
 // Components
 import SwitchContainer from './components/SwitchContainer.vue'
-import SidebarComponent from './components/LeftSidebar.vue' // Assuming LeftSidebar.vue is your sidebar
+import SidebarComponent from './components/LeftSidebar.vue'
 import ConnectionLostModal from './components/ConnectionLostModal.vue'
 import JavascriptErrorModal from './components/JavascriptErrorModal.vue'
 import NotificationContainer from './components/NotificationContainer.vue'
@@ -25,35 +26,32 @@ import { Sun, Moon, SunMoon } from 'lucide-vue-next'
 // --- Initialize Composables ---
 const themeManager = useTheme()
 const switchManager = useGlobalSwitches()
-const mainContentEl = ref<HTMLElement | null>(null) // For sidebar
-const sidebarManager = useSidebar(mainContentEl) // useSidebar now receives mainContentEl
+const mainContentEl = ref<HTMLElement | null>(null)
+const sidebarManager = useSidebar(mainContentEl)
 const backendStatusManager = useBackendStatus()
 const jsErrorHandler = useJavascriptErrorHandler()
-useBrowserCompatibility() // Initialize browser compatibility checks
+useBrowserCompatibility()
 
 // --- Theme Switch Registration ---
 const themeSwitchConfig = computed(
   (): SwitchConfig => ({
     id: 'theme-switch',
-    order: 0, // Rightmost
+    order: 0,
     states: [
       {
         value: 'light',
         iconComponent: Sun,
         title: 'Switch to Light Theme',
-        iconClass: 'text-yellow-500 dark:text-yellow-400',
       },
       {
         value: 'dark',
         iconComponent: Moon,
         title: 'Switch to Dark Theme',
-        iconClass: 'text-blue-400 dark:text-blue-300',
       },
       {
         value: 'system',
         iconComponent: SunMoon,
         title: 'Use System Preference',
-        iconClass: 'text-slate-500 dark:text-slate-400',
       },
     ],
     currentStateValue: themeManager.currentTheme.value,
@@ -61,7 +59,6 @@ const themeSwitchConfig = computed(
   }),
 )
 
-// Register and keep theme switch updated
 watch(
   themeSwitchConfig,
   (newConfig) => {
@@ -74,13 +71,12 @@ onUnmounted(() => {
   switchManager.unregisterSwitch('theme-switch')
 })
 
-// --- Event Handlers for Modals & Sidebar ---
 const handleRetryConnection = () => {
   backendStatusManager.triggerManualHealthCheck()
 }
 
 const openRepositoryIssuesPage = () => {
-  openExternalLink('https://github.com/canmi21/ipelfs/issues') // Assuming this is your repo
+  openExternalLink('https://github.com/canmi21/ipelfs/issues')
 }
 
 const handleOpenExternalLink = (url: string) => {
@@ -108,7 +104,6 @@ const handleOpenExternalLink = (url: string) => {
     />
 
     <SwitchContainer />
-
     <NotificationContainer />
 
     <div

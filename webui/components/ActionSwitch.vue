@@ -1,9 +1,10 @@
+// webui/components/ActionSwitch.vue
 <script setup lang="ts">
 import type { Component as VueComponent } from 'vue'
 
 const props = defineProps<{
   iconComponent: VueComponent | string
-  iconClass?: string
+  iconClass?: string // This can still be used for non-color classes or very specific overrides
   title?: string
   onToggle: () => void
 }>()
@@ -21,15 +22,15 @@ const props = defineProps<{
     <component
       :is="props.iconComponent"
       class="w-6 h-6 transform transition-transform duration-150 group-hover:scale-110"
-      :class="[props.iconClass, '!group-hover:text-[var(--icon-accent-color)]']"
+      :class="[props.iconClass]"
     />
   </button>
 </template>
 
 <style scoped>
+/* Icon color change on hover and keyboard focus */
 button:hover > :deep(svg),
 button:focus-visible > :deep(svg) {
-  /* Changed from :focus to :focus-visible for icon color change */
   color: var(--icon-accent-color);
 }
 </style>
