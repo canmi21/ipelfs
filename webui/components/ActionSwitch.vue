@@ -14,7 +14,7 @@ const props = defineProps<{
     @click="props.onToggle"
     :title="props.title"
     type="button"
-    class="p-1.5 rounded-md group transition-colors duration-150 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main-content)] dark:focus-visible:ring-offset-[var(--bg-main-content)]"
+    class="p-1.5 rounded-md group transition-colors duration-150 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main-content)] dark:focus-visible:ring-offset-[var(--action-switch-dark-offset-bg,var(--bg-main-content))]"
     :style="{ color: 'var(--icon-muted-color)' }"
     aria-label="Action switch"
   >
@@ -28,8 +28,8 @@ const props = defineProps<{
 
 <style scoped>
 button:hover > :deep(svg),
-button:focus > :deep(svg) {
-  /* Icon color changes on hover AND any focus */
+button:focus-visible > :deep(svg) {
+  /* Changed from :focus to :focus-visible for icon color change */
   color: var(--icon-accent-color);
 }
 </style>

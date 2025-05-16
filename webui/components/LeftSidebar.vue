@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue' // Import computed
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   PanelRightOpen,
@@ -8,7 +8,7 @@ import {
   Server,
   ServerOff,
 } from 'lucide-vue-next'
-import ActionSwitch from './ActionSwitch.vue' // Import ActionSwitch
+import ActionSwitch from './ActionSwitch.vue'
 import SidebarNavList from './SidebarNavList.vue'
 
 const props = defineProps<{
@@ -34,8 +34,7 @@ const navigateTo = (path: string) => {
 const sidebarToggleSwitchState = computed(() => ({
   iconComponent: props.isSidebarCollapsed ? PanelRightClose : PanelRightOpen,
   title: 'Toggle Sidebar',
-  // iconClass can be used if specific non-hover/non-focus color is needed for the icon itself
-  // Default ActionSwitch styling will use --icon-muted-color and hover/focus to --icon-accent-color
+  // iconClass could be used for specific static coloring if ActionSwitch base style isn't enough
 }))
 
 const handleSidebarToggleAction = () => {
@@ -48,7 +47,6 @@ const githubLinkSwitchState = computed(() => ({
 }))
 
 const openGitHubRepoAction = () => {
-  // Make sure to use the correct GitHub link for your project
   emit('open-external-link', 'https://github.com/canmi21/ipelfs')
 }
 </script>
@@ -59,7 +57,7 @@ const openGitHubRepoAction = () => {
     class="fixed top-0 left-0 h-full bg-sidebar z-30 transition-all ease-in-out duration-300 overflow-hidden flex flex-col"
   >
     <div class="shrink-0">
-      <div class="h-14 flex items-center px-0">
+      <div class="h-14 flex items-center">
         <div class="w-14 h-14 flex-shrink-0 flex items-center justify-center">
           <ActionSwitch
             :icon-component="sidebarToggleSwitchState.iconComponent"
@@ -67,10 +65,7 @@ const openGitHubRepoAction = () => {
             :on-toggle="handleSidebarToggleAction"
           />
         </div>
-        <div
-          v-if="!props.isSidebarCollapsed && props.showGithubIcon"
-          class="ml-auto mr-3 flex items-center justify-center"
-        >
+        <div v-if="!props.isSidebarCollapsed && props.showGithubIcon" class="ml-auto mr-3">
           <ActionSwitch
             :icon-component="githubLinkSwitchState.iconComponent"
             :title="githubLinkSwitchState.title"
@@ -140,10 +135,7 @@ const openGitHubRepoAction = () => {
 .bg-sidebar {
   background-color: var(--sidebar-bg);
 }
-.text-icon-muted {
-  color: var(--icon-muted-color);
-}
-/* .group:hover .group-hover\:text-icon-accent no longer needed here if ActionSwitch handles its own hover directly */
+/* .text-icon-muted is now primarily handled by ActionSwitch's base style prop or iconClass if needed */
 .border-sidebar-border {
   border-color: var(--sidebar-border-color);
 }
@@ -154,9 +146,7 @@ const openGitHubRepoAction = () => {
   color: var(--status-disconnected-color);
 }
 
-/* Styles for status orb and text (copied from your original LeftSidebar if they were there) */
 .status-orb {
-  /* ... */
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -202,7 +192,7 @@ const openGitHubRepoAction = () => {
 .status-latency-display-text {
   font-size: 0.75rem;
   line-height: 1rem;
-  color: var(--sidebar-text-muted);
+  color: var(--sidebar-text-muted); /* Ensure --sidebar-text-muted is defined */
 }
 .min-w-0 {
   min-width: 0;
