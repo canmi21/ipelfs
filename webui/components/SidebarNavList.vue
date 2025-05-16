@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Server, DatabaseZap, FileClock, LandPlot } from 'lucide-vue-next'
+import './../assets/sidebarnavlist.css'
 
 const props = defineProps<{
   isSidebarCollapsed: boolean
@@ -23,6 +24,7 @@ const navItems = [
         :key="item.id"
         class="flex items-center h-11 mx-2 rounded-md group"
         :class="{
+          // These classes now come from sidebarnavlist.css
           'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
             !props.isSidebarCollapsed && props.showSidebarText,
         }"
@@ -55,28 +57,3 @@ const navItems = [
     </ul>
   </nav>
 </template>
-
-<style scoped>
-.text-sidebar-main {
-  color: var(--sidebar-text-main);
-}
-/* .text-icon-muted is no longer needed as a separate class here if color is applied directly */
-
-/* For text hover when LI is hovered (expanded sidebar) */
-/* This selector targets the text span when the LI (group) is hovered */
-.group:hover .text-sidebar-main {
-  color: var(--icon-accent-color);
-}
-
-.hover\:bg-sidebar-item-hover-bg:hover {
-  background-color: var(--sidebar-item-hover-bg);
-}
-.dark .dark\:hover\:bg-sidebar-item-dark-hover-bg:hover {
-  background-color: var(--sidebar-item-dark-hover-bg);
-}
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-</style>

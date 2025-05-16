@@ -10,6 +10,7 @@ import {
 } from 'lucide-vue-next'
 import ActionSwitch from './ActionSwitch.vue'
 import SidebarNavList from './SidebarNavList.vue'
+import './../assets/sidebar.css'
 
 const props = defineProps<{
   isSidebarCollapsed: boolean
@@ -30,11 +31,9 @@ const navigateTo = (path: string) => {
   router.push(path)
 }
 
-// --- Computed states for ActionSwitch components ---
 const sidebarToggleSwitchState = computed(() => ({
   iconComponent: props.isSidebarCollapsed ? PanelRightClose : PanelRightOpen,
   title: 'Toggle Sidebar',
-  // iconClass could be used for specific static coloring if ActionSwitch base style isn't enough
 }))
 
 const handleSidebarToggleAction = () => {
@@ -89,6 +88,7 @@ const openGitHubRepoAction = () => {
             :is="props.isBackendConnected ? Server : ServerOff"
             class="w-6 h-6 flex-shrink-0 transition-colors duration-150"
             :class="{
+              // 这些类名现在由 sidebar.css 定义
               'text-status-connected': props.isBackendConnected,
               'text-status-disconnected': !props.isBackendConnected,
             }"
@@ -132,20 +132,8 @@ const openGitHubRepoAction = () => {
 </template>
 
 <style scoped>
-.bg-sidebar {
-  background-color: var(--sidebar-bg);
-}
-/* .text-icon-muted is now primarily handled by ActionSwitch's base style prop or iconClass if needed */
-.border-sidebar-border {
-  border-color: var(--sidebar-border-color);
-}
-.text-status-connected {
-  color: var(--status-connected-color);
-}
-.text-status-disconnected {
-  color: var(--status-disconnected-color);
-}
-
+/* "重要的" CSS 或特定于组件内部结构的样式保留在这里 */
+/* 例如，状态小圆点的动画 */
 .status-orb {
   width: 9px;
   height: 9px;
@@ -182,19 +170,5 @@ const openGitHubRepoAction = () => {
   50% {
     transform: scale(0.88);
   }
-}
-.status-connected-text {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
-  color: var(--status-connected-color);
-}
-.status-latency-display-text {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  color: var(--sidebar-text-muted); /* Ensure --sidebar-text-muted is defined */
-}
-.min-w-0 {
-  min-width: 0;
 }
 </style>

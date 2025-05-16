@@ -1,0 +1,39 @@
+/* Background for the sidebar itself */
+.bg-sidebar {
+  background-color: var(--sidebar-bg);
+}
+
+/* Border color used within the sidebar, e.g., for separators */
+.border-sidebar-border {
+  border-color: var(--sidebar-border-color);
+}
+
+/* Text color for connected status */
+.text-status-connected {
+  color: var(--status-connected-color);
+}
+
+/* Text color for disconnected status */
+.text-status-disconnected {
+  color: var(--status-disconnected-color);
+}
+
+/* Styling for the "Connected" text itself */
+.status-connected-text {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+  font-weight: 600; /* font-semibold */
+  color: var(--status-connected-color);
+}
+
+/* Styling for the latency display text */
+.status-latency-display-text {
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1rem;
+  color: var(--sidebar-text-muted); /* Uses a theme variable */
+}
+
+/* Utility class for min-width: 0 */
+.min-w-0 {
+  min-width: 0;
+}
