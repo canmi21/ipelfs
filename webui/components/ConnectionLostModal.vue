@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { ref, watch, nextTick, computed, onUnmounted } from 'vue' // Added ref, watch, nextTick, onUnmounted
 import { ServerOff, ExternalLink, RotateCcw, X as IconX } from 'lucide-vue-next'
+import ActionSwitch from './ActionSwitch.vue'
+import './../assets/connectionlost.css'
 
 const props = defineProps<{
   isBackendConnected: boolean
@@ -10,12 +13,137 @@ const props = defineProps<{
 
 const emit = defineEmits(['retry-connection', 'open-issues-page'])
 
+const modalContentRef = ref<HTMLElement | null>(null) // Ref for the modal content area
+
 const handleRetry = () => {
   emit('retry-connection')
 }
 const handleOpenIssues = () => {
   emit('open-issues-page')
 }
+
+// --- Focus Trap Logic ---
+const getFocusableElements = (): HTMLElement[] => {
+  if (!modalContentRef.value) return []
+  const selector =
+    'a[href]:not([disabled]), button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=""], [tabindex="-1"])'
+  const elements = Array.from(modalContentRef.value.querySelectorAll<HTMLElement>(selector))
+  // Filter for visible elements
+  return elements.filter((el) => {
+    const style = window.getComputedStyle(el)
+    return (
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      el.offsetWidth > 0 &&
+      el.offsetHeight > 0
+    )
+  })
+}
+
+const handleFocusTrap = (event: KeyboardEvent) => {
+  if (event.key !== 'Tab' || !modalContentRef.value) {
+    return // Only trap Tab key, and only if modal is present
+  }
+
+  const focusableElements = getFocusableElements()
+  if (focusableElements.length === 0) {
+    event.preventDefault() // No focusable elements within modal, prevent tabbing out
+    return
+  }
+
+  const firstElement = focusableElements[0]
+  const lastElement = focusableElements[focusableElements.length - 1]
+
+  if (event.shiftKey) {
+    // Shift + Tab
+    // If current active element is the first, or if focus is somehow outside the modal (e.g. browser URL bar then shift-tab)
+    if (
+      document.activeElement === firstElement ||
+      !modalContentRef.value.contains(document.activeElement)
+    ) {
+      lastElement.focus()
+      event.preventDefault()
+    }
+  } else {
+    // Tab
+    // If current active element is the last, or if focus is somehow outside the modal
+    if (
+      document.activeElement === lastElement ||
+      !modalContentRef.value.contains(document.activeElement)
+    ) {
+      firstElement.focus()
+      event.preventDefault()
+    }
+  }
+}
+
+watch(
+  () => props.isBackendConnected,
+  (isConnected, oldIsConnected) => {
+    const isModalVisible = !isConnected
+    const wasModalVisible = oldIsConnected === false // oldIsConnected would be true if it *was* connected
+
+    if (isModalVisible && !wasModalVisible) {
+      // Modal just became visible
+      nextTick(() => {
+        const focusableElements = getFocusableElements()
+        if (focusableElements.length > 0) {
+          // Try to focus the "Retry Connection" button first as it's a primary action.
+          // It can be identified by a specific class or attribute if needed, or by being last.
+          // For now, let's focus the last interactable element, which is the retry button.
+          // Or better, find it more reliably if possible.
+          const retryButton = modalContentRef.value?.querySelector<HTMLButtonElement>(
+            'button.retry-button-js-hook',
+          ) // Added a hook class
+          if (retryButton) {
+            retryButton.focus()
+          } else if (focusableElements.length > 0) {
+            // Fallback to the first focusable element if retry button not found by hook
+            focusableElements[0].focus()
+          }
+        } else if (modalContentRef.value) {
+          // If no interactive elements, focus the modal card itself (it needs tabindex="-1")
+          // (modalContentRef.value as HTMLElement).focus();
+        }
+        document.addEventListener('keydown', handleFocusTrap)
+      })
+    } else if (!isModalVisible && wasModalVisible) {
+      // Modal just became hidden
+      document.removeEventListener('keydown', handleFocusTrap)
+      // Optionally, restore focus to the element that had focus before modal opened
+      // This requires storing that element, which is an advanced enhancement.
+    }
+  },
+)
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleFocusTrap)
+})
+
+// Computed state for the GitHub Issues ActionSwitch
+const githubIssuesSwitchState = computed(() => ({
+  iconComponent: ExternalLink,
+  title: 'Open GitHub Issues',
+  iconClass:
+    'text-gray-400 dark:text-gray-500 group-hover:!text-gray-600 dark:group-hover:!text-gray-300',
+}))
+
+// Focus visible classes for interactable elements (ActionSwitch already has its own via props)
+const focusVisibleRingBase =
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-2'
+const focusVisibleRingOffsetModalBg = // For elements directly on modal background
+  'focus-visible:ring-offset-[var(--modal-bg-color)] dark:focus-visible:ring-offset-[var(--modal-bg-color)]'
+
+// Dynamic classes for the retry button
+const retryButtonClasses = computed(() => {
+  if (props.isRetryingManualCheck) {
+    return 'connection-lost-modal-button-retrying text-gray-700 dark:text-gray-300'
+  }
+  if (props.showRetryFailureIcon) {
+    return 'connection-lost-modal-button-failed text-white'
+  }
+  return 'connection-lost-modal-button-primary text-white'
+})
 </script>
 
 <template>
@@ -25,26 +153,32 @@ const handleOpenIssues = () => {
       class="fixed inset-0 z-[9998] bg-gray-900 bg-opacity-40 dark:bg-black dark:bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4"
       aria-modal="true"
       role="dialog"
+      aria-labelledby="connection-lost-title"
     >
       <Transition name="modal-pop" appear>
         <div
+          ref="modalContentRef"
           class="modal-card-content bg-modal-bg text-modal-text p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md sm:max-w-lg relative"
+          tabindex="-1"
         >
           <div class="flex justify-between items-center mb-4">
             <div class="flex items-center">
               <ServerOff class="w-8 h-8 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" />
-              <h2 class="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400">
+              <h2
+                id="connection-lost-title"
+                class="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400"
+              >
                 Connection Lost
               </h2>
             </div>
-            <button
-              @click="handleOpenIssues"
-              class="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-full transition-colors duration-150"
-              title="Open GitHub Issues"
+            <ActionSwitch
+              :icon-component="githubIssuesSwitchState.iconComponent"
+              :title="githubIssuesSwitchState.title"
+              :icon-class="githubIssuesSwitchState.iconClass"
+              :on-toggle="handleOpenIssues"
               aria-label="Open GitHub Issues for help"
-            >
-              <ExternalLink class="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
+              class="connection-lost-github-button"
+            />
           </div>
           <div class="flex items-center mb-5 text-modal-text-secondary">
             <strong class="text-sm sm:text-base">WebUI is currently unavailable.</strong>
@@ -82,13 +216,11 @@ const handleOpenIssues = () => {
           <button
             @click="handleRetry"
             :disabled="props.isRetryingManualCheck || props.showRetryFailureIcon"
-            class="mt-6 w-full font-semibold py-2.5 px-4 rounded-lg transition-all duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+            class="retry-button-js-hook mt-6 w-full font-semibold py-2.5 px-4 rounded-lg transition-all duration-150 ease-in-out flex items-center justify-center text-sm sm:text-base"
             :class="[
-              props.isRetryingManualCheck
-                ? 'bg-gray-400 dark:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-not-allowed'
-                : props.showRetryFailureIcon
-                  ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white focus:ring-red-500'
-                  : 'bg-button-primary hover:bg-button-primary-hover text-white focus:ring-button-primary-focus',
+              retryButtonClasses,
+              focusVisibleRingBase,
+              focusVisibleRingOffsetModalBg,
               { 'animate-shake': props.triggerShake },
             ]"
           >
@@ -111,30 +243,7 @@ const handleOpenIssues = () => {
 </template>
 
 <style scoped>
-/* Styles for modal content, transitions, buttons etc. should be here or in main.css if global */
-.bg-modal-bg {
-  background-color: var(--modal-bg-color);
-}
-.text-modal-text {
-  color: var(--modal-text-color);
-}
-.text-modal-text-secondary {
-  color: var(--modal-text-secondary-color);
-}
-
-.bg-button-primary {
-  background-color: var(--button-primary-bg);
-}
-.hover\:bg-button-primary-hover:hover {
-  background-color: var(--button-primary-hover-bg);
-}
-.focus\:ring-button-primary-focus:focus {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--button-primary-focus-ring);
-}
-
-/* Animations (spin, shake, fade, pop) should ideally be global in main.css if used by multiple components */
+/* Animations (spin, shake) and layout transitions (overlay-fade, modal-pop) remain scoped here */
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -142,10 +251,6 @@ const handleOpenIssues = () => {
   animation: shake-effect 0.4s ease-in-out;
 }
 
-/* Keyframes for spin and shake, and transitions like overlay-fade, modal-pop
-   should be moved to a global CSS file (e.g., assets/main.css) if they are generic enough.
-   For brevity, I'm assuming they might be in main.css. If not, copy them here or to main.css.
-*/
 @keyframes spin {
   to {
     transform: rotate(360deg);
