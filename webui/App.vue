@@ -1,67 +1,91 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 
+// Composables
+import { useTheme } from './composables/useTheme'
 import { useSidebar } from './composables/useSidebar'
 import { useBackendStatus } from './composables/useBackendStatus'
+import { useBrowserCompatibility } from './composables/useBrowserCompatibility'
 import { useJavascriptErrorHandler } from './composables/useJavascriptErrorHandler'
+import { useGlobalSwitches, type SwitchConfig } from './composables/useGlobalSwitches'
 
-import ThemeToggle from './components/ThemeToggle.vue'
-import SidebarComponent from './components/LeftSidebar.vue'
+// Utils
+import { openExternalLink, refreshPage } from './utils/browser'
+
+// Components
+import SwitchContainer from './components/SwitchContainer.vue'
+import SidebarComponent from './components/LeftSidebar.vue' // Assuming LeftSidebar.vue is your sidebar
 import ConnectionLostModal from './components/ConnectionLostModal.vue'
 import JavascriptErrorModal from './components/JavascriptErrorModal.vue'
 import NotificationContainer from './components/NotificationContainer.vue'
 
-import { openExternalLink, refreshPage } from './utils/browser'
-import { useBrowserCompatibility } from './composables/useBrowserCompatibility'
+// Icons for Theme Switch
+import { Sun, Moon, SunMoon } from 'lucide-vue-next'
 
-// --- Theme (from composable) ---
-// isDark is implicitly handled by useTheme via document.documentElement.classList
-// const { handleToggle: handleThemeToggle, currentIcon: themeIcon } = useTheme() // Already imported by ThemeToggle.vue
+// --- Initialize Composables ---
+const themeManager = useTheme()
+const switchManager = useGlobalSwitches()
+const mainContentEl = ref<HTMLElement | null>(null) // For sidebar
+const sidebarManager = useSidebar(mainContentEl) // useSidebar now receives mainContentEl
+const backendStatusManager = useBackendStatus()
+const jsErrorHandler = useJavascriptErrorHandler()
+useBrowserCompatibility() // Initialize browser compatibility checks
 
-// --- Main Content Element Ref for Sidebar ---
-const mainContentEl = ref<HTMLElement | null>(null)
+// --- Theme Switch Registration ---
+const themeSwitchConfig = computed(
+  (): SwitchConfig => ({
+    id: 'theme-switch',
+    order: 0, // Rightmost
+    states: [
+      {
+        value: 'light',
+        iconComponent: Sun,
+        title: 'Switch to Light Theme',
+        iconClass: 'text-yellow-500 dark:text-yellow-400',
+      },
+      {
+        value: 'dark',
+        iconComponent: Moon,
+        title: 'Switch to Dark Theme',
+        iconClass: 'text-blue-400 dark:text-blue-300',
+      },
+      {
+        value: 'system',
+        iconComponent: SunMoon,
+        title: 'Use System Preference',
+        iconClass: 'text-slate-500 dark:text-slate-400',
+      },
+    ],
+    currentStateValue: themeManager.currentTheme.value,
+    onToggle: () => themeManager.handleToggle(),
+  }),
+)
 
-// --- Sidebar (from composable) ---
-const {
-  isSidebarCollapsed,
-  showSidebarText,
-  showGithubIconInSidebar,
-  showInlineStatusTextInSidebar,
-  sidebarWidthClass,
-  contentMarginClass,
-  // isAnimating, // Not directly needed in App.vue template
-  handleSidebarToggle,
-} = useSidebar(mainContentEl)
+// Register and keep theme switch updated
+watch(
+  themeSwitchConfig,
+  (newConfig) => {
+    switchManager.registerSwitch(newConfig)
+  },
+  { immediate: true, deep: true },
+)
 
-// --- Backend Status (from composable) ---
-const {
-  isBackendConnected,
-  latencyMs,
-  formattedLatency,
-  healthCheckTimerId,
-  triggerManualHealthCheck,
-  isRetryingManualCheck,
-  triggerShake,
-  showRetryFailureIcon,
-} = useBackendStatus(/* you can pass healthCheckUrl here if it's dynamic */)
+onUnmounted(() => {
+  switchManager.unregisterSwitch('theme-switch')
+})
 
-// --- JavaScript Error Handling (from composable) ---
-const { showJavascriptErrorOverlay, jsErrorHelpLink } = useJavascriptErrorHandler()
-
-// --- Event Handlers for Modals ---
+// --- Event Handlers for Modals & Sidebar ---
 const handleRetryConnection = () => {
-  triggerManualHealthCheck()
+  backendStatusManager.triggerManualHealthCheck()
 }
 
 const openRepositoryIssuesPage = () => {
-  openExternalLink('https://github.com/canmi21/ipelfs/issues')
+  openExternalLink('https://github.com/canmi21/ipelfs/issues') // Assuming this is your repo
 }
 
 const handleOpenExternalLink = (url: string) => {
   openExternalLink(url)
 }
-
-useBrowserCompatibility()
 </script>
 
 <template>
@@ -70,26 +94,26 @@ useBrowserCompatibility()
     :style="{ backgroundColor: 'var(--bg-main-content)', color: 'var(--text-main-color)' }"
   >
     <SidebarComponent
-      :is-sidebar-collapsed="isSidebarCollapsed"
-      :show-sidebar-text="showSidebarText"
-      :show-github-icon="showGithubIconInSidebar"
-      :show-inline-status-text="showInlineStatusTextInSidebar"
-      :sidebar-width-class="sidebarWidthClass"
-      :is-backend-connected="isBackendConnected"
-      :formatted-latency="formattedLatency"
-      :latency-ms="latencyMs"
-      :health-check-timer-id="healthCheckTimerId"
-      @toggle-sidebar="handleSidebarToggle"
+      :is-sidebar-collapsed="sidebarManager.isSidebarCollapsed.value"
+      :show-sidebar-text="sidebarManager.showSidebarText.value"
+      :show-github-icon="sidebarManager.showGithubIconInSidebar.value"
+      :show-inline-status-text="sidebarManager.showInlineStatusTextInSidebar.value"
+      :sidebar-width-class="sidebarManager.sidebarWidthClass.value"
+      :is-backend-connected="backendStatusManager.isBackendConnected.value"
+      :formatted-latency="backendStatusManager.formattedLatency.value"
+      :latency-ms="backendStatusManager.latencyMs.value"
+      :health-check-timer-id="backendStatusManager.healthCheckTimerId.value"
+      @toggle-sidebar="sidebarManager.handleSidebarToggle"
       @open-external-link="handleOpenExternalLink"
     />
 
-    <ThemeToggle />
+    <SwitchContainer />
 
     <NotificationContainer />
 
     <div
       ref="mainContentEl"
-      :class="contentMarginClass"
+      :class="sidebarManager.contentMarginClass.value"
       class="relative z-20 transition-margin min-h-screen overflow-y-auto"
       :style="{ backgroundColor: 'var(--bg-main-content)' }"
     >
@@ -101,17 +125,17 @@ useBrowserCompatibility()
     </div>
 
     <ConnectionLostModal
-      :is-backend-connected="isBackendConnected"
-      :is-retrying-manual-check="isRetryingManualCheck"
-      :trigger-shake="triggerShake"
-      :show-retry-failure-icon="showRetryFailureIcon"
+      :is-backend-connected="backendStatusManager.isBackendConnected.value"
+      :is-retrying-manual-check="backendStatusManager.isRetryingManualCheck.value"
+      :trigger-shake="backendStatusManager.triggerShake.value"
+      :show-retry-failure-icon="backendStatusManager.showRetryFailureIcon.value"
       @retry-connection="handleRetryConnection"
       @open-issues-page="openRepositoryIssuesPage"
-      v-if="!showJavascriptErrorOverlay"
+      v-if="!jsErrorHandler.showJavascriptErrorOverlay.value"
     />
     <JavascriptErrorModal
-      :show-overlay="showJavascriptErrorOverlay"
-      :help-link="jsErrorHelpLink"
+      :show-overlay="jsErrorHandler.showJavascriptErrorOverlay.value"
+      :help-link="jsErrorHandler.jsErrorHelpLink"
       @refresh-page="refreshPage"
       @open-external-link="handleOpenExternalLink"
     />
@@ -119,15 +143,5 @@ useBrowserCompatibility()
 </template>
 
 <style>
-/*
-  The <style> block from the original App.vue, which contained :root, .dark, body,
-  and global utility animation classes, should be MOVED to 'webui/assets/main.css'.
-  Then, import 'webui/assets/main.css' in your 'webui/main.ts' file.
-
-  Example in main.ts:
-  import './assets/main.css'
-
-  This App.vue should ideally have NO <style> block or only very specific,
-  non-global styles if absolutely necessary. Keeping it clean.
-*/
+/* Global styles should be in main.css */
 </style>
