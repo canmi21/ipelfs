@@ -13,7 +13,7 @@ const volumes = ref(
     id: i + 1,
     name: `Storage Volume ${i + 1}`,
     description: `This is a sample description for volume no. ${i + 1}.`,
-    type: i % 2 === 0 ? 'SSD' : 'HDD Archive',
+    type: i % 2 === 0 ? 'SSD' : 'HDD Archive', // Type is still in data, though not displayed by VolumeItem
   })),
 )
 
@@ -30,16 +30,8 @@ const layoutSwitchConfig = computed(
     id: LAYOUT_SWITCH_ID,
     order: 10,
     states: [
-      {
-        value: 'grid',
-        iconComponent: LayoutGrid,
-        title: 'Grid View',
-      },
-      {
-        value: 'list',
-        iconComponent: LayoutList,
-        title: 'List View',
-      },
+      { value: 'grid', iconComponent: LayoutGrid, title: 'Grid View' },
+      { value: 'list', iconComponent: LayoutList, title: 'List View' },
     ],
     currentStateValue: layoutMode.value,
     onToggle: () => {
@@ -51,10 +43,11 @@ const layoutSwitchConfig = computed(
 
 watch(
   [layoutSwitchConfig, isVolumesPageActive],
-  ([newConfig, onPage], [oldOnPage]) => {
+  ([newConfig, onPage], [oldConfig, oldOnPage]) => {
     if (onPage) {
       registerSwitch(newConfig)
-    } else if (oldOnPage && !onPage) {
+    } else if (oldConfig && oldOnPage && !onPage) {
+      // Ensure oldConfig and oldOnPage are valid before accessing
       unregisterSwitch(LAYOUT_SWITCH_ID)
     }
   },
@@ -71,7 +64,9 @@ const listContainerClasses = computed(() => {
   if (layoutMode.value === 'grid') {
     return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6'
   } else {
-    return 'flex flex-col space-y-4'
+    // For list view, space-y-4 on the TransitionGroup's rendered div works well.
+    // Or, apply mb-4 to each VolumeItem if TransitionGroup itself should not have spacing classes.
+    return 'flex flex-col space-y-4' // This class will now be applied to the TransitionGroup's tag
   }
 })
 </script>
@@ -90,17 +85,19 @@ const listContainerClasses = computed(() => {
       <div class="mt-4 sm:mt-0"></div>
     </div>
 
-    <div :class="listContainerClasses">
+    <TransitionGroup tag="div" name="volume-list" :class="listContainerClasses">
       <VolumeItem
         v-for="volume in volumes"
         :key="volume.id"
         :item="volume"
         :layout-mode="layoutMode"
+        class="volume-list-item"
       />
-    </div>
+    </TransitionGroup>
   </div>
 </template>
 
 <style scoped>
-/* Add any specific styles for VolumesView if needed */
+/* Styles specific to VolumesView.vue can go here if needed. */
+/* Transition styles will be added to a global CSS file like main.css */
 </style>

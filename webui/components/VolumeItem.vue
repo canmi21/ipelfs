@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Package } from 'lucide-vue-next' // 使用 Package 图标
+
 defineProps<{
   item: { id: number; name: string; description?: string; type?: string }
   layoutMode: 'grid' | 'list'
@@ -9,34 +11,29 @@ defineProps<{
   <div
     class="rounded-lg shadow transition-all duration-200 ease-in-out hover:shadow-xl"
     :style="{
-      backgroundColor: 'var(--sidebar-bg)' /* Using sidebar-bg for card background */,
+      backgroundColor: 'var(--sidebar-bg)',
       border: `1px solid var(--sidebar-border-color)`,
     }"
     :class="{
-      'p-4 flex flex-col': layoutMode === 'grid', // Grid item specific layout
-      'p-3 flex items-center space-x-4': layoutMode === 'list', // List item specific layout
+      'p-4 flex flex-col items-start text-left': layoutMode === 'grid',
+      'p-3 flex items-center space-x-4': layoutMode === 'list',
     }"
   >
     <div
       class="flex-shrink-0 rounded-md flex items-center justify-center"
       :class="{
-        'w-16 h-16 bg-slate-200 dark:bg-slate-700 mb-3': layoutMode === 'grid',
-        'w-12 h-12 bg-slate-200 dark:bg-slate-700': layoutMode === 'list',
+        'w-12 h-12 mb-2': layoutMode === 'grid',
+        'w-12 h-12': layoutMode === 'list',
       }"
     >
-      <Cube
-        class="text-slate-500 dark:text-slate-400"
-        :class="{
-          'w-8 h-8': layoutMode === 'grid',
-          'w-6 h-6': layoutMode === 'list',
-        }"
-      />
+      <Package class="text-slate-500 dark:text-slate-400 w-8 h-8" />
     </div>
-    <div class="flex-grow min-w-0">
+
+    <div class="flex-grow min-w-0" :class="{ 'w-full': layoutMode === 'grid' }">
       <h3
         class="font-semibold truncate"
         :class="{
-          'text-lg mb-1 text-center': layoutMode === 'grid',
+          'text-md mb-1': layoutMode === 'grid',
           'text-md': layoutMode === 'list',
         }"
         :style="{ color: 'var(--text-main-color)' }"
@@ -48,40 +45,15 @@ defineProps<{
         v-if="item.description"
         class="text-xs truncate"
         :style="{ color: 'var(--sidebar-text-muted)' }"
-        :class="{ 'text-center': layoutMode === 'grid' }"
         :title="item.description"
+        :class="{ '': layoutMode === 'grid' }"
       >
         {{ item.description }}
       </p>
-      <p
-        v-if="item.type && layoutMode === 'grid'"
-        class="text-xs mt-2 text-center rounded-full px-2 py-0.5 inline-block"
-        :style="{
-          backgroundColor: 'var(--sidebar-item-hover-bg)',
-          color: 'var(--icon-accent-color)',
-        }"
-      >
-        {{ item.type }}
-      </p>
-      <p
-        v-if="item.type && layoutMode === 'list'"
-        class="text-xs mt-0.5"
-        :style="{ color: 'var(--icon-accent-color)' }"
-      >
-        Type: {{ item.type }}
-      </p>
-    </div>
-    <div v-if="layoutMode === 'grid'" class="mt-3 text-center">
-      <button
-        class="text-xs px-3 py-1 rounded-md text-white manage-button"
-        :style="{ backgroundColor: 'var(--button-primary-bg)' }"
-      >
-        Manage
-      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Ensure text truncation works well, especially in grid mode if height is constrained */
+/* Styles specific to VolumeItem if needed beyond Tailwind classes */
 </style>
