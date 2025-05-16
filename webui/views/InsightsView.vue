@@ -1,41 +1,4 @@
-<script setup lang="ts">
-import { onMounted } from 'vue'
-import { useNotifications } from './../composables/useNotifications' // Corrected path
-
-const { addNotification } = useNotifications()
-
-onMounted(() => {
-  const notificationDuration = 30000 // 30 seconds
-
-  // Send an 'info' (default green) notification
-  addNotification({
-    message: 'Welcome to Insights! This is an info (default green) notification.',
-    type: 'info',
-    duration: notificationDuration,
-  })
-
-  // Send a 'success' (green) notification
-  addNotification({
-    message: 'Successfully loaded initial data. This is a success notification.',
-    type: 'success',
-    duration: notificationDuration,
-  })
-
-  // Send a 'warning' (yellow) notification
-  addNotification({
-    message: 'Attention: Some metrics are nearing their thresholds. This is a warning.',
-    type: 'warning',
-    duration: notificationDuration,
-  })
-
-  // Send an 'error' (red) notification
-  addNotification({
-    message: 'Critical Error: Failed to connect to a data source. This is an error.',
-    type: 'error',
-    duration: notificationDuration,
-  })
-})
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <div class="p-4 md:p-6">

@@ -139,9 +139,9 @@ export function useBackendStatus(/* healthCheckUrl can be removed or made option
     } else {
       if (oldValue === true && hasBeenConnectedAtLeastOnce.value) {
         addNotification({
-          message: 'Backend connection lost.', // 使用你提供的消息
+          message: 'Backend connection lost.',
           type: 'error',
-          duration: 2100, // 使用你提供的时长 (之前是5000，根据你的代码片段更新)
+          duration: 5200,
         })
       }
     }
