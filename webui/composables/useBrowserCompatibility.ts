@@ -11,7 +11,7 @@ export function useBrowserCompatibility() {
   const runBrowserChecks = async () => {
     let dismissedBrowserWarning = false
     let dismissedFirefoxWarning = false
-    let ua = '' // User-Agent
+    let ua = '' // User-Agent, will be fetched from backend
 
     try {
       if (typeof localStorage !== 'undefined') {
@@ -19,46 +19,37 @@ export function useBrowserCompatibility() {
           localStorage.getItem(LOCALSTORAGE_KEY_DISMISSED_BROWSER_WARNING) === 'true'
         dismissedFirefoxWarning =
           localStorage.getItem(LOCALSTORAGE_KEY_DISMISSED_FIREFOX_WARNING) === 'true'
-      } else {
-        console.warn(
-          'localStorage is not available. Browser compatibility notifications cannot be persistently dismissed.',
-        )
       }
-    } catch (e) {
-      console.warn('Error accessing localStorage for browser compatibility checks:', e)
+    } catch {
+      // Silently catch error for localStorage access if it's critical for page load
+      // Or consider a more robust error handling if localStorage is essential
     }
 
     try {
       const uaUrl = buildApiUrl('/v1/ipelfs/ua')
       const response = await fetch(uaUrl)
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch UA from backend: ${response.status} ${response.statusText}`,
-        )
-      }
-      const result = await response.json()
-      if (result.success && result.data && typeof result.data.user_agent === 'string') {
-        ua = result.data.user_agent.toLowerCase()
-      } else {
-        if (typeof navigator !== 'undefined' && navigator.userAgent) {
-          ua = navigator.userAgent.toLowerCase()
-        } else {
-          return
-        }
-      }
-    } catch {
-      if (typeof navigator !== 'undefined' && navigator.userAgent) {
-        ua = navigator.userAgent.toLowerCase()
-        addNotification({
-          message: 'Could not verify your browser via backend.',
-          type: 'warning',
-          duration: 3500,
-        })
-      } else {
+        // Failed to fetch, do not proceed with UA-based checks
         return
       }
+      const result = await response.json()
+      if (
+        result.success &&
+        result.data &&
+        typeof result.data.user_agent === 'string' &&
+        result.data.user_agent.trim() !== ''
+      ) {
+        ua = result.data.user_agent.toLowerCase()
+      } else {
+        // Backend did not return a valid user_agent string
+        return
+      }
+    } catch {
+      // Error fetching User-Agent from backend
+      return
     }
 
+    // empty
     if (!ua) {
       return
     }
@@ -76,12 +67,10 @@ export function useBrowserCompatibility() {
 
     const isGenerallySupported = isChrome || isEdge || isSafari
 
-    // --- ORIGINAL LOGIC with added console logs ---
     if (!dismissedBrowserWarning && !isGenerallySupported && !isFirefox) {
-      //console.log('[BrowserCompat] Triggering non-recommended browser warning for real.')
       addNotification({
-        message: 'Consider using a modern browser like Chrome, Edge, or Safari.',
-        type: 'warning',
+        message: 'Consider using a mainstream Chromium-based browser',
+        type: 'warning', // Yellow
         duration: 5000,
         onManuallyDismissed: () => {
           try {
@@ -97,8 +86,8 @@ export function useBrowserCompatibility() {
 
     if (!dismissedFirefoxWarning && isFirefox) {
       addNotification({
-        message: 'Some animations might show slight inconsistencies on Firefox.',
-        type: 'info',
+        message: 'Some animations might show slight inconsistencies on Firefox',
+        type: 'info', // Green
         duration: 5000,
         onManuallyDismissed: () => {
           try {
@@ -114,7 +103,7 @@ export function useBrowserCompatibility() {
   }
 
   onMounted(() => {
-    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+    if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
       runBrowserChecks()
     }
   })
