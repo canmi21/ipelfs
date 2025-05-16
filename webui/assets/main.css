@@ -207,3 +207,34 @@ body {
     transform: scale(0.88);
   }
 }
+
+/* Optional: Base transition for items, can help if specific properties change outside of enter/leave/move */
+.switch-list-item {
+  transition: all 0.3s ease-in-out; /* Or be more specific, e.g., background-color, opacity */
+}
+
+.switch-list-enter-active,
+.switch-list-leave-active {
+  transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
+}
+
+.switch-list-move {
+  transition: transform 0.4s cubic-bezier(0.55, 0, 0.1, 1);
+}
+
+.switch-list-enter-from,
+.switch-list-leave-to {
+  opacity: 0;
+  /* For flex-row-reverse, if new items appear on the "left" end (visually):
+    A positive translateX will make them slide in from their right.
+    A negative translateX would make them slide in from their left.
+    Given your description, items shifting or new items appearing "at the yielded position"
+    might involve them sliding in f5rom where space is made.
+    translateX(20px) (slide from right towards left into place) is a reasonable default.
+    If an item is removed and others shift right, .switch-list-move handles it.
+    If a new item is inserted and visually appears on the left of existing items,
+    translateX(-20px) might be more intuitive for its enter animation.
+    Let's keep translateX(20px) for now, which means items "slide left" into view from off-screen right.
+  */
+  transform: translateX(15px); /* 15px is suitable here */
+}
