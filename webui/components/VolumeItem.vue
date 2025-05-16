@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Package } from 'lucide-vue-next' // 使用 Package 图标
+import { Package } from 'lucide-vue-next'
 
 defineProps<{
   item: { id: number; name: string; description?: string; type?: string }

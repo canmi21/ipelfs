@@ -13,7 +13,7 @@ const volumes = ref(
     id: i + 1,
     name: `Storage Volume ${i + 1}`,
     description: `This is a sample description for volume no. ${i + 1}.`,
-    type: i % 2 === 0 ? 'SSD' : 'HDD Archive', // Type is still in data, though not displayed by VolumeItem
+    type: i % 2 === 0 ? 'SSD' : 'HDD Archive',
   })),
 )
 
@@ -47,7 +47,6 @@ watch(
     if (onPage) {
       registerSwitch(newConfig)
     } else if (oldConfig && oldOnPage && !onPage) {
-      // Ensure oldConfig and oldOnPage are valid before accessing
       unregisterSwitch(LAYOUT_SWITCH_ID)
     }
   },
@@ -64,9 +63,7 @@ const listContainerClasses = computed(() => {
   if (layoutMode.value === 'grid') {
     return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6'
   } else {
-    // For list view, space-y-4 on the TransitionGroup's rendered div works well.
-    // Or, apply mb-4 to each VolumeItem if TransitionGroup itself should not have spacing classes.
-    return 'flex flex-col space-y-4' // This class will now be applied to the TransitionGroup's tag
+    return 'flex flex-col gap-4' // Using gap-4 for list view
   }
 })
 </script>
@@ -78,26 +75,31 @@ const listContainerClasses = computed(() => {
         <h1 class="text-2xl md:text-3xl font-semibold" :style="{ color: 'var(--text-main-color)' }">
           Volumes
         </h1>
-        <p class="mt-1 text-sm md:text-base" :style="{ color: 'var(--sidebar-text-muted)' }">
-          Manage your storage volumes here.
-        </p>
       </div>
       <div class="mt-4 sm:mt-0"></div>
     </div>
 
-    <TransitionGroup tag="div" name="volume-list" :class="listContainerClasses">
-      <VolumeItem
-        v-for="volume in volumes"
-        :key="volume.id"
-        :item="volume"
-        :layout-mode="layoutMode"
-        class="volume-list-item"
-      />
-    </TransitionGroup>
+    <Transition name="layout-fade" mode="out-in">
+      <div :key="layoutMode" :class="listContainerClasses">
+        <VolumeItem
+          v-for="volume in volumes"
+          :key="volume.id"
+          :item="volume"
+          :layout-mode="layoutMode"
+        />
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
-/* Styles specific to VolumesView.vue can go here if needed. */
-/* Transition styles will be added to a global CSS file like main.css */
+/* For the entire list container when layoutMode changes */
+.layout-fade-enter-active,
+.layout-fade-leave-active {
+  transition: opacity 0.15s ease-in-out;
+}
+.layout-fade-enter-from,
+.layout-fade-leave-to {
+  opacity: 0;
+}
 </style>
