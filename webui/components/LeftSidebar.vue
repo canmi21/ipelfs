@@ -1,29 +1,28 @@
 <script setup lang="ts">
+import { computed } from 'vue' // Import computed
 import { useRouter } from 'vue-router'
 import {
   PanelRightOpen,
   PanelRightClose,
   SquareArrowOutUpRight,
-  Server, // Still needed for the footer
-  ServerOff, // Still needed for the footer
-  // DatabaseZap, FileClock are moved to SidebarNavList
+  Server,
+  ServerOff,
 } from 'lucide-vue-next'
-import SidebarNavList from './SidebarNavList.vue' // Import the new component
+import ActionSwitch from './ActionSwitch.vue' // Import ActionSwitch
+import SidebarNavList from './SidebarNavList.vue'
 
-// Props from App.vue (or a composable if App.vue uses useSidebar)
 const props = defineProps<{
   isSidebarCollapsed: boolean
   showSidebarText: boolean
-  showGithubIcon: boolean // Renamed for clarity within sidebar context
-  showInlineStatusText: boolean // Renamed for clarity
+  showGithubIcon: boolean
+  showInlineStatusText: boolean
   sidebarWidthClass: string
-  isBackendConnected: boolean // Pass backend status for the icon
+  isBackendConnected: boolean
   formattedLatency: string | null
   latencyMs: number | null
   healthCheckTimerId: number | undefined
 }>()
 
-// Emit an event to App.vue to toggle the sidebar
 const emit = defineEmits(['toggle-sidebar', 'open-external-link'])
 
 const router = useRouter()
@@ -31,11 +30,25 @@ const navigateTo = (path: string) => {
   router.push(path)
 }
 
-const handleToggle = () => {
+// --- Computed states for ActionSwitch components ---
+const sidebarToggleSwitchState = computed(() => ({
+  iconComponent: props.isSidebarCollapsed ? PanelRightClose : PanelRightOpen,
+  title: 'Toggle Sidebar',
+  // iconClass can be used if specific non-hover/non-focus color is needed for the icon itself
+  // Default ActionSwitch styling will use --icon-muted-color and hover/focus to --icon-accent-color
+}))
+
+const handleSidebarToggleAction = () => {
   emit('toggle-sidebar')
 }
 
-const openRepoLink = () => {
+const githubLinkSwitchState = computed(() => ({
+  iconComponent: SquareArrowOutUpRight,
+  title: 'Open GitHub Repository',
+}))
+
+const openGitHubRepoAction = () => {
+  // Make sure to use the correct GitHub link for your project
   emit('open-external-link', 'https://github.com/canmi21/ipelfs')
 }
 </script>
@@ -46,27 +59,22 @@ const openRepoLink = () => {
     class="fixed top-0 left-0 h-full bg-sidebar z-30 transition-all ease-in-out duration-300 overflow-hidden flex flex-col"
   >
     <div class="shrink-0">
-      <div class="h-14 flex items-center">
+      <div class="h-14 flex items-center px-0">
         <div class="w-14 h-14 flex-shrink-0 flex items-center justify-center">
-          <div
-            @click="handleToggle"
-            class="cursor-pointer p-1.5 rounded-md group"
-            title="Toggle Sidebar"
-          >
-            <component
-              :is="props.isSidebarCollapsed ? PanelRightClose : PanelRightOpen"
-              class="w-6 h-6 text-icon-muted group-hover:text-icon-accent transform transition-all duration-150 group-hover:scale-110"
-            />
-          </div>
+          <ActionSwitch
+            :icon-component="sidebarToggleSwitchState.iconComponent"
+            :title="sidebarToggleSwitchState.title"
+            :on-toggle="handleSidebarToggleAction"
+          />
         </div>
         <div
           v-if="!props.isSidebarCollapsed && props.showGithubIcon"
-          @click="openRepoLink"
-          class="cursor-pointer p-1.5 rounded-md group ml-auto mr-3"
-          title="Open GitHub Repository"
+          class="ml-auto mr-3 flex items-center justify-center"
         >
-          <SquareArrowOutUpRight
-            class="w-5 h-5 text-icon-muted group-hover:text-icon-accent transform transition-all duration-150 group-hover:scale-110"
+          <ActionSwitch
+            :icon-component="githubLinkSwitchState.iconComponent"
+            :title="githubLinkSwitchState.title"
+            :on-toggle="openGitHubRepoAction"
           />
         </div>
       </div>
@@ -129,18 +137,13 @@ const openRepoLink = () => {
 </template>
 
 <style scoped>
-/* Styles specific to Sidebar.vue */
 .bg-sidebar {
   background-color: var(--sidebar-bg);
 }
-/* .text-sidebar-main, .text-icon-muted, etc. might not be needed here if only used in SidebarNavList now */
-/* However, icons in header/footer still use them. */
 .text-icon-muted {
   color: var(--icon-muted-color);
 }
-.group:hover .group-hover\:text-icon-accent {
-  color: var(--icon-accent-color) !important;
-}
+/* .group:hover .group-hover\:text-icon-accent no longer needed here if ActionSwitch handles its own hover directly */
 .border-sidebar-border {
   border-color: var(--sidebar-border-color);
 }
@@ -151,7 +154,9 @@ const openRepoLink = () => {
   color: var(--status-disconnected-color);
 }
 
+/* Styles for status orb and text (copied from your original LeftSidebar if they were there) */
 .status-orb {
+  /* ... */
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -189,18 +194,17 @@ const openRepoLink = () => {
   }
 }
 .status-connected-text {
-  font-size: 0.875rem; /* text-sm */
+  font-size: 0.875rem;
   line-height: 1.25rem;
-  font-weight: 600; /* font-semibold */
+  font-weight: 600;
   color: var(--status-connected-color);
 }
 .status-latency-display-text {
-  font-size: 0.75rem; /* text-xs */
+  font-size: 0.75rem;
   line-height: 1rem;
-  color: var(--sidebar-text-muted); /* Use a theme variable */
+  color: var(--sidebar-text-muted);
 }
 .min-w-0 {
   min-width: 0;
 }
-/* .truncate might not be needed here if only nav text used it */
 </style>

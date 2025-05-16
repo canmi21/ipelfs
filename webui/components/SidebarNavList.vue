@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { Server, DatabaseZap, FileClock, LandPlot } from 'lucide-vue-next'
 
-// Props received from the parent Sidebar component
 const props = defineProps<{
   isSidebarCollapsed: boolean
   showSidebarText: boolean
-  navigateTo: (path: string) => void // Function to handle navigation
+  navigateTo: (path: string) => void
 }>()
 </script>
 
@@ -13,8 +12,11 @@ const props = defineProps<{
   <nav class="flex-grow pt-2">
     <ul class="space-y-1">
       <li
+        tabindex="0"
         @click="() => props.navigateTo('/')"
-        class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
+        @keydown.enter="() => props.navigateTo('/')"
+        @keydown.space="() => props.navigateTo('/')"
+        class="cursor-pointer group rounded-md flex items-center h-11 mx-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--sidebar-bg)] dark:focus-visible:ring-offset-[var(--sidebar-bg)]"
         :class="{
           'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
             !props.isSidebarCollapsed,
@@ -33,10 +35,12 @@ const props = defineProps<{
           Insights
         </span>
       </li>
-
       <li
+        tabindex="0"
         @click="() => props.navigateTo('/volumes')"
-        class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
+        @keydown.enter="() => props.navigateTo('/volumes')"
+        @keydown.space="() => props.navigateTo('/volumes')"
+        class="cursor-pointer group rounded-md flex items-center h-11 mx-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--sidebar-bg)] dark:focus-visible:ring-offset-[var(--sidebar-bg)]"
         :class="{
           'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
             !props.isSidebarCollapsed,
@@ -56,8 +60,11 @@ const props = defineProps<{
         </span>
       </li>
       <li
+        tabindex="0"
         @click="() => props.navigateTo('/collections')"
-        class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
+        @keydown.enter="() => props.navigateTo('/collections')"
+        @keydown.space="() => props.navigateTo('/collections')"
+        class="cursor-pointer group rounded-md flex items-center h-11 mx-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--sidebar-bg)] dark:focus-visible:ring-offset-[var(--sidebar-bg)]"
         :class="{
           'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
             !props.isSidebarCollapsed,
@@ -77,8 +84,11 @@ const props = defineProps<{
         </span>
       </li>
       <li
+        tabindex="0"
         @click="() => props.navigateTo('/activity')"
-        class="cursor-pointer group rounded-md flex items-center h-11 mx-2"
+        @keydown.enter="() => props.navigateTo('/activity')"
+        @keydown.space="() => props.navigateTo('/activity')"
+        class="cursor-pointer group rounded-md flex items-center h-11 mx-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-500 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--sidebar-bg)] dark:focus-visible:ring-offset-[var(--sidebar-bg)]"
         :class="{
           'hover:bg-sidebar-item-hover-bg dark:hover:bg-sidebar-item-dark-hover-bg':
             !props.isSidebarCollapsed,
@@ -102,8 +112,6 @@ const props = defineProps<{
 </template>
 
 <style scoped>
-/* Styles specific to SidebarNavList.vue, if any. Otherwise, rely on global/parent styles. */
-/* For example, you might want to ensure these utility classes are available or defined here if not globally. */
 .text-sidebar-main {
   color: var(--sidebar-text-main);
 }
