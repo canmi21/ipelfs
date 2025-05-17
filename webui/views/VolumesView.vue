@@ -1,7 +1,7 @@
 <template>
   <div class="text-center">
     <h1 class="text-4xl font-bold text-blue-500">Welcome to Vue + Tailwind!</h1>
-    <p class="mt-4 text-lg text-gray-700">Your app is running smoothly. Insights</p>
+    <p class="mt-4 text-lg text-gray-700">Your app is running smoothly. VolumesView</p>
   </div>
 </template>
 
