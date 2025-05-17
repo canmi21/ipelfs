@@ -23,6 +23,6 @@ export default {
 .middle-sidebar {
   flex-grow: 1;
   overflow-y: auto;
-  min-height: 0;
+  min-height: 0; /* Important for flex-grow and overflow to work correctly */
 }
 </style>

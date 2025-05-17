@@ -6,9 +6,6 @@
     :style="topSidebarContainerStyle"
     :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }"
   >
-    <div class="logo" v-show="!isSidebarCollapsed">
-      <h2>My App</h2>
-    </div>
     <SidebarToggleButton />
   </div>
 </template>
@@ -21,8 +18,8 @@ import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSid
 const { isCollapsed: isSidebarCollapsed } = useSidebarState()
 
 const topSidebarContainerStyle = computed(() => ({
-  height: isSidebarCollapsed.value ? '3rem' : '4rem',
-  justifyContent: isSidebarCollapsed.value ? 'center' : 'space-between',
+  height: '3rem', // Fixed height of 3rem for both states
+  justifyContent: 'center', // Always center the button
 }))
 </script>
 
@@ -42,12 +39,6 @@ export default {
   overflow: hidden;
   transition:
     height 0.3s ease-in-out,
-    padding 0.3s ease-in-out;
-}
-.logo {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    /* Height transition might be less relevant if always 3rem */ padding 0.3s ease-in-out;
 }
 </style>

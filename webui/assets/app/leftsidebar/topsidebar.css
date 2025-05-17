@@ -1,24 +1,19 @@
 /* assets/app/leftsidebar/topsidebar.css */
 
 .top-sidebar {
-  padding: 1rem;
+  padding: 1rem; /* Default padding for expanded state */
   background-color: var(--color-bg-page);
-  border-bottom: 1px solid var(--color-border-primary);
+  /* border-bottom: 1px solid var(--color-border-primary); Removed, dividers handled differently */
   box-sizing: border-box;
   transition:
     padding 0.3s ease-in-out,
-    border-radius 0.3s ease-in-out,
-    border-bottom 0.3s ease-in-out;
+    border-radius 0.3s ease-in-out;
 }
 
 .top-sidebar.sidebar-is-collapsed {
-  padding: 0.45rem;
-  border-radius: 0.5rem;
-  border-bottom: none;
-}
-
-.logo h2 {
-  font-size: 1.5rem;
-  color: var(--color-text-default);
-  margin: 0;
+  /* TopSidebar is 3rem x 3rem. Button is 1.5rem x 1.5rem. */
+  /* Padding to center button: (3rem - 1.5rem) / 2 = 0.75rem */
+  padding: 0.75rem;
+  border-radius: 0.5rem; /* Rounded square */
+  /* border-bottom: none; /* No border when collapsed and rounded */
 }

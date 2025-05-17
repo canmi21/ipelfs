@@ -3,8 +3,10 @@
 <template>
   <div class="sidebar-internal-layout">
     <TopSidebar />
+    <hr class="sidebar-divider" />
     <MiddleSidebar v-show="!isCollapsed" />
-    <BottomSidebar v-show="!isCollapsed" />
+    <hr class="sidebar-divider" v-show="!isCollapsed" />
+    <BottomSidebar />
   </div>
 </template>
 
@@ -29,6 +31,13 @@ export default {
   flex-direction: column;
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow: hidden; /* Keep this to hide parts of children if they overflow during transition */
+}
+
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--color-border-primary);
+  margin: 0 0.5rem; /* 0 top/bottom margin, 0.5rem left/right margin for gap */
+  flex-shrink: 0; /* Prevent divider from shrinking */
 }
 </style>

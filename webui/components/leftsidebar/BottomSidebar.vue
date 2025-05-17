@@ -1,12 +1,17 @@
 <!-- components/leftsidebar/BottomSidebar.vue -->
 
 <template>
-  <div class="bottom-sidebar">
-    <div class="settings">
-      <button>Settings</button>
-    </div>
+  <div class="bottom-sidebar" :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }">
+    <ServerConnectionStatus />
   </div>
 </template>
+
+<script lang="ts" setup>
+import ServerConnectionStatus from './bottomsidebar/ServerConnectionStatus.vue'
+import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSidebarToggleButton' // Path to shared state
+
+const { isCollapsed: isSidebarCollapsed } = useSidebarState()
+</script>
 
 <script lang="ts">
 export default {
@@ -18,15 +23,12 @@ export default {
 @import '../../assets/app/leftsidebar/bottomsidebar.css';
 
 .bottom-sidebar {
-  height: 4rem;
+  height: 3rem; /* Fixed height of 3rem */
   flex-shrink: 0;
   display: flex;
   align-items: center;
-}
-.settings {
-  /* Layout for settings content if needed */
-  width: 100%; /* Example: make settings area take full width for button alignment */
-  display: flex; /* Example for button alignment */
-  justify-content: flex-start; /* Example: Align button to start */
+  justify-content: center; /* Center the ServerConnectionStatus component */
+  overflow: hidden;
+  transition: padding 0.3s ease-in-out; /* If padding changes with collapse state */
 }
 </style>

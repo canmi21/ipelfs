@@ -1,21 +1,14 @@
 /* assets/app/leftsidebar/bottomsidebar.css */
 
 .bottom-sidebar {
-  padding: 1rem;
-  background-color: var(--color-bg-page); /* Or --color-bg-surface */
-  border-top: 1px solid var(--color-border-primary);
+  padding: 1rem; /* Default padding for expanded state */
+  background-color: var(--color-bg-page);
+  /* border-top: 1px solid var(--color-border-primary); Removed, dividers handled differently */
+  box-sizing: border-box;
 }
 
-.settings button {
-  padding: 0.5rem 1rem; /* Specific padding for this button type */
-  background-color: var(--theme-button-positive-bg);
-  color: var(--text-on-button-positive);
-  border: none; /* Style (no border) */
-  border-radius: 4px; /* Specific styling attribute */
-  cursor: pointer; /* Interaction style */
-  font-weight: 500; /* Example of specific font styling */
-}
-
-.settings button:hover {
-  background-color: var(--theme-button-positive-hover-bg);
+.bottom-sidebar.sidebar-is-collapsed {
+  /* BottomSidebar is 3rem x 3rem. ServerConnectionStatus icon container is ~1.8rem. */
+  /* Padding to center: (3rem - 1.8rem) / 2 = 0.6rem */
+  padding: 0.6rem;
 }
