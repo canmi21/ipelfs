@@ -3,6 +3,11 @@
 .left-sidebar {
   background-color: var(--color-bg-page);
   color: var(--color-text-content);
-  padding: 1rem;
+  padding: 1rem; /* Default padding for expanded state */
+  box-sizing: border-box;
+  transition: padding 0.3s ease-in-out; /* Match transition in App.vue if needed */
 }
-/* .dark rules are now handled by variables in app.css */
+
+.left-sidebar.sidebar-is-collapsed {
+  padding: 0; /* No padding when collapsed to maximize internal space */
+}

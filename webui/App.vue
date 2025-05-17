@@ -2,7 +2,11 @@
 
 <template>
   <div class="flex h-screen">
-    <div class="left-sidebar" :style="leftSidebarStyle">
+    <div
+      class="left-sidebar"
+      :style="leftSidebarStyle"
+      :class="{ 'sidebar-is-collapsed': isCollapsed }"
+    >
       <LeftSidebar />
     </div>
     <div class="relative-main">
@@ -21,7 +25,7 @@ const { isCollapsed } = useSidebarState()
 
 const leftSidebarStyle = computed(() => ({
   flexBasis: isCollapsed.value ? '3rem' : '16rem',
-  transition: 'flex-basis 0.3s ease-in-out',
+  transition: 'flex-basis 0.3s ease-in-out, padding 0.3s ease-in-out', // Added padding to transition
 }))
 
 onMounted(() => {
@@ -43,6 +47,7 @@ export default {
 
 .left-sidebar {
   overflow-x: hidden;
+  /* padding is now controlled in leftsidebar.css based on .sidebar-is-collapsed */
 }
 
 .relative-main {

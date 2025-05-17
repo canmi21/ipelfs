@@ -1,7 +1,11 @@
 <!-- components/leftsidebar/TopSidebar.vue -->
 
 <template>
-  <div class="top-sidebar" :style="topSidebarDynamicStyle">
+  <div
+    class="top-sidebar"
+    :style="topSidebarContainerStyle"
+    :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }"
+  >
     <div class="logo" v-show="!isSidebarCollapsed">
       <h2>My App</h2>
     </div>
@@ -16,7 +20,8 @@ import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSid
 
 const { isCollapsed: isSidebarCollapsed } = useSidebarState()
 
-const topSidebarDynamicStyle = computed(() => ({
+const topSidebarContainerStyle = computed(() => ({
+  height: isSidebarCollapsed.value ? '3rem' : '4rem', // 折叠时高度为 3rem
   justifyContent: isSidebarCollapsed.value ? 'center' : 'space-between',
 }))
 </script>
@@ -31,12 +36,13 @@ export default {
 @import '../../assets/app/leftsidebar/topsidebar.css';
 
 .top-sidebar {
-  height: 4rem;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  /* justifyContent is now dynamic via :style */
   overflow: hidden;
+  transition:
+    height 0.3s ease-in-out,
+    padding 0.3s ease-in-out;
 }
 .logo {
   min-width: 0;

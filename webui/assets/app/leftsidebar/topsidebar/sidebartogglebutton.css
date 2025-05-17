@@ -1,15 +1,21 @@
 /* assets/app/leftsidebar/topsidebar/sidebartogglebutton.css */
 
 .sidebar-toggle-button {
-  background-color: var(--color-bg-neutral);
-  color: var(--color-text-on-neutral);
-  border: 1px solid var(--color-border-secondary); /* Using secondary border or a specific neutral border */
-  border-radius: 4px; /* Specific styling attribute */
-  cursor: pointer; /* Interaction style */
-  font-size: 1rem; /* Specific typographic detail */
-  line-height: 1; /* Specific typographic detail for icon/text centering */
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-toggle-button:hover {
-  background-color: var(--color-bg-neutral-hover);
+  color: var(--color-text-default);
 }
+
+/* .dark .sidebar-toggle-button specific styles can be added if --color-text-muted
+   doesn't sufficiently adapt or if a different base/hover color is needed in dark mode.
+   For now, it relies on the base variables adapting to dark mode. */
