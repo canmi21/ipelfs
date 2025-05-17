@@ -20,7 +20,7 @@ import { useSidebarState } from './composables/leftsidebar/topsidebar/useSidebar
 const { isCollapsed } = useSidebarState()
 
 const leftSidebarStyle = computed(() => ({
-  flexBasis: isCollapsed.value ? '4.5rem' : '16rem',
+  flexBasis: isCollapsed.value ? '3rem' : '16rem',
   transition: 'flex-basis 0.3s ease-in-out',
 }))
 
