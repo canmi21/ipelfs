@@ -1,14 +1,19 @@
 /* assets/app/leftsidebar/bottomsidebar/serverconnectionstatus.css */
 
 .server-status-icon-container {
+  background-color: transparent;
   color: var(--color-text-muted);
-  border-radius: 4px; /* Consistent with toggle button's visual style */
-  padding: 0; /* Icon should fill or be centered by flex in parent */
-  /* No background, no border, similar to SidebarToggleButton */
+  border: none;
+  border-radius: 4px;
+  cursor: default;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .server-status-icon-container:hover {
-  color: var(--color-text-default); /* Optional: hover effect for icon color */
+  color: var(--color-text-default);
 }
 
 .server-status-icon-container:focus {
@@ -19,5 +24,5 @@
   outline: none;
   box-shadow:
     0 0 0 2px var(--color-bg-page),
-    /* Assuming BottomSidebar uses --color-bg-page */ 0 0 0 4px var(--color-focus-ring);
+    0 0 0 4px var(--color-focus-ring);
 }

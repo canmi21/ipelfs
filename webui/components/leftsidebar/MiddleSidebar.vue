@@ -2,7 +2,7 @@
 
 <template>
   <div class="middle-sidebar">
-    <ul>
+    <ul v-show="!isParentCollapsed">
       <li>Home</li>
       <li>Activity</li>
       <li>Collections</li>
@@ -12,9 +12,17 @@
 </template>
 
 <script lang="ts">
-export default {
+import { defineComponent } from 'vue'
+
+export default defineComponent({
   name: 'MiddleSidebar',
-}
+  props: {
+    isParentCollapsed: {
+      type: Boolean,
+      required: true,
+    },
+  },
+})
 </script>
 
 <style scoped>
@@ -22,7 +30,8 @@ export default {
 
 .middle-sidebar {
   flex-grow: 1;
-  overflow-y: auto;
-  min-height: 0; /* Important for flex-grow and overflow to work correctly */
+  overflow-y: auto; /* Applied when content is visible and overflows */
+  min-height: 0; /* Allows the element to shrink to 0 height if content is hidden and no other constraints */
+  /* This ensures it can still grow to fill space due to flex-grow: 1 */
 }
 </style>

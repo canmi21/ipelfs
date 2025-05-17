@@ -8,7 +8,7 @@
 
 <script lang="ts" setup>
 import ServerConnectionStatus from './bottomsidebar/ServerConnectionStatus.vue'
-import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSidebarToggleButton' // Path to shared state
+import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSidebarToggleButton'
 
 const { isCollapsed: isSidebarCollapsed } = useSidebarState()
 </script>
@@ -23,12 +23,12 @@ export default {
 @import '../../assets/app/leftsidebar/bottomsidebar.css';
 
 .bottom-sidebar {
-  height: 3rem; /* Fixed height of 3rem */
+  height: 3rem;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: center; /* Center the ServerConnectionStatus component */
+  justify-content: flex-start;
   overflow: hidden;
-  transition: padding 0.3s ease-in-out; /* If padding changes with collapse state */
+  transition: padding 0.3s ease-in-out;
 }
 </style>

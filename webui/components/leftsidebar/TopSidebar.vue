@@ -1,26 +1,16 @@
 <!-- components/leftsidebar/TopSidebar.vue -->
 
 <template>
-  <div
-    class="top-sidebar"
-    :style="topSidebarContainerStyle"
-    :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }"
-  >
+  <div class="top-sidebar" :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }">
     <SidebarToggleButton />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
 import SidebarToggleButton from './topsidebar/SidebarToggleButton.vue'
 import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSidebarToggleButton'
 
 const { isCollapsed: isSidebarCollapsed } = useSidebarState()
-
-const topSidebarContainerStyle = computed(() => ({
-  height: '3rem', // Fixed height of 3rem for both states
-  justifyContent: 'center', // Always center the button
-}))
 </script>
 
 <script lang="ts">
@@ -33,12 +23,12 @@ export default {
 @import '../../assets/app/leftsidebar/topsidebar.css';
 
 .top-sidebar {
+  height: 3rem; /* Fixed height */
   flex-shrink: 0;
   display: flex;
-  align-items: center;
+  align-items: center; /* Vertically centers content (the button) */
+  justify-content: flex-start; /* Align content to the start, padding will position it */
   overflow: hidden;
-  transition:
-    height 0.3s ease-in-out,
-    /* Height transition might be less relevant if always 3rem */ padding 0.3s ease-in-out;
+  transition: padding 0.3s ease-in-out;
 }
 </style>

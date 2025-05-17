@@ -6,7 +6,7 @@
     :class="{ 'is-collapsed': isCollapsed }"
     @click="handleToggleSidebar"
   >
-    <component :is="currentIcon" :size="iconProps.size" :stroke-width="iconProps.strokeWidth" />
+    <component :is="currentIcon" :size="24" :stroke-width="2" />
   </button>
 </template>
 
@@ -32,19 +32,14 @@ export default defineComponent({
       return isCollapsed.value ? PanelRightOpen : PanelRightClose
     })
 
-    const iconProps = computed(() => {
-      if (isCollapsed.value) {
-        return { size: 24, strokeWidth: 2 } // Icon size 1.5rem (24px)
-      } else {
-        return { size: 20, strokeWidth: 2.5 } // Expanded state icon size
-      }
-    })
+    // iconProps is no longer needed as size and strokeWidth are now fixed in the template
+    // isCollapsed is still used for the :class binding if any visual difference is needed
+    // (other than size, e.g. if the icon itself changed more drastically, but here only type changes)
 
     return {
-      isCollapsed,
+      isCollapsed, // Needed for :class if other non-size style changes based on collapse
       handleToggleSidebar,
       currentIcon,
-      iconProps,
     }
   },
 })
@@ -54,19 +49,11 @@ export default defineComponent({
 @import '../../../assets/app/leftsidebar/topsidebar/sidebartogglebutton.css';
 
 .sidebar-toggle-button {
-  width: 2rem; /* Expanded state button width */
-  height: 2rem; /* Expanded state button height */
+  width: 1.5rem;
+  height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition:
-    width 0.15s ease-in-out,
-    height 0.15s ease-in-out,
-    opacity 0.15s ease-in-out;
-}
-
-.sidebar-toggle-button.is-collapsed {
-  width: 1.5rem; /* Collapsed state button width to match 1.5rem icon */
-  height: 1.5rem; /* Collapsed state button height */
+  transition: opacity 0.15s ease-in-out; /* Only opacity transition needed now */
 }
 </style>

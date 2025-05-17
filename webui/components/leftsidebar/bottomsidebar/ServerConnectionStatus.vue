@@ -22,8 +22,8 @@ export default defineComponent({
 @import '../../../assets/app/leftsidebar/bottomsidebar/serverconnectionstatus.css';
 
 .server-status-icon-container {
-  width: 1.8rem; /* Slightly larger container for 1.5rem icon, or exactly 1.5rem */
-  height: 1.8rem;
+  width: 1.5rem; /* To contain 1.5rem icon */
+  height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
