@@ -1,8 +1,8 @@
 /* assets/app/leftsidebar/middlesidebar.css */
 
 .middle-sidebar {
-  padding: 1rem 0.5rem; /* Example: 1rem top/bottom, 0.5rem left/right to align content with divider gap */
-  background-color: var(--color-bg-surface);
+  padding: 1rem 0.5rem;
+  background-color: var(--color-bg-page); /* Updated to match Top/Bottom Sidebar */
   color: var(--color-text-content);
 }
 
@@ -16,18 +16,3 @@ li {
   padding: 10px 0;
   cursor: pointer;
 }
-
-li:hover {
-  /* color: var(--theme-green-base); */
-}
-
-/* .dark .middle-sidebar specific background was --color-bg-surface-alt-dark */
-/* This is now handled by the general .dark --color-bg-surface if that's the desired mapping,
-   or you can introduce a specific class here if MiddleSidebar always needs that alt color in dark mode.
-   For now, assuming it uses the standard surface color. If it needs the alt color:
-   .dark .middle-sidebar { background-color: var(--color-bg-surface-alt-dark); }
-   But to adhere to "colors in app.css", it's better this component class is styled generally,
-   or `MiddleSidebar.vue`'s root `div` gets a more specific class if it *always* needs the alt color.
-   For simplicity, mapped to standard surface. If it must be --color-bg-surface-alt-dark,
-   the component should indicate this need, perhaps via a modifier class.
-*/
