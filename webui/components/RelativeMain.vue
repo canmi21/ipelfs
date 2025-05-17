@@ -29,7 +29,7 @@ export default defineComponent({
 .actions-toolbar-position {
   position: absolute;
   top: 0rem;
-  right: 0.5rem;
+  right: 0.75rem;
   z-index: 10;
 }
 </style>
