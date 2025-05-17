@@ -3,9 +3,10 @@
 import { ref, computed, watch, readonly, type Ref, type Component } from 'vue'
 import { getValueFromLocalStorage, setValueInLocalStorage } from '../../useLocalStorage'
 import { Sun, Moon, SunMoon } from 'lucide-vue-next'
+import { determineNextThemeMode } from './useWhatIsNext'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
-type EffectiveTheme = 'light' | 'dark'
+export type EffectiveTheme = 'light' | 'dark'
 
 const THEME_STORAGE_KEY = 'theme_preference_v3'
 const DEFAULT_THEME_MODE: ThemeMode = 'system'
@@ -58,22 +59,20 @@ if (IS_CLIENT) {
   } catch {
     mediaQuery.addListener(updateSystemPreference)
   }
-  systemPreference.value = getSystemPreference()
+  // Ensure systemPreference is initially correct after listener setup
+  // This ensures that if the page loads and system preference is immediately needed, it's fresh.
+  if (IS_CLIENT && preferredThemeMode.value === 'system') {
+    // Only critical if starting in system mode
+    systemPreference.value = getSystemPreference()
+  }
 }
 
 export function useThemeToggleButton() {
   const cycleTheme = () => {
-    let newMode: ThemeMode
-    if (preferredThemeMode.value === 'light') {
-      newMode = 'dark'
-    } else if (preferredThemeMode.value === 'dark') {
-      newMode = 'system'
-    } else {
-      newMode = 'light'
-    }
-    preferredThemeMode.value = newMode
+    const nextMode = determineNextThemeMode(preferredThemeMode.value, systemPreference.value)
+    preferredThemeMode.value = nextMode
     if (IS_CLIENT) {
-      setValueInLocalStorage<ThemeMode>(THEME_STORAGE_KEY, newMode)
+      setValueInLocalStorage<ThemeMode>(THEME_STORAGE_KEY, nextMode)
     }
   }
 
