@@ -1,0 +1,13 @@
+/* assets/app/relativemain.css */
+
+.relative-main {
+  background-color: #ffffff;
+  color: #333;
+  height: 100vh;
+  padding: 1rem;
+}
+
+.dark .relative-main {
+  background-color: #212121;
+  color: #fff;
+}

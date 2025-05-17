@@ -1,16 +1,55 @@
 <template>
-  <div class="container mx-auto p-4">
-    <router-view></router-view>
-    <!-- 渲染匹配到的组件 -->
+  <div class="flex h-screen">
+    <div class="left-sidebar">
+      <LeftSidebar />
+    </div>
+    <div class="relative-main">
+      <RelativeMain />
+    </div>
   </div>
 </template>
 
 <script lang="ts">
+import LeftSidebar from './components/LeftSidebar.vue'
+import RelativeMain from './components/RelativeMain.vue'
+
 export default {
   name: 'App',
+  components: {
+    LeftSidebar,
+    RelativeMain,
+  },
+  mounted() {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark')
+    }
+  },
 }
 </script>
 
-<style scoped>
-/* 可以在这里加入一些全局样式 */
+<style>
+@import './assets/app/leftsidebar.css';
+@import './assets/app/relativemain.css';
+
+.flex {
+  display: flex;
+}
+
+.h-screen {
+  height: 100vh;
+}
+
+.left-sidebar {
+  flex: 0 0 16rem;
+}
+
+.relative-main {
+  flex: 1;
+}
+
+@media (min-width: 640px) {
+  .flex {
+    display: flex;
+  }
+}
 </style>

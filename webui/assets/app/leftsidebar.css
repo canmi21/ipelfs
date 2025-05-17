@@ -1,0 +1,14 @@
+/* assets/app/leftsidebar.css */
+
+.left-sidebar {
+  background-color: #f9f9f9;
+  color: #333;
+  width: 16rem;
+  height: 100vh;
+  padding: 1rem;
+}
+
+.dark .left-sidebar {
+  background-color: #171717;
+  color: #fff;
+}
