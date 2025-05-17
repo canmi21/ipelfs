@@ -25,7 +25,7 @@ const { isCollapsed } = useSidebarState()
 
 const leftSidebarStyle = computed(() => ({
   flexBasis: isCollapsed.value ? '3rem' : '16rem',
-  transition: 'flex-basis 0.3s ease-in-out, padding 0.3s ease-in-out',
+  transition: 'flex-basis 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
 }))
 
 onMounted(() => {
@@ -47,12 +47,12 @@ export default {
 
 .left-sidebar {
   overflow-x: hidden;
-  /* padding is now controlled in leftsidebar.css based on .sidebar-is-collapsed */
+  /* padding and its transition are now fully controlled in leftsidebar.css */
 }
 
 .relative-main {
   flex: 1;
   overflow-y: auto;
-  transition: margin-left 0.3s ease-in-out;
+  transition: margin-left 0.3s ease-in-out; /* This transition can also be updated if desired */
 }
 </style>

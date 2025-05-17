@@ -5,9 +5,9 @@
   color: var(--color-text-content);
   padding: 0;
   box-sizing: border-box;
-  transition: padding 0.3s ease-in-out; /* Match transition in App.vue if needed */
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .left-sidebar.sidebar-is-collapsed {
-  padding: 0; /* No padding when collapsed to maximize internal space */
+  padding: 0;
 }
