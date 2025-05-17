@@ -3,8 +3,15 @@
 .relative-main {
   background-color: #ffffff;
   color: #333;
-  height: 100vh;
-  padding: 1rem;
+  /* REMOVE: height: 100vh; /* This was causing the element to be too tall. */
+
+  height: 100%; /* MODIFIED: Make this element take 100% of its parent's height. */
+  /* The parent div (in App.vue) is already sized correctly by the flex layout. */
+
+  padding: 1rem; /* This padding will be applied inside the 100% height. */
+
+  box-sizing: border-box; /* ADDED: Ensures padding and border are included in the element's total width and height. */
+  /* Tailwind CSS applies this globally, but it's good for explicitness here. */
 }
 
 .dark .relative-main {

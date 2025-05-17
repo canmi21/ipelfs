@@ -1,14 +1,15 @@
 /* assets/app/leftsidebar.css */
 
 .left-sidebar {
+  /* Styles for the container div in App.vue that wraps <LeftSidebar /> */
   background-color: #f9f9f9;
   color: #333;
-  width: 16rem;
-  height: 100vh;
-  padding: 1rem;
+  padding: 1rem; /* This padding is on the main sidebar container. Child components will be inside this padding. */
+  /* REMOVE: width: 16rem; /* Width is controlled by 'flex-basis' in App.vue's <style> */
+  /* REMOVE: height: 100vh; /* Height is controlled by the flex layout in App.vue */
 }
 
 .dark .left-sidebar {
-  background-color: #171717;
-  color: #fff;
+  background-color: #171717; /* Dark mode background for the sidebar container */
+  color: #fff; /* Dark mode text color */
 }
