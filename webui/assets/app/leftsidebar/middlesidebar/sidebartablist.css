@@ -1,0 +1,7 @@
+/* assets/app/leftsidebar/middlesidebar/sidebartablist.css */
+
+.sidebar-tab-list-container {
+  width: 100%;
+  /* Height is determined by the sum of its children (4 tabs * 3rem = 12rem) */
+  /* No specific background or padding needed unless design requires it */
+}

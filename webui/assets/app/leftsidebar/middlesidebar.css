@@ -1,8 +1,8 @@
 /* assets/app/leftsidebar/middlesidebar.css */
 
 .middle-sidebar {
-  padding: 1rem 0.5rem;
-  background-color: var(--color-bg-page); /* Updated to match Top/Bottom Sidebar */
+  padding: 0rem 0rem;
+  background-color: var(--color-bg-page);
   color: var(--color-text-content);
 }
 
