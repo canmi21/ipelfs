@@ -22,7 +22,8 @@ export default defineComponent({
 </script>
 
 <style scoped>
-@import '../../../../assets/app/leftsidebar/middlesidebar/sidebartablist/commontab.css';
+@import '../../../../assets/app/leftsidebar/middlesidebar/sidebartablist/commontab.css'; /* Or insightstab.css if unique */
+
 .sidebar-tab-item {
   height: 3rem;
   width: 100%;
@@ -32,6 +33,7 @@ export default defineComponent({
   padding-left: 0.75rem;
   padding-right: 0.75rem;
 }
+
 .tab-icon-wrapper {
   width: 1.5rem;
   height: 1.5rem;
@@ -39,8 +41,15 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.1s ease-out;
+  transition:
+    transform 0.1s ease-out,
+    outline 0.12s ease-out,
+    outline-offset 0.12s ease-out; /* Added outline transitions */
+  border-radius: 4px; /* Added for rounded outline */
+  outline: 2px solid transparent; /* Pre-allocate space for outline */
+  outline-offset: 2px; /* Match the focus-visible offset */
 }
+
 .tab-label {
   margin-left: 0.75rem;
   white-space: nowrap;
