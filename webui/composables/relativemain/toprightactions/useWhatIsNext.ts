@@ -1,6 +1,7 @@
 // composables/relativemain/toprightactions/useWhatIsNext.ts
 
-import type { ThemeMode, EffectiveTheme } from './useThemeToggleButton'
+export type ThemeMode = 'light' | 'dark' | 'system'
+export type EffectiveTheme = 'light' | 'dark'
 
 export function determineNextThemeMode(
   currentPreferredMode: ThemeMode,

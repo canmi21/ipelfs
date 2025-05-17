@@ -28,11 +28,7 @@ const leftSidebarStyle = computed(() => ({
   transition: 'flex-basis 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
 }))
 
-onMounted(() => {
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.documentElement.classList.add('dark')
-  }
-})
+onMounted(() => {})
 </script>
 
 <script lang="ts">

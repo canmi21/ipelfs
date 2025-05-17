@@ -16,15 +16,47 @@
     box-shadow 0.12s ease-out;
 }
 
-.theme-toggle-button:hover {
-  color: var(--color-text-default);
+/* General hover/focus-visible behavior (scale and default color change for system mode) */
+.theme-toggle-button:hover,
+.theme-toggle-button:focus-visible {
+  color: var(--color-text-default); /* Default hover/focus color (used by system mode icon) */
   transform: scale(1.05);
 }
 
-.theme-toggle-button:active {
-  transform: scale(0.95);
+/* Specific hover/focus-visible colors based on current theme mode class */
+
+/* When SUN icon is shown (button has .theme-mode-light class) */
+.theme-toggle-button.theme-mode-light:hover,
+.theme-toggle-button.theme-mode-light:focus-visible {
+  color: #eab308; /* Yellow for when page is in light mode */
+}
+html.dark .theme-toggle-button.theme-mode-light:hover,
+html.dark .theme-toggle-button.theme-mode-light:focus-visible {
+  color: #fcd34d; /* Lighter Yellow for when page is in dark mode */
 }
 
+/* When MOON icon is shown (button has .theme-mode-dark class) */
+.theme-toggle-button.theme-mode-dark:hover,
+.theme-toggle-button.theme-mode-dark:focus-visible {
+  color: #3b82f6; /* Blue for when page is in light mode */
+}
+html.dark .theme-toggle-button.theme-mode-dark:hover,
+html.dark .theme-toggle-button.theme-mode-dark:focus-visible {
+  color: #60a5fa; /* Lighter Blue for when page is in dark mode */
+}
+
+/* When SUN-MOON icon is shown (button has .theme-mode-system class),
+   it will use the general hover/focus-visible color (var(--color-text-default))
+   defined for .theme-toggle-button:hover and .theme-toggle-button:focus-visible. */
+
+/* Active state */
+.theme-toggle-button:active {
+  transform: scale(
+    0.95
+  ); /* Scale down slightly on active, overrides hover/focus scale for transform */
+}
+
+/* Focus styles (outline removal and box-shadow ring) */
 .theme-toggle-button:focus {
   outline: none;
 }
@@ -33,7 +65,6 @@
   outline: none;
   box-shadow:
     0 0 0 2px var(--color-bg-surface),
-    0 0 0 4px var(--color-focus-ring);
-  color: var(--color-text-default);
-  transform: scale(1.05);
+    /* Assuming button is on a surface background */ 0 0 0 4px var(--color-focus-ring);
+  /* Color and transform are handled by the rules above, including specific mode overrides */
 }

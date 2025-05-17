@@ -4,9 +4,7 @@ import { ref, computed, watch, readonly, type Ref, type Component } from 'vue'
 import { getValueFromLocalStorage, setValueInLocalStorage } from '../../useLocalStorage'
 import { Sun, Moon, SunMoon } from 'lucide-vue-next'
 import { determineNextThemeMode } from './useWhatIsNext'
-
-export type ThemeMode = 'light' | 'dark' | 'system'
-export type EffectiveTheme = 'light' | 'dark'
+import type { ThemeMode, EffectiveTheme } from './useWhatIsNext'
 
 const THEME_STORAGE_KEY = 'theme_preference_v3'
 const DEFAULT_THEME_MODE: ThemeMode = 'system'
@@ -19,6 +17,7 @@ const preferredThemeMode = ref<ThemeMode>(
 )
 
 const systemPreference = ref<EffectiveTheme>(IS_CLIENT ? getSystemPreference() : 'light')
+let clickCount = 0
 
 function getSystemPreference(): EffectiveTheme {
   if (IS_CLIENT && window.matchMedia) {
@@ -59,17 +58,33 @@ if (IS_CLIENT) {
   } catch {
     mediaQuery.addListener(updateSystemPreference)
   }
-  // Ensure systemPreference is initially correct after listener setup
-  // This ensures that if the page loads and system preference is immediately needed, it's fresh.
-  if (IS_CLIENT && preferredThemeMode.value === 'system') {
-    // Only critical if starting in system mode
-    systemPreference.value = getSystemPreference()
-  }
+  systemPreference.value = getSystemPreference()
 }
 
 export function useThemeToggleButton() {
   const cycleTheme = () => {
-    const nextMode = determineNextThemeMode(preferredThemeMode.value, systemPreference.value)
+    clickCount++
+    let nextMode: ThemeMode
+
+    const currentPreferred = preferredThemeMode.value
+    const currentSystem = systemPreference.value
+
+    if (clickCount % 3 === 0) {
+      if (currentPreferred === 'light' && currentSystem === 'dark') {
+        nextMode = 'dark'
+      } else if (currentPreferred === 'dark' && currentSystem === 'light') {
+        nextMode = 'light'
+      } else if (currentPreferred === 'system' && currentSystem === 'light') {
+        nextMode = 'light'
+      } else if (currentPreferred === 'system' && currentSystem === 'dark') {
+        nextMode = 'dark'
+      } else {
+        nextMode = determineNextThemeMode(currentPreferred, currentSystem)
+      }
+    } else {
+      nextMode = determineNextThemeMode(currentPreferred, currentSystem)
+    }
+
     preferredThemeMode.value = nextMode
     if (IS_CLIENT) {
       setValueInLocalStorage<ThemeMode>(THEME_STORAGE_KEY, nextMode)
