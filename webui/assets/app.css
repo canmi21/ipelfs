@@ -50,6 +50,10 @@
   --color-bg-neutral: var(--color-bg-neutral-light);
   --color-bg-neutral-hover: var(--color-bg-neutral-hover-light);
   --color-text-on-neutral: var(--color-text-on-neutral-light);
+
+  /* Accent & Focus Colors */
+  --color-accent-focus-light: #007bff; /* A standard blue for focus indicators in light mode. */
+  --color-focus-ring: var(--color-accent-focus-light); /* Generic focus ring variable. */
 }
 
 .dark {
@@ -93,6 +97,12 @@
   /* Example: If the main green button needs different styling in dark mode beyond its text color */
   --theme-button-positive-bg: var(--theme-button-positive-bg-dark);
   --theme-button-positive-hover-bg: var(--theme-button-positive-hover-bg-dark);
+
+  /* Dark Mode Accent & Focus Colors */
+  --color-accent-focus-dark: #3b82f6; /* A slightly lighter/brighter blue for focus in dark mode. */
+  --color-focus-ring: var(
+    --color-accent-focus-dark
+  ); /* Override generic focus ring for dark mode. */
 
   /* Theme colors like --theme-green-base are generally kept consistent unless a specific dark mode variant is designed.
      Text-on-theme colors like --text-on-green might need adjustment if the base theme color itself changes luminosity significantly,

@@ -25,7 +25,7 @@ const { isCollapsed } = useSidebarState()
 
 const leftSidebarStyle = computed(() => ({
   flexBasis: isCollapsed.value ? '3rem' : '16rem',
-  transition: 'flex-basis 0.3s ease-in-out, padding 0.3s ease-in-out', // Added padding to transition
+  transition: 'flex-basis 0.3s ease-in-out, padding 0.3s ease-in-out',
 }))
 
 onMounted(() => {

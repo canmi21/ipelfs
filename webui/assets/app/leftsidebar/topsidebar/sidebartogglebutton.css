@@ -4,18 +4,33 @@
   background-color: transparent;
   color: var(--color-text-muted);
   border: none;
-  border-radius: 4px;
+  border-radius: 4px; /* 按钮的圆角 */
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Ensures the element is focusable by script/mouse, and for :focus-visible if needed */
+  /* tabindex="0" might be implicitly set by <button> but good to keep in mind for custom elements */
 }
 
 .sidebar-toggle-button:hover {
   color: var(--color-text-default);
 }
 
-/* .dark .sidebar-toggle-button specific styles can be added if --color-text-muted
-   doesn't sufficiently adapt or if a different base/hover color is needed in dark mode.
-   For now, it relies on the base variables adapting to dark mode. */
+.sidebar-toggle-button:focus {
+  /* Provide a basic fallback for browsers that don't support :focus-visible,
+     or to remove the default outline if you *only* want the box-shadow. */
+  outline: none;
+}
+
+.sidebar-toggle-button:focus-visible {
+  outline: none; /* Remove default browser outline */
+  /* Create a 2-layer box-shadow for a distinct ring:
+     1. Inner shadow: same color as the button's background (TopSidebar surface) to create a "gap".
+     2. Outer shadow: the actual focus ring color.
+     Adjust the `var(--color-bg-page)` if the button sits on a different background color. */
+  box-shadow:
+    0 0 0 2px var(--color-bg-page),
+    /* Assuming TopSidebar uses --color-bg-page */ 0 0 0 4px var(--color-focus-ring);
+}

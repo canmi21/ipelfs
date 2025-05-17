@@ -34,9 +34,9 @@ export default defineComponent({
 
     const iconProps = computed(() => {
       if (isCollapsed.value) {
-        return { size: 32, strokeWidth: 1.75 }
+        return { size: 33.6, strokeWidth: 1.75 } // Icon size 2.1rem (33.6px), adjusted stroke
       } else {
-        return { size: 20, strokeWidth: 2.5 }
+        return { size: 20, strokeWidth: 2.5 } // Expanded state
       }
     })
 
@@ -54,16 +54,19 @@ export default defineComponent({
 @import '../../../assets/app/leftsidebar/topsidebar/sidebartogglebutton.css';
 
 .sidebar-toggle-button {
-  width: 2rem;
-  height: 2rem;
+  width: 2rem; /* Expanded state button width */
+  height: 2rem; /* Expanded state button height */
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.15s ease-in-out;
+  transition:
+    width 0.15s ease-in-out,
+    height 0.15s ease-in-out,
+    opacity 0.15s ease-in-out;
 }
 
 .sidebar-toggle-button.is-collapsed {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.5rem; /* Collapsed state button width to fit 2.1rem icon */
+  height: 1.5rem; /* Collapsed state button height */
 }
 </style>

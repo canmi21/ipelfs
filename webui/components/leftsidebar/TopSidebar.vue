@@ -21,7 +21,7 @@ import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSid
 const { isCollapsed: isSidebarCollapsed } = useSidebarState()
 
 const topSidebarContainerStyle = computed(() => ({
-  height: isSidebarCollapsed.value ? '3rem' : '4rem', // 折叠时高度为 3rem
+  height: isSidebarCollapsed.value ? '3rem' : '4rem',
   justifyContent: isSidebarCollapsed.value ? 'center' : 'space-between',
 }))
 </script>
