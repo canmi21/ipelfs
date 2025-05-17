@@ -14,9 +14,9 @@
 import TopSidebar from './leftsidebar/TopSidebar.vue'
 import MiddleSidebar from './leftsidebar/MiddleSidebar.vue'
 import BottomSidebar from './leftsidebar/BottomSidebar.vue'
-import { useSidebarState } from '../composables/leftsidebar/topsidebar/useSidebarToggleButton'
+import { useSidebar } from '../composables/leftsidebar/useSidebar'
 
-const { isCollapsed } = useSidebarState()
+const { isCollapsed } = useSidebar()
 </script>
 
 <script lang="ts">

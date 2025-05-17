@@ -19,9 +19,9 @@
 import { computed, onMounted } from 'vue'
 import LeftSidebar from './components/LeftSidebar.vue'
 import RelativeMain from './components/RelativeMain.vue'
-import { useSidebarState } from './composables/leftsidebar/topsidebar/useSidebarToggleButton'
+import { useSidebar } from './composables/leftsidebar/useSidebar'
 
-const { isCollapsed } = useSidebarState()
+const { isCollapsed } = useSidebar()
 
 const leftSidebarStyle = computed(() => ({
   flexBasis: isCollapsed.value ? '3rem' : '16rem',
@@ -47,12 +47,11 @@ export default {
 
 .left-sidebar {
   overflow-x: hidden;
-  /* padding and its transition are now fully controlled in leftsidebar.css */
 }
 
 .relative-main {
   flex: 1;
   overflow-y: auto;
-  transition: margin-left 0.3s ease-in-out; /* This transition can also be updated if desired */
+  transition: margin-left 0.3s ease-in-out;
 }
 </style>

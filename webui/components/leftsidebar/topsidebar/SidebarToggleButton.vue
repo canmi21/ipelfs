@@ -13,7 +13,7 @@
 <script lang="ts">
 import { defineComponent, computed } from 'vue'
 import { PanelRightClose, PanelRightOpen } from 'lucide-vue-next'
-import { useSidebarState } from '../../../composables/leftsidebar/topsidebar/useSidebarToggleButton'
+import { useSidebar } from '../../../composables/leftsidebar/useSidebar'
 
 export default defineComponent({
   name: 'SidebarToggleButton',
@@ -22,7 +22,7 @@ export default defineComponent({
     PanelRightOpen,
   },
   setup() {
-    const { isCollapsed, toggleSidebar } = useSidebarState()
+    const { isCollapsed, toggleSidebar } = useSidebar()
 
     const handleToggleSidebar = () => {
       toggleSidebar()
@@ -32,12 +32,8 @@ export default defineComponent({
       return isCollapsed.value ? PanelRightOpen : PanelRightClose
     })
 
-    // iconProps is no longer needed as size and strokeWidth are now fixed in the template
-    // isCollapsed is still used for the :class binding if any visual difference is needed
-    // (other than size, e.g. if the icon itself changed more drastically, but here only type changes)
-
     return {
-      isCollapsed, // Needed for :class if other non-size style changes based on collapse
+      isCollapsed,
       handleToggleSidebar,
       currentIcon,
     }
@@ -54,5 +50,9 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: center;
+  transition:
+    opacity 0.15s ease-in-out,
+    color 0.12s ease-out,
+    transform 0.12s ease-out;
 }
 </style>
