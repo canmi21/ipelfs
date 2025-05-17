@@ -1,0 +1,25 @@
+/* assets/app/leftsidebar/topsidebar/sidebartogglebutton.css */
+
+.sidebar-toggle-button {
+  background-color: #e0e0e0;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.sidebar-toggle-button:hover {
+  background-color: #d0d0d0;
+}
+
+.dark .sidebar-toggle-button {
+  background-color: #424242;
+  color: #f0f0f0;
+  border: 1px solid #555;
+}
+
+.dark .sidebar-toggle-button:hover {
+  background-color: #505050;
+}
