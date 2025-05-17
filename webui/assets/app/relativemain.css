@@ -1,12 +1,8 @@
 /* assets/app/relativemain.css */
 
 .relative-main {
-  background-color: #ffffff;
-  color: #333;
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-content);
   padding: 1rem;
 }
-
-.dark .relative-main {
-  background-color: #212121;
-  color: #fff;
-}
+/* .dark rules are now handled by variables in app.css */

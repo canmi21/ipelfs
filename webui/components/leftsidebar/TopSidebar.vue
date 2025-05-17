@@ -34,9 +34,7 @@ export default {
   overflow: hidden;
 }
 .logo {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0; /* Allows shrinking */
+  /* Further layout for logo content if any, goes here */
 }
 </style>

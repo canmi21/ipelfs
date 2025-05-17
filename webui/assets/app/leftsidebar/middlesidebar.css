@@ -2,13 +2,20 @@
 
 .middle-sidebar {
   padding: 1rem;
-  background-color: #ffffff;
+  background-color: var(--color-bg-surface); /* Main surface for content */
+  color: var(--color-text-content); /* Default text color for this section */
 }
 
-.dark .middle-sidebar {
-  background-color: #2d2d2d;
-  color: #e0e0e0;
-}
+/* .dark .middle-sidebar specific background was --color-bg-surface-alt-dark */
+/* This is now handled by the general .dark --color-bg-surface if that's the desired mapping,
+   or you can introduce a specific class here if MiddleSidebar always needs that alt color in dark mode.
+   For now, assuming it uses the standard surface color. If it needs the alt color:
+   .dark .middle-sidebar { background-color: var(--color-bg-surface-alt-dark); }
+   But to adhere to "colors in app.css", it's better this component class is styled generally,
+   or `MiddleSidebar.vue`'s root `div` gets a more specific class if it *always* needs the alt color.
+   For simplicity, mapped to standard surface. If it must be --color-bg-surface-alt-dark,
+   the component should indicate this need, perhaps via a modifier class.
+*/
 
 ul {
   list-style-type: none;
@@ -17,6 +24,11 @@ ul {
 }
 
 li {
-  padding: 10px 0;
-  cursor: pointer;
+  padding: 10px 0; /* Specific padding for list items */
+  cursor: pointer; /* Interaction style */
+  /* If list items need a hover background or text color, use variables */
+}
+
+li:hover {
+  /* Example hover: color: var(--theme-green-base); */
 }

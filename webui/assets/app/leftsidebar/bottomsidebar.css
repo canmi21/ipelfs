@@ -2,24 +2,20 @@
 
 .bottom-sidebar {
   padding: 1rem;
-  background-color: #f9f9f9;
-  border-top: 1px solid #ddd;
-}
-
-.dark .bottom-sidebar {
-  background-color: #171717;
-  border-top: 1px solid #333;
+  background-color: var(--color-bg-page); /* Or --color-bg-surface */
+  border-top: 1px solid var(--color-border-primary);
 }
 
 .settings button {
-  padding: 0.5rem 1rem;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  padding: 0.5rem 1rem; /* Specific padding for this button type */
+  background-color: var(--theme-button-positive-bg);
+  color: var(--text-on-button-positive);
+  border: none; /* Style (no border) */
+  border-radius: 4px; /* Specific styling attribute */
+  cursor: pointer; /* Interaction style */
+  font-weight: 500; /* Example of specific font styling */
 }
 
-.dark .settings button {
-  background-color: #388e3c;
+.settings button:hover {
+  background-color: var(--theme-button-positive-hover-bg);
 }

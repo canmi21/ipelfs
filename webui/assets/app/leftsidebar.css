@@ -1,12 +1,8 @@
 /* assets/app/leftsidebar.css */
 
 .left-sidebar {
-  background-color: #f9f9f9;
-  color: #333;
+  background-color: var(--color-bg-page);
+  color: var(--color-text-content);
   padding: 1rem;
 }
-
-.dark .left-sidebar {
-  background-color: #171717;
-  color: #fff;
-}
+/* .dark rules are now handled by variables in app.css */

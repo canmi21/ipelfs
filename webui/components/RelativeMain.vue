@@ -13,7 +13,7 @@ export default {
 </script>
 
 <style scoped>
-@import '../assets/app/relativemain_component.css'; /* Assuming a new CSS for component-specific styles if needed beyond layout */
+@import '../assets/app/relativemain_component.css';
 
 .relative-main-content-wrapper {
   height: 100%;

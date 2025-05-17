@@ -1,0 +1,102 @@
+/* assets/app.css */
+
+:root {
+  /* Light Mode: Base Background & Text Colors */
+  --color-bg-page-light: #f9f9f9; /* Primary page background for light mode (e.g., body background). */
+  --color-bg-surface-light: #ffffff; /* Background for UI surfaces like cards, modals, sidebars in light mode. */
+  --color-text-default-light: #1a1a1a; /* Default text color for high contrast, primary content in light mode (e.g., headings). */
+  --color-text-content-light: #333333; /* Standard text color for general content, slightly softer than default, in light mode. */
+  --color-text-muted-light: #555555; /* Muted text color for secondary or less emphasized information in light mode. */
+  --color-text-placeholder-light: #777777; /* Placeholder text color in light mode. */
+
+  /* Light Mode: Border Colors */
+  --color-border-primary-light: #dddddd; /* Primary border color for dividers, outlines on components in light mode. */
+  --color-border-secondary-light: #cccccc; /* Secondary, slightly stronger border color in light mode. */
+
+  /* Light Mode: Neutral Element Backgrounds (e.g., for buttons, specific UI parts) */
+  --color-bg-neutral-light: #e0e0e0; /* Background for neutral elements like specific buttons or UI parts in light mode. */
+  --color-bg-neutral-hover-light: #d0d0d0; /* Hover state background for neutral elements in light mode. */
+  --color-text-on-neutral-light: #333333; /* Text color for use on neutral backgrounds in light mode. */
+
+  /* Theme Colors: Green */
+  --theme-green-base: #269279; /* Base shade for the green theme color. For primary actions or green-themed elements. */
+  --theme-green-variant: #2ba687; /* Variant (e.g., hover) for the green theme color. */
+  --text-on-green: #e6ebea; /* Text color for high readability on green theme backgrounds. */
+
+  /* Theme Colors: Yellow */
+  --theme-yellow-base: #ddad13; /* Base shade for the yellow theme color. For warnings, highlights. */
+  --theme-yellow-variant: #eac21e; /* Variant (e.g., hover) for the yellow theme color. */
+  --text-on-yellow: #6c4119; /* Text color for high readability on yellow theme backgrounds. */
+
+  /* Theme Colors: Red */
+  --theme-red-base: #de4747; /* Base shade for the red theme color. For errors, destructive actions. */
+  --theme-red-variant: #e66e6f; /* Variant (e.g., hover) for the red theme color. */
+  --text-on-red: #ece6e7; /* Text color for high readability on red theme backgrounds. */
+
+  /* Theme Colors: Positive Action Button (e.g., primary submit buttons) */
+  --theme-button-positive-bg: #4caf50; /* Background color for positive action buttons (e.g., 'Save', 'Confirm'). */
+  --theme-button-positive-hover-bg: #43a047; /* Hover background color for positive action buttons. */
+  --text-on-button-positive: #ffffff; /* Text color for positive action buttons. */
+
+  /* Default Theme Assignments (Light Mode - Generic variables to be used in components) */
+  --color-bg-page: var(--color-bg-page-light);
+  --color-bg-surface: var(--color-bg-surface-light);
+  --color-text-default: var(--color-text-default-light);
+  --color-text-content: var(--color-text-content-light);
+  --color-text-muted: var(--color-text-muted-light);
+  --color-text-placeholder: var(--color-text-placeholder-light);
+  --color-border-primary: var(--color-border-primary-light);
+  --color-border-secondary: var(--color-border-secondary-light);
+  --color-bg-neutral: var(--color-bg-neutral-light);
+  --color-bg-neutral-hover: var(--color-bg-neutral-hover-light);
+  --color-text-on-neutral: var(--color-text-on-neutral-light);
+}
+
+.dark {
+  /* Dark Mode: Base Background & Text Colors */
+  --color-bg-page-dark: #171717; /* Primary page background for dark mode. */
+  --color-bg-surface-dark: #212121; /* Background for UI surfaces in dark mode. */
+  --color-bg-surface-alt-dark: #2d2d2d; /* Alternative surface background for varied depth in dark mode. */
+  --color-text-default-dark: #e0e0e0; /* Default text color for high contrast, primary content in dark mode. */
+  --color-text-content-dark: #cccccc; /* Standard text color for general content in dark mode. */
+  --color-text-muted-dark: #a0a0a0; /* Muted text color for secondary information in dark mode. */
+  --color-text-placeholder-dark: #888888; /* Placeholder text color in dark mode. */
+
+  /* Dark Mode: Border Colors */
+  --color-border-primary-dark: #333333; /* Primary border color in dark mode. */
+  --color-border-secondary-dark: #555555; /* Secondary border color in dark mode. */
+
+  /* Dark Mode: Neutral Element Backgrounds */
+  --color-bg-neutral-dark: #424242; /* Background for neutral elements in dark mode. */
+  --color-bg-neutral-hover-dark: #505050; /* Hover state background for neutral elements in dark mode. */
+  --color-text-on-neutral-dark: #f0f0f0; /* Text color for use on neutral backgrounds in dark mode. */
+
+  /* Theme Colors: Positive Action Button (Dark Mode - if different appearance is desired) */
+  --theme-button-positive-bg-dark: #388e3c; /* Background color for positive action buttons in dark mode. */
+  --theme-button-positive-hover-bg-dark: #2e7d32; /* Hover background for positive action buttons in dark mode. */
+  /* --text-on-button-positive remains #FFFFFF, typically good contrast. */
+
+  /* Overwrite Default Theme Assignments for Dark Mode */
+  --color-bg-page: var(--color-bg-page-dark);
+  --color-bg-surface: var(--color-bg-surface-dark);
+  --color-text-default: var(--color-text-default-dark);
+  --color-text-content: var(--color-text-content-dark);
+  --color-text-muted: var(--color-text-muted-dark);
+  --color-text-placeholder: var(--color-text-placeholder-dark);
+  --color-border-primary: var(--color-border-primary-dark);
+  --color-border-secondary: var(--color-border-secondary-dark);
+  --color-bg-neutral: var(--color-bg-neutral-dark);
+  --color-bg-neutral-hover: var(--color-bg-neutral-hover-dark);
+  --color-text-on-neutral: var(--color-text-on-neutral-dark);
+
+  /* Overwrite specific theme elements if they need a dark mode variant */
+  /* Example: If the main green button needs different styling in dark mode beyond its text color */
+  --theme-button-positive-bg: var(--theme-button-positive-bg-dark);
+  --theme-button-positive-hover-bg: var(--theme-button-positive-hover-bg-dark);
+
+  /* Theme colors like --theme-green-base are generally kept consistent unless a specific dark mode variant is designed.
+     Text-on-theme colors like --text-on-green might need adjustment if the base theme color itself changes luminosity significantly,
+     or if a specific dark mode variant of the theme color is introduced.
+     For now, primary theme color definitions from :root are used.
+  */
+}
