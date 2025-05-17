@@ -1,19 +1,40 @@
 <!-- components/leftsidebar/topsidebar/SidebarToggleButton.vue -->
 
 <template>
-  <button class="sidebar-toggle-button" @click="handleClick">&lt;</button>
+  <button class="sidebar-toggle-button" @click="handleToggleSidebar">
+    <component :is="currentIcon" :size="20" stroke-width="2.5" />
+  </button>
 </template>
 
 <script lang="ts">
-export default {
+import { defineComponent, computed } from 'vue'
+import { PanelRightClose, PanelRightOpen } from 'lucide-vue-next'
+import { useSidebarState } from '../../../composables/leftsidebar/topsidebar/useSidebarToggleButton'
+
+export default defineComponent({
   name: 'SidebarToggleButton',
-  emits: ['toggle'],
-  methods: {
-    handleClick() {
-      this.$emit('toggle')
-    },
+  components: {
+    PanelRightClose,
+    PanelRightOpen,
   },
-}
+  setup() {
+    const { isCollapsed, toggleSidebar } = useSidebarState()
+
+    const handleToggleSidebar = () => {
+      toggleSidebar()
+    }
+
+    const currentIcon = computed(() => {
+      return isCollapsed.value ? PanelRightClose : PanelRightOpen
+    })
+
+    return {
+      isCollapsed,
+      handleToggleSidebar,
+      currentIcon,
+    }
+  },
+})
 </script>
 
 <style scoped>

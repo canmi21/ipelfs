@@ -2,27 +2,23 @@
 
 <template>
   <div class="top-sidebar">
-    <div class="logo">
+    <div class="logo" v-show="!isSidebarCollapsed">
       <h2>My App</h2>
     </div>
-    <SidebarToggleButton @toggle="onToggleCollapse" />
+    <SidebarToggleButton />
   </div>
 </template>
 
-<script lang="ts">
+<script lang="ts" setup>
 import SidebarToggleButton from './topsidebar/SidebarToggleButton.vue'
+import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSidebarToggleButton'
 
+const { isCollapsed: isSidebarCollapsed } = useSidebarState()
+</script>
+
+<script lang="ts">
 export default {
   name: 'TopSidebar',
-  components: {
-    SidebarToggleButton,
-  },
-  emits: ['toggleSidebarCollapse'],
-  methods: {
-    onToggleCollapse() {
-      this.$emit('toggleSidebarCollapse')
-    },
-  },
 }
 </script>
 
@@ -35,5 +31,12 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  overflow: hidden;
+}
+.logo {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
