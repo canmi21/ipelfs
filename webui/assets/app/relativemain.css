@@ -3,6 +3,6 @@
 .relative-main {
   background-color: var(--color-bg-surface);
   color: var(--color-text-content);
-  padding: 1rem;
+  padding: 0rem;
 }
 /* .dark rules are now handled by variables in app.css */
