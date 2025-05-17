@@ -1,0 +1,25 @@
+/* assets/app/leftsidebar/bottomsidebar.css */
+
+.bottom-sidebar {
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-top: 1px solid #ddd;
+}
+
+.dark .bottom-sidebar {
+  background-color: #171717;
+  border-top: 1px solid #333;
+}
+
+.settings button {
+  padding: 0.5rem 1rem;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dark .settings button {
+  background-color: #388e3c;
+}

@@ -1,0 +1,22 @@
+/* assets/app/leftsidebar/topsidebar.css */
+
+.top-sidebar {
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+}
+
+.dark .top-sidebar {
+  background-color: #171717;
+  border-bottom: 1px solid #333;
+}
+
+.logo h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0;
+}
+
+.dark .logo h2 {
+  color: #fff;
+}

@@ -1,3 +1,5 @@
+<!-- components/leftsidebar/TopSidebar.vue -->
+
 <template>
   <div class="top-sidebar">
     <div class="logo">
@@ -13,28 +15,12 @@ export default {
 </script>
 
 <style scoped>
+@import '../../assets/app/leftsidebar/topsidebar.css';
+
 .top-sidebar {
-  padding: 1rem;
-  background-color: #f9f9f9; /* Matches the general sidebar background from the global css */
-  border-bottom: 1px solid #ddd;
-  height: 4rem; /* Fixed height for the top section */
-  flex-shrink: 0; /* Prevent shrinking if space is tight (though fixed height usually suffices) */
-}
-
-.dark .top-sidebar {
-  /* Dark mode styling */
-  background-color: #171717;
-  border-bottom: 1px solid #333;
-}
-
-.logo h2 {
-  font-size: 1.5rem;
-  color: #333;
-  margin: 0; /* Reset default margin */
-}
-
-.dark .logo h2 {
-  /* Dark mode styling */
-  color: #fff;
+  height: 4rem;
+  flex-shrink: 0;
+  display: flex; /* Added for content alignment */
+  align-items: center; /* Example alignment */
 }
 </style>
