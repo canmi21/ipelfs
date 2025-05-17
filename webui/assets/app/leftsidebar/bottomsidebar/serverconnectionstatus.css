@@ -10,10 +10,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition:
+    color 0.12s ease-out,
+    transform 0.12s ease-out;
 }
 
 .server-status-icon-container:hover {
   color: var(--color-text-default);
+  transform: scale(1.05);
 }
 
 .server-status-icon-container:focus {

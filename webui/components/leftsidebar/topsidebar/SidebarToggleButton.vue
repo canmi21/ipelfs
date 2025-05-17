@@ -54,6 +54,5 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.15s ease-in-out; /* Only opacity transition needed now */
 }
 </style>

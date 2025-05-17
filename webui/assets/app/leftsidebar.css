@@ -3,7 +3,7 @@
 .left-sidebar {
   background-color: var(--color-bg-page);
   color: var(--color-text-content);
-  padding: 0%;
+  padding: 0;
   box-sizing: border-box;
   transition: padding 0.3s ease-in-out; /* Match transition in App.vue if needed */
 }

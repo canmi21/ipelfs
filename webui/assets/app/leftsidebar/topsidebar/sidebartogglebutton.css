@@ -10,10 +10,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition:
+    color 0.12s ease-out,
+    transform 0.12s ease-out;
 }
 
 .sidebar-toggle-button:hover {
   color: var(--color-text-default);
+  transform: scale(1.05);
 }
 
 .sidebar-toggle-button:focus {
