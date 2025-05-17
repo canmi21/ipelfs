@@ -1,6 +1,6 @@
-/* assets/app/leftsidebar/bottomsidebar/serverconnectionstatus.css */
+/* assets/app/relativemain/toprightactions/themetogglebutton.css */
 
-.server-status-icon-container {
+.theme-toggle-button {
   background-color: transparent;
   color: var(--color-text-muted);
   border: none;
@@ -16,23 +16,23 @@
     box-shadow 0.12s ease-out;
 }
 
-.server-status-icon-container:hover {
+.theme-toggle-button:hover {
   color: var(--color-text-default);
   transform: scale(1.05);
 }
 
-.server-status-icon-container:active {
+.theme-toggle-button:active {
   transform: scale(0.95);
 }
 
-.server-status-icon-container:focus {
+.theme-toggle-button:focus {
   outline: none;
 }
 
-.server-status-icon-container:focus-visible {
+.theme-toggle-button:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 2px var(--color-bg-page),
+    0 0 0 2px var(--color-bg-surface),
     0 0 0 4px var(--color-focus-ring);
   color: var(--color-text-default);
   transform: scale(1.05);

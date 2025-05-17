@@ -1,0 +1,9 @@
+/* assets/app/relativemain/toprightactions.css */
+
+.top-right-actions-container {
+  padding: 0rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0rem;
+}
