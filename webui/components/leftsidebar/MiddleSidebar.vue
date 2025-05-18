@@ -29,9 +29,9 @@ export default defineComponent({
 
 .middle-sidebar {
   flex-grow: 1;
-  overflow-y: auto;
+  overflow-y: auto; /* Allow vertical scrolling for content */
+  overflow-x: hidden; /* Prevent horizontal scrolling during transitions */
   min-height: 0;
-  display: flex; /* This ensures SidebarTabList can be aligned if needed, e.g. centered vertically if MiddleSidebar is taller */
-  /* For now, SidebarTabList has a fixed height and width: 100% so it will fill. */
+  display: flex;
 }
 </style>
