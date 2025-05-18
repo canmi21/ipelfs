@@ -1,0 +1,42 @@
+/* assets/app/leftsidebar/topsidebar/aboutbutton.css */
+
+.about-icon-link {
+  /* Styling the <a> tag */
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem; /* Fixed size for the clickable icon area */
+  height: 1.5rem;
+  transition:
+    color 0.12s ease-out,
+    transform 0.12s ease-out,
+    box-shadow 0.12s ease-out;
+}
+
+.about-icon-link:hover {
+  color: var(--color-text-default);
+  transform: scale(1.05);
+}
+
+.about-icon-link:active {
+  transform: scale(0.95);
+}
+
+.about-icon-link:focus {
+  outline: none;
+}
+
+.about-icon-link:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-bg-page),
+    0 0 0 4px var(--color-focus-ring);
+  color: var(--color-text-default);
+  transform: scale(1.05);
+}

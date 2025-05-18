@@ -3,14 +3,18 @@
 <template>
   <div class="top-sidebar" :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }">
     <SidebarToggleButton />
+    <transition name="fade-about-button">
+      <AboutButton v-show="!isSidebarCollapsed" />
+    </transition>
   </div>
 </template>
 
 <script lang="ts" setup>
 import SidebarToggleButton from './topsidebar/SidebarToggleButton.vue'
-import { useSidebarState } from '../../composables/leftsidebar/topsidebar/useSidebarToggleButton'
+import AboutButton from './topsidebar/AboutButton.vue'
+import { useSidebar } from '../../composables/leftsidebar/useSidebar'
 
-const { isCollapsed: isSidebarCollapsed } = useSidebarState()
+const { isCollapsed: isSidebarCollapsed } = useSidebar()
 </script>
 
 <script lang="ts">
@@ -22,13 +26,22 @@ export default {
 <style scoped>
 @import '../../assets/app/leftsidebar/topsidebar.css';
 
-.top-sidebar {
-  height: 3rem; /* Fixed height */
-  flex-shrink: 0;
-  display: flex;
-  align-items: center; /* Vertically centers content (the button) */
-  justify-content: flex-start; /* Align content to the start, padding will position it */
-  overflow: hidden;
-  transition: padding 0.3s ease-in-out;
+/* .top-sidebar base styles (height, flex, etc.) are now primarily in the imported CSS. */
+/* Scoped styles are for component-specific overrides or truly unique aspects. */
+
+/* Styles for the AboutButton fade transition */
+.fade-about-button-enter-active,
+.fade-about-button-leave-active {
+  transition: opacity 0.15s ease-in-out;
+}
+
+.fade-about-button-enter-from,
+.fade-about-button-leave-to {
+  opacity: 0;
+}
+
+.fade-about-button-enter-to,
+.fade-about-button-leave-from {
+  opacity: 1;
 }
 </style>

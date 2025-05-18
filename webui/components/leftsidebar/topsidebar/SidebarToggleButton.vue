@@ -1,13 +1,11 @@
 <!-- components/leftsidebar/topsidebar/SidebarToggleButton.vue -->
 
 <template>
-  <button
-    class="sidebar-toggle-button"
-    :class="{ 'is-collapsed': isCollapsed }"
-    @click="handleToggleSidebar"
-  >
-    <component :is="currentIcon" :size="24" :stroke-width="2" />
-  </button>
+  <div class="toggle-button-slot" :class="{ 'is-collapsed-slot': isCollapsed }">
+    <button class="sidebar-toggle-button" @click="handleToggleSidebar">
+      <component :is="currentIcon" :size="24" :stroke-width="2" />
+    </button>
+  </div>
 </template>
 
 <script lang="ts">
@@ -33,7 +31,7 @@ export default defineComponent({
     })
 
     return {
-      isCollapsed,
+      isCollapsed, // Used for the slot's class if needed, or passed to button if button style changes
       handleToggleSidebar,
       currentIcon,
     }
@@ -44,15 +42,20 @@ export default defineComponent({
 <style scoped>
 @import '../../../assets/app/leftsidebar/topsidebar/sidebartogglebutton.css';
 
-.sidebar-toggle-button {
-  width: 1.5rem;
-  height: 1.5rem;
+.toggle-button-slot {
+  width: 3rem;
+  height: 3rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition:
-    opacity 0.15s ease-in-out,
-    color 0.12s ease-out,
-    transform 0.12s ease-out;
+  flex-shrink: 0; /* Prevent slot from shrinking in flex layout */
+}
+
+.sidebar-toggle-button {
+  /* This is the inner 1.5rem x 1.5rem button */
+  width: 1.5rem;
+  height: 1.5rem;
+  /* Styling (transparent bg, color, focus etc.) is in the imported CSS */
+  /* display:flex, align-items, justify-content for icon centering is also in imported CSS */
 }
 </style>
