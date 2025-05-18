@@ -1,17 +1,17 @@
 /* assets/app/leftsidebar/bottomsidebar/serverconnectionstatus/serverinfocard.css */
 
 .server-info-card {
-  width: 9rem;
-  height: 15rem;
+  width: 15rem;
+  height: 9rem;
   background-color: var(--color-bg-surface);
   color: var(--color-text-content);
-  border: 1px solid var(--color-border-secondary); /* Using secondary border for a less prominent look */
-  border-radius: 6px; /* Slightly larger radius for a card */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15); /* Floating effect shadow */
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
   padding: 1rem;
   box-sizing: border-box;
-  position: fixed; /* Positioned relative to the viewport */
-  z-index: 1050; /* High z-index to appear above other elements */
-  overflow-y: auto; /* In case content exceeds 15rem height */
-  font-size: 0.875rem; /* Example base font size for card content */
+  position: fixed;
+  z-index: 1050;
+  overflow-y: auto;
+  font-size: 0.875rem;
 }

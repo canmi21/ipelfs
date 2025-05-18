@@ -3,7 +3,6 @@
 <template>
   <div
     class="server-status-icon-container"
-    :title="`WebSocket Status: ${connectionStatus}`"
     tabindex="0"
     :class="statusClass"
     @mouseenter="handleIconMouseEnter"
@@ -24,10 +23,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted, computed, ref, type StyleValue } from 'vue'
+import { defineComponent, onMounted, computed } from 'vue'
 import { Server } from 'lucide-vue-next'
 import { useWebSocket } from '../../../composables/useWebSocket'
 import ServerInfoCard from './serverconnectionstatus/ServerInfoCard.vue'
+import { useServerInfoCard } from '../../../composables/leftsidebar/bottomsidebar/useServerInfoCard'
 
 export default defineComponent({
   name: 'ServerConnectionStatus',
@@ -39,91 +39,25 @@ export default defineComponent({
     const wsUrl = 'ws://localhost:33330/v1/ipelfs/socket'
     const { status, connect } = useWebSocket(wsUrl)
 
-    const isCardVisible = ref(false)
-    const cardPosition = ref({ x: 0, y: 0 })
-    let showCardTimerId: number | null = null
-    let hideCardTimerId: number | null = null
-
-    // const cardWidthRem = 9; // Card width in rem - not needed for this positioning logic
-    const cardHeightRem = 15 // Card height in rem, defined in CSS
-
-    const clearTimers = () => {
-      if (showCardTimerId !== null) {
-        clearTimeout(showCardTimerId)
-        showCardTimerId = null
-      }
-      if (hideCardTimerId !== null) {
-        clearTimeout(hideCardTimerId)
-        hideCardTimerId = null
-      }
-    }
-
-    const handleIconMouseEnter = (event: MouseEvent | FocusEvent) => {
-      clearTimers()
-      showCardTimerId = window.setTimeout(() => {
-        if (event instanceof MouseEvent) {
-          cardPosition.value = { x: event.clientX, y: event.clientY }
-        } else {
-          const rect = (event.currentTarget as HTMLElement)?.getBoundingClientRect()
-          if (rect) {
-            // For focus, position card's bottom-left relative to the icon's bottom-left
-            cardPosition.value = { x: rect.left, y: rect.bottom }
-          }
-        }
-        isCardVisible.value = true
-      }, 700)
-    }
-
-    const startHideCardTimer = () => {
-      clearTimers()
-      hideCardTimerId = window.setTimeout(() => {
-        isCardVisible.value = false
-      }, 200)
-    }
-
-    const handleIconMouseLeave = () => {
-      clearTimeout(showCardTimerId)
-      startHideCardTimer()
-    }
-
-    const handleCardMouseEnter = () => {
-      clearTimeout(hideCardTimerId)
-    }
-
-    const handleCardMouseLeave = () => {
-      startHideCardTimer()
-    }
+    const {
+      isCardVisible,
+      cardDynamicStyle,
+      handleIconMouseEnter,
+      handleIconMouseLeave,
+      handleCardMouseEnter,
+      handleCardMouseLeave,
+    } = useServerInfoCard()
 
     onMounted(() => {
       connect()
-    })
-
-    onUnmounted(() => {
-      clearTimers()
     })
 
     const statusClass = computed(() => {
       return `status-${status.value.toLowerCase()}`
     })
 
-    const cardDynamicStyle = computed((): StyleValue => {
-      const fontSize =
-        typeof window !== 'undefined'
-          ? parseFloat(getComputedStyle(document.documentElement).fontSize)
-          : 16
-      const cardPixelHeight = cardHeightRem * fontSize
-      // const cardPixelWidth = cardWidthRem * fontSize; // Not needed for left calculation
-
-      return {
-        position: 'fixed',
-        // Position bottom-left corner of card at mouseX, mouseY
-        left: `${cardPosition.value.x}px`, // Card's left edge is at mouseX
-        top: `${cardPosition.value.y - cardPixelHeight}px`, // Card's top edge = mouseY - cardHeight (so bottom is at mouseY)
-      }
-    })
-
     return {
-      connectionStatus: status,
+      // connectionStatus: status, // 不再需要，因为移除了 title
       statusClass,
       isCardVisible,
       cardDynamicStyle,
@@ -157,11 +91,11 @@ export default defineComponent({
 .fade-server-info-card-enter-from,
 .fade-server-info-card-leave-to {
   opacity: 0;
-  transform: translateY(10px) translateX(0px); /* Adjusted transform for bottom-left anchor appearance */
+  transform: translateY(10px);
 }
 .fade-server-info-card-enter-to,
 .fade-server-info-card-leave-from {
   opacity: 1;
-  transform: translateY(0) translateX(0);
+  transform: translateY(0);
 }
 </style>
