@@ -10,14 +10,28 @@
           </span>
         </transition>
       </div>
-      <div v-else class="content-container" key="text-phase">Placeholder text</div>
+      <div v-else class="content-container" key="text-phase">
+        <p class="card-title">{{ title }}</p>
+        <p class="card-description">{{ desc }}</p>
+        <p class="card-status" :class="statusTextClass">{{ cardStatusText }}</p>
+      </div>
     </transition>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onUnmounted, type PropType, type StyleValue } from 'vue'
+import {
+  defineComponent,
+  ref,
+  onMounted,
+  onUnmounted,
+  computed,
+  type PropType,
+  type StyleValue,
+} from 'vue'
 import { RotateCcw } from 'lucide-vue-next'
+import { useI18n } from '@/composables/useI18n'
+import { useWebSocket } from '@/composables/useWebSocket' // Import global WebSocket status
 
 export default defineComponent({
   name: 'ServerInfoCard',
@@ -31,25 +45,54 @@ export default defineComponent({
     },
   },
   setup() {
-    const showActualContent = ref(false) // Controls switch from loader to actual content
-    const spinnerVisible = ref(false) // Controls spinner's own fade-in
+    const { t, rt } = useI18n()
+    const { status: wsStatus } = useWebSocket() // Get the global WebSocket status
 
+    const title = rt('infocard.how')
+    const desc = rt('infocard.desc')
+
+    const cardStatusText = computed(() => {
+      switch (wsStatus.value) {
+        case 'OPEN':
+          return t('infocard.connected')
+        case 'CONNECTING':
+          return t('infocard.connecting')
+        case 'CLOSING':
+          return t('infocard.connecting') // Or a specific "infocard.closing" key
+        case 'CLOSED':
+        case 'ERROR':
+        case 'INITIAL':
+        default:
+          return t('infocard.disconnect')
+      }
+    })
+
+    const statusTextClass = computed(() => {
+      switch (wsStatus.value) {
+        case 'OPEN':
+          return 'status-text-open'
+        case 'CONNECTING':
+        case 'CLOSING':
+          return 'status-text-connecting'
+        default:
+          return 'status-text-disconnected'
+      }
+    })
+
+    const showActualContent = ref(false)
+    const spinnerVisible = ref(false)
     let spinnerFadeInTimerId: number | null = null
     let contentDisplayTimerId: number | null = null
 
     onMounted(() => {
-      // Card growth animation (210ms) is handled by the parent component's transition.
-      // After a short delay (approximating card height reaching ~3rem), fade in spinner.
-      // Card width/height animation is 0.21s. 3rem is 1/3 of 9rem height. So ~70ms.
       spinnerFadeInTimerId = window.setTimeout(() => {
-        spinnerVisible.value = true // Trigger spinner fade-in
-      }, 70) // Delay for spinner to appear after card starts growing
+        spinnerVisible.value = true
+      }, 70) // Spinner fade-in after card starts appearing
 
-      // Timer to switch from spinner to actual content.
-      // This 3-second timer starts after the spinner has had a chance to appear.
+      // Display loader for 3 seconds (after spinner itself appears) then show content
       contentDisplayTimerId = window.setTimeout(() => {
-        showActualContent.value = true // Trigger fade-out of loader, fade-in of content
-      }, 70 + 3000) // 70ms for spinner to appear + 3000ms display time
+        showActualContent.value = true
+      }, 210) // 210ms for spinner fade-in
     })
 
     onUnmounted(() => {
@@ -60,6 +103,10 @@ export default defineComponent({
     return {
       showActualContent,
       spinnerVisible,
+      title,
+      desc,
+      cardStatusText,
+      statusTextClass,
     }
   },
 })
@@ -74,13 +121,15 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
 }
 
 .content-container {
   width: 100%;
   height: 100%;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
   text-align: left;
 }
 
@@ -91,7 +140,7 @@ export default defineComponent({
 
 @keyframes server-info-card-spin {
   from {
-    transform: rotate(0deg); /* Ensures clockwise spin for a standard SVG */
+    transform: rotate(0deg);
   }
   to {
     transform: rotate(-360deg);
@@ -101,10 +150,36 @@ export default defineComponent({
 .icon-spin-animation {
   animation: server-info-card-spin 1s linear infinite;
   display: block;
-  transform-origin: center center;
 }
 
-/* Transition for the spinner icon itself appearing */
+.card-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.card-description {
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  flex-grow: 1; /* Allow description to take space if status is pushed to bottom */
+}
+
+.card-status {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: auto; /* Pushes status text to the bottom */
+  width: 100%;
+}
+
+.status-text-open {
+  color: var(--theme-green-base);
+}
+.status-text-connecting {
+  color: var(--theme-yellow-base);
+}
+.status-text-disconnected {
+  color: var(--theme-red-base);
+}
+
 .fade-spinner-enter-active {
   transition: opacity 0.15s ease-in;
 }
@@ -114,23 +189,17 @@ export default defineComponent({
 .fade-spinner-enter-to {
   opacity: 1;
 }
-/* No leave for spinner, its parent div (.loader-container) will be transitioned out */
 
-/* Transition between loader DIV and content DIV */
 .content-switcher-enter-active {
-  /* For content ("Placeholder text") fading in */
-  transition: opacity 0.2s ease-in 0.05s; /* Small delay after loader starts fading out */
+  transition: opacity 0.2s ease-in 0.05s;
 }
 .content-switcher-leave-active {
-  /* For loader-container fading out */
   transition: opacity 0.2s ease-out;
 }
-
 .content-switcher-enter-from,
 .content-switcher-leave-to {
   opacity: 0;
 }
-
 .content-switcher-enter-to,
 .content-switcher-leave-from {
   opacity: 1;

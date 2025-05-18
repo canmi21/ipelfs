@@ -36,8 +36,8 @@ export default defineComponent({
     ServerInfoCard,
   },
   setup() {
-    const wsUrl = 'ws://localhost:33330/v1/ipelfs/socket'
-    const { status, connect } = useWebSocket(wsUrl)
+    const wsRelativeEndpoint = '/v1/ipelfs/socket' // Define the relative endpoint
+    const { status, connect } = useWebSocket() // Get the singleton methods and status
 
     const {
       isCardVisible,
@@ -49,7 +49,7 @@ export default defineComponent({
     } = useServerInfoCard()
 
     onMounted(() => {
-      connect()
+      connect(wsRelativeEndpoint) // Call connect once with the endpoint to configure and initiate
     })
 
     const statusClass = computed(() => {
@@ -57,7 +57,7 @@ export default defineComponent({
     })
 
     return {
-      connectionStatus: status, // Kept for potential title or debug use
+      connectionStatus: status, // For potential use, e.g. debugging or more detailed title
       statusClass,
       isCardVisible,
       cardDynamicStyle,
@@ -96,8 +96,8 @@ export default defineComponent({
 }
 .server-info-card-transition-enter-to {
   opacity: 1;
-  width: 15rem; /* Final width defined in serverinfocard.css */
-  height: 9rem; /* Final height defined in serverinfocard.css */
+  width: 19rem;
+  height: 9rem;
 }
 
 /* Card Disappearance (Leave) Transition: Fade out at full size with optional transform */
@@ -108,13 +108,13 @@ export default defineComponent({
 }
 .server-info-card-transition-leave-from {
   opacity: 1;
-  width: 15rem;
+  width: 19rem;
   height: 9rem;
   transform: translateY(0px);
 }
 .server-info-card-transition-leave-to {
   opacity: 0;
-  width: 15rem;
+  width: 19rem;
   height: 9rem;
   transform: translateY(10px);
 }

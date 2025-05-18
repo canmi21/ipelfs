@@ -1,7 +1,7 @@
 /* assets/app/leftsidebar/bottomsidebar/serverconnectionstatus/serverinfocard.css */
 
 .server-info-card {
-  width: 15rem;
+  width: 19rem;
   height: 9rem;
   background-color: var(--color-bg-surface);
   color: var(--color-text-content);

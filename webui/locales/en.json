@@ -2,5 +2,10 @@
   "sidebar.insights": "Insights",
   "sidebar.volumes": "Volumes",
   "sidebar.collections": "Collections",
-  "sidebar.activity": "Activity"
+  "sidebar.activity": "Activity",
+  "infocard.how": "How does this work?",
+  "infocard.desc": "When you open this page, we connect to the server via WebSocket so events can be shared in real time.",
+  "infocard.connected": "WebSocket Connected",
+  "infocard.disconnect": "WebSocket Disconnected",
+  "infocard.connecting": "WebSocket Connecting"
 }
