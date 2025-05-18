@@ -68,19 +68,25 @@ export default defineComponent({
 <style scoped>
 @import '../../../../assets/app/leftsidebar/bottomsidebar/serverconnectionstatus/serverinfocard.css';
 
-.loader-container,
-.content-container {
+.loader-container {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center; /* For placeholder text if it wraps */
+  text-align: center;
+}
+
+.content-container {
+  width: 100%;
+  height: 100%;
+  display: block;
+  text-align: left;
 }
 
 .mirrored-icon-wrapper {
   display: inline-block;
-  transform: scaleX(-1); /* Mirrors the icon horizontally */
+  transform: scaleX(-1);
 }
 
 @keyframes server-info-card-spin {
@@ -88,13 +94,14 @@ export default defineComponent({
     transform: rotate(0deg); /* Ensures clockwise spin for a standard SVG */
   }
   to {
-    transform: rotate(360deg);
+    transform: rotate(-360deg);
   }
 }
 
 .icon-spin-animation {
   animation: server-info-card-spin 1s linear infinite;
   display: block;
+  transform-origin: center center;
 }
 
 /* Transition for the spinner icon itself appearing */
