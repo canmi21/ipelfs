@@ -3,18 +3,19 @@
 .top-sidebar {
   height: 3rem;
   flex-shrink: 0;
-  display: flex; /* Ensures children are flex items */
-  align-items: center; /* Vertically aligns children */
-  /* justify-content: flex-start; /* Default, or remove if not needed. margin-left:auto handles right alignment */
+  display: flex;
+  align-items: center;
+  /* justify-content: flex-start; /* Default or explicitly set if needed, not space-between */
   overflow: hidden;
-  padding: 0; /* No padding on TopSidebar itself; children manage their internal spacing and size */
+  padding: 0; /* No padding on TopSidebar itself in both states */
   background-color: var(--color-bg-page);
   box-sizing: border-box;
   transition: border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .top-sidebar.sidebar-is-collapsed {
-  padding: 0; /* Slot will fill this, no padding needed on TopSidebar itself */
+  /* padding: 0; /* Already set in base, so no change needed here for padding */
   border-radius: 0.5rem;
-  justify-content: center; /* Center the single SidebarToggleButton slot when collapsed */
+  /* justify-content: center; /* REMOVED: The 3x3 SidebarToggleButton slot will fill the 3x3 TopSidebar */
+  /* Its internal centering will handle the icon. */
 }

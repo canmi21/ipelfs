@@ -17,8 +17,6 @@ import AboutButton from './topsidebar/AboutButton.vue'
 import { useSidebar } from '../../composables/leftsidebar/useSidebar'
 
 const { isCollapsed: isSidebarCollapsed } = useSidebar()
-
-// No dynamic :style needed for height or justify-content here, handled by CSS
 </script>
 
 <script lang="ts">
@@ -30,23 +28,25 @@ export default {
 <style scoped>
 @import '../../assets/app/leftsidebar/topsidebar.css';
 
-/* .top-sidebar's base styles (height, display, align-items, overflow)
-   are now primarily in the imported topsidebar.css.
-   justify-content is also handled there or by flexbox defaults with the new wrapper.
+/* .top-sidebar base styles are now fully in the imported topsidebar.css */
+/* Any justify-content that was here should be removed to defer to the external CSS logic,
+   or ensure it's 'flex-start' or not set, to allow margin-left: auto to work.
+   The current external CSS has no justify-content for the base .top-sidebar rule,
+   which defaults to flex-start, which is correct.
 */
 
 .about-button-wrapper {
   margin-left: auto; /* This pushes this wrapper (and AboutButton inside) to the right */
-  display: flex; /* Ensures the wrapper itself behaves as a flex item if needed */
-  align-items: center; /* Vertically align the AboutButton's slot if necessary */
+  display: flex;
+  align-items: center;
 }
 
 /* Styles for the AboutButton fade transition */
 .fade-about-button-enter-active {
-  transition: opacity 0.15s ease-in-out 0.1s; /* Fade-in: 0.15s duration, 0.1s DELAY */
+  transition: opacity 0.15s ease-in-out 0.1s;
 }
 .fade-about-button-leave-active {
-  transition: opacity 0.25s ease-in-out; /* Fade-out: 0.25s duration, NO DELAY */
+  transition: opacity 0.25s ease-in-out;
 }
 
 .fade-about-button-enter-from,
