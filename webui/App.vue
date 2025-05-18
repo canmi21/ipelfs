@@ -1,7 +1,7 @@
 <!-- App.vue -->
 
 <template>
-  <div class="flex h-screen">
+  <div class="app-root-container">
     <div
       class="left-sidebar"
       :style="leftSidebarStyle"
@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import LeftSidebar from './components/LeftSidebar.vue'
 import RelativeMain from './components/RelativeMain.vue'
 import { useSidebar } from './composables/leftsidebar/useSidebar'
@@ -27,8 +27,6 @@ const leftSidebarStyle = computed(() => ({
   flexBasis: isCollapsed.value ? '3rem' : '16rem',
   transition: 'flex-basis 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
 }))
-
-onMounted(() => {})
 </script>
 
 <script lang="ts">
@@ -40,6 +38,12 @@ export default {
 <style>
 @import './assets/app/leftsidebar.css';
 @import './assets/app/relativemain.css';
+
+.app-root-container {
+  display: flex;
+  height: 100vh; /* Fallback for older browsers */
+  height: 100svh; /* Use Small Viewport Height for mobile to avoid overlap with browser UI */
+}
 
 .left-sidebar {
   overflow-x: hidden;
