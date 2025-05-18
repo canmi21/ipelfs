@@ -1,12 +1,13 @@
 // composables/useWebSocket.ts
 
 import { ref, readonly, shallowRef, onScopeDispose, type Ref } from 'vue'
+import { getAbsoluteApiUrl } from './useApiUrl'
 
 export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSING' | 'CLOSED' | 'ERROR' | 'INITIAL'
 
 const IS_CLIENT = typeof window !== 'undefined'
 
-export function useWebSocket(url: string) {
+export function useWebSocket(relativeEndpoint: string) {
   const status = ref<WebSocketStatus>('INITIAL')
   const data = shallowRef<unknown | null>(null)
   const errorEvent = shallowRef<Event | CloseEvent | null>(null)
@@ -22,30 +23,31 @@ export function useWebSocket(url: string) {
       return
     }
 
-    console.log(`Attempting to connect to WebSocket: ${url}`)
+    const absoluteUrl = getAbsoluteApiUrl(relativeEndpoint)
+    console.log(`Attempting to connect to WebSocket using base: ${absoluteUrl}`)
     status.value = 'CONNECTING'
     data.value = null
     errorEvent.value = null
 
     try {
-      let correctedUrl = url
-      if (url.startsWith('http://')) {
-        correctedUrl = url.replace('http://', 'ws://')
-      } else if (url.startsWith('https://')) {
-        correctedUrl = url.replace('https://', 'wss://')
+      let correctedWebSocketUrl = absoluteUrl
+      if (absoluteUrl.startsWith('http://')) {
+        correctedWebSocketUrl = absoluteUrl.replace('http://', 'ws://')
+      } else if (absoluteUrl.startsWith('https://')) {
+        correctedWebSocketUrl = absoluteUrl.replace('https://', 'wss://')
       }
-      console.log(`Corrected WebSocket URL: ${correctedUrl}`)
+      console.log(`Corrected WebSocket URL for connection: ${correctedWebSocketUrl}`)
 
-      ws = new WebSocket(correctedUrl)
+      ws = new WebSocket(correctedWebSocketUrl)
 
       ws.onopen = () => {
         status.value = 'OPEN'
-        console.log(`WebSocket connected: ${correctedUrl}`)
+        console.log(`WebSocket connected: ${correctedWebSocketUrl}`)
       }
 
       ws.onmessage = (event) => {
         console.log('WebSocket message received:', event.data)
-        data.value = event.data // Or JSON.parse(event.data) if expecting JSON
+        data.value = event.data
       }
 
       ws.onerror = (event) => {
@@ -58,7 +60,7 @@ export function useWebSocket(url: string) {
         status.value = 'CLOSED'
         errorEvent.value = event
         console.log(
-          `WebSocket disconnected: ${correctedUrl}`,
+          `WebSocket disconnected: ${correctedWebSocketUrl}`,
           `Code: ${event.code}, Reason: "${event.reason}", Clean: ${event.wasClean}`,
         )
         ws = null
@@ -66,7 +68,6 @@ export function useWebSocket(url: string) {
     } catch (err) {
       console.error('Failed to create WebSocket connection:', err)
       status.value = 'ERROR'
-      // errorEvent.value = err as Event; // 'err' might not be an Event instance
     }
   }
 
