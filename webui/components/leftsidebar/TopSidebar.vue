@@ -3,6 +3,7 @@
 <template>
   <div class="top-sidebar" :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }">
     <SidebarToggleButton />
+    <div class="top-sidebar-spacer" v-show="!isSidebarCollapsed"></div>
     <transition name="fade-about-button">
       <AboutButton v-show="!isSidebarCollapsed" />
     </transition>
@@ -26,8 +27,12 @@ export default {
 <style scoped>
 @import '../../assets/app/leftsidebar/topsidebar.css';
 
-/* .top-sidebar base styles (height, flex, etc.) are now primarily in the imported CSS. */
-/* Scoped styles are for component-specific overrides or truly unique aspects. */
+/* .top-sidebar base styles are now primarily in the imported CSS.
+   Scoped style is for component-specific layout helpers or transitions. */
+
+.top-sidebar-spacer {
+  flex-grow: 1; /* Pushes AboutButton to the right when sidebar is expanded */
+}
 
 /* Styles for the AboutButton fade transition */
 .fade-about-button-enter-active,

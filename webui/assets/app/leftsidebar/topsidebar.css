@@ -1,24 +1,19 @@
 /* assets/app/leftsidebar/topsidebar.css */
 
 .top-sidebar {
-  height: 3rem; /* Fixed height */
+  height: 3rem;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   overflow: hidden;
+  padding: 0;
   background-color: var(--color-bg-page);
   box-sizing: border-box;
-  transition:
-    padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Default for expanded state */
-  padding: 0;
-  justify-content: space-between;
+  transition: border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .top-sidebar.sidebar-is-collapsed {
-  padding: 0; /* The 3x3 slot child will fill this */
-  border-radius: 0.5rem;
-  justify-content: center; /* Center the single 3x3 toggle button slot */
+  /* padding: 0.75rem; /* Removed, SidebarToggleButton slot (3x3) will fill TopSidebar (3x3) */
+  border-radius: 0.5rem; /* Rounded square look for the TopSidebar itself when collapsed */
+  /* justify-content: center; /* Removed, single 3x3 child will fill and center its own content */
 }
