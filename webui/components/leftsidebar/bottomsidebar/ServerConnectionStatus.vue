@@ -11,7 +11,7 @@
     @blur="handleIconMouseLeave"
   >
     <Server :size="24" :stroke-width="2" />
-    <transition name="fade-server-info-card">
+    <transition name="server-info-card-transition">
       <ServerInfoCard
         v-if="isCardVisible"
         :card-style="cardDynamicStyle"
@@ -57,7 +57,7 @@ export default defineComponent({
     })
 
     return {
-      // connectionStatus: status, // 不再需要，因为移除了 title
+      connectionStatus: status,
       statusClass,
       isCardVisible,
       cardDynamicStyle,
@@ -82,20 +82,43 @@ export default defineComponent({
   position: relative;
 }
 
-.fade-server-info-card-enter-active,
-.fade-server-info-card-leave-active {
+/* Card Appearance (Enter) Transition: Growth from bottom-left */
+.server-info-card-transition-enter-active {
+  transition:
+    opacity 0.21s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.21s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.21s cubic-bezier(0.4, 0, 0.2, 1);
+  /* transform-origin: bottom left; /* Not strictly needed when animating width/height from anchored L/B */
+}
+.server-info-card-transition-enter-from {
+  opacity: 0;
+  width: 0px; /* Start from 0 width */
+  height: 0px; /* Start from 0 height */
+  /* left and bottom are set by :card-style, growth is up and right */
+}
+.server-info-card-transition-enter-to {
+  opacity: 1;
+  width: 15rem; /* Final width from serverinfocard.css */
+  height: 9rem; /* Final height from serverinfocard.css */
+}
+
+/* Card Disappearance (Leave) Transition: Fade out at full size with optional transform */
+.server-info-card-transition-leave-active {
   transition:
     opacity 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
+    transform 0.2s ease-in-out; /* For the slight translateY on leave */
+  /* Width and height are NOT transitioned on leave */
 }
-.fade-server-info-card-enter-from,
-.fade-server-info-card-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.fade-server-info-card-enter-to,
-.fade-server-info-card-leave-from {
+.server-info-card-transition-leave-from {
   opacity: 1;
-  transform: translateY(0);
+  width: 15rem; /* Maintain full size */
+  height: 9rem; /* Maintain full size */
+  transform: translateY(0px);
+}
+.server-info-card-transition-leave-to {
+  opacity: 0;
+  width: 15rem; /* Maintain full size while fading */
+  height: 9rem; /* Maintain full size while fading */
+  transform: translateY(10px); /* Slight downward movement on fade out */
 }
 </style>
