@@ -23,5 +23,5 @@ export default defineComponent({
 
 <style scoped>
 @import '../../assets/app/relativemain/toprightactions.css';
-/* Ensure toprightactions.css has 'gap' if multiple buttons, e.g., gap: 0.5rem; */
+/* No additional scoped styles needed here as layout is in the imported CSS */
 </style>

@@ -1,9 +1,11 @@
 /* assets/app/relativemain/toprightactions.css */
 
 .top-right-actions-container {
-  padding: 0rem;
   height: 3rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0rem;
+  display: flex; /* Use flex to arrange children (the 3x3 slots) */
+  flex-direction: row-reverse; /* Arrange items from right to left */
+  align-items: center; /* Vertically center the slots if their height was different, though they are also 3rem */
+  padding: 0rem;
+  gap: 0rem; /* No gap between the 3x3 slots */
+  /* Width will be implicitly n * 3rem */
 }
