@@ -1,0 +1,39 @@
+/* assets/app/relativemain/toprightactions/languagetogglebutton.css */
+
+.language-toggle-button {
+  background-color: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.12s ease-out,
+    transform 0.12s ease-out,
+    box-shadow 0.12s ease-out;
+}
+
+.language-toggle-button:hover {
+  color: var(--color-text-default);
+  transform: scale(1.05);
+}
+
+.language-toggle-button:active {
+  transform: scale(0.95);
+}
+
+.language-toggle-button:focus {
+  outline: none;
+}
+
+.language-toggle-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-bg-surface),
+    0 0 0 4px var(--color-focus-ring);
+  color: var(--color-text-default);
+  transform: scale(1.05);
+}
