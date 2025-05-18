@@ -12,21 +12,21 @@
   justify-content: center;
   transition:
     color 0.12s ease-out,
-    transform 0.12s ease-out,
+    2 transform 0.12s ease-out,
     box-shadow 0.12s ease-out;
-}
-
-.server-status-icon-container:hover {
-  color: var(--color-text-default);
-  transform: scale(1.05);
-}
-
-.server-status-icon-container:active {
-  transform: scale(0.95);
 }
 
 .server-status-icon-container:focus {
   outline: none;
+}
+
+.server-status-icon-container:hover {
+  color: var(--color-text-default);
+  transform: none;
+}
+
+.server-status-icon-container:active {
+  transform: none;
 }
 
 .server-status-icon-container:focus-visible {
@@ -35,7 +35,7 @@
     0 0 0 2px var(--color-bg-page),
     0 0 0 4px var(--color-focus-ring);
   color: var(--color-text-default);
-  transform: scale(1.05);
+  transform: none;
 }
 
 /* Status-specific icon colors */
