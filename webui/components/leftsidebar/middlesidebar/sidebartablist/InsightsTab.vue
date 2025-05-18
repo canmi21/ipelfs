@@ -49,7 +49,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-@import '../../../../assets/app/leftsidebar/middlesidebar/sidebartablist/commontab.css'; /* Or specific insightstab.css */
+@import '../../../../assets/app/leftsidebar/middlesidebar/sidebartablist/commontab.css';
 
 .sidebar-tab-item {
   height: 3rem;
@@ -94,9 +94,12 @@ export default defineComponent({
   line-height: 1.5rem;
 }
 
-.fade-tab-label-enter-active,
+/* Styles for the Tab Label fade transition */
+.fade-tab-label-enter-active {
+  transition: opacity 0.15s ease-in-out; /* Fade-in: 0.15s duration, NO DELAY */
+}
 .fade-tab-label-leave-active {
-  transition: opacity 0.15s ease-in-out;
+  transition: opacity 0.25s ease-in-out 0.1s; /* Fade-out: 0.25s duration, 0.1s DELAY */
 }
 
 .fade-tab-label-enter-from,

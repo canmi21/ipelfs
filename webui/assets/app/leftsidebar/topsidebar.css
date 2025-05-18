@@ -3,17 +3,18 @@
 .top-sidebar {
   height: 3rem;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
+  display: flex; /* Ensures children are flex items */
+  align-items: center; /* Vertically aligns children */
+  /* justify-content: flex-start; /* Default, or remove if not needed. margin-left:auto handles right alignment */
   overflow: hidden;
-  padding: 0;
+  padding: 0; /* No padding on TopSidebar itself; children manage their internal spacing and size */
   background-color: var(--color-bg-page);
   box-sizing: border-box;
   transition: border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .top-sidebar.sidebar-is-collapsed {
-  /* padding: 0.75rem; /* Removed, SidebarToggleButton slot (3x3) will fill TopSidebar (3x3) */
-  border-radius: 0.5rem; /* Rounded square look for the TopSidebar itself when collapsed */
-  /* justify-content: center; /* Removed, single 3x3 child will fill and center its own content */
+  padding: 0; /* Slot will fill this, no padding needed on TopSidebar itself */
+  border-radius: 0.5rem;
+  justify-content: center; /* Center the single SidebarToggleButton slot when collapsed */
 }
