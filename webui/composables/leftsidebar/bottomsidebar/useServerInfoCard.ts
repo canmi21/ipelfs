@@ -2,6 +2,7 @@
 
 import { ref, computed, onScopeDispose, readonly, type Ref, type StyleValue } from 'vue'
 
+const CARD_HEIGHT_REM = 9
 const SHOW_DELAY_MS = 700
 const HIDE_DELAY_MS = 300
 
@@ -9,7 +10,7 @@ const IS_CLIENT = typeof window !== 'undefined'
 
 export function useServerInfoCard() {
   const isCardVisible = ref(false)
-  const cardPosition = ref({ x: 0, y: 0 }) // Stores mouse clientX/clientY
+  const cardPosition = ref({ x: 0, y: 0 })
 
   let showTimeoutId: number | null = null
   let hideTimeoutId: number | null = null
@@ -20,12 +21,12 @@ export function useServerInfoCard() {
   const clearTimers = () => {
     if (showTimeoutId !== null) {
       clearTimeout(showTimeoutId)
-      showTimeoutId = null
     }
+    showTimeoutId = null
     if (hideTimeoutId !== null) {
       clearTimeout(hideTimeoutId)
-      hideTimeoutId = null
     }
+    hideTimeoutId = null
   }
 
   const showCardLogic = (event: MouseEvent | FocusEvent) => {
@@ -35,7 +36,7 @@ export function useServerInfoCard() {
       // FocusEvent
       const rect = (event.currentTarget as HTMLElement)?.getBoundingClientRect()
       if (rect) {
-        cardPosition.value = { x: rect.left, y: rect.bottom } // Anchor bottom-left of card to icon's bottom-left
+        cardPosition.value = { x: rect.left, y: rect.bottom }
       }
     }
     isCardVisible.value = true
@@ -50,6 +51,7 @@ export function useServerInfoCard() {
   const handleIconMouseEnter = (event: MouseEvent | FocusEvent) => {
     isMouseOverIcon.value = true
     if (hideTimeoutId !== null) {
+      // Guard direct call
       clearTimeout(hideTimeoutId)
     }
     hideTimeoutId = null
@@ -67,6 +69,7 @@ export function useServerInfoCard() {
   const handleIconMouseLeave = () => {
     isMouseOverIcon.value = false
     if (showTimeoutId !== null) {
+      // Guard direct call
       clearTimeout(showTimeoutId)
     }
     showTimeoutId = null
@@ -74,7 +77,9 @@ export function useServerInfoCard() {
     if (isCardVisible.value && hideTimeoutId === null) {
       hideTimeoutId = window.setTimeout(hideCardLogic, HIDE_DELAY_MS)
     } else if (!isCardVisible.value) {
+      // If card is not visible, ensure any stray hide timer is cleared.
       if (hideTimeoutId !== null) {
+        // Guard direct call
         clearTimeout(hideTimeoutId)
       }
       hideTimeoutId = null
@@ -84,6 +89,7 @@ export function useServerInfoCard() {
   const handleCardMouseEnter = () => {
     isMouseOverCard.value = true
     if (hideTimeoutId !== null) {
+      // Guard direct call - this was the line you highlighted
       clearTimeout(hideTimeoutId)
     }
     hideTimeoutId = null
@@ -97,13 +103,15 @@ export function useServerInfoCard() {
   }
 
   const cardDynamicStyle = computed((): StyleValue => {
-    // cardPosition.value.x is mouseX, cardPosition.value.y is mouseY
-    // We want the card's bottom-left corner to be at (mouseX, mouseY)
+    const fontSize = IS_CLIENT
+      ? parseFloat(getComputedStyle(document.documentElement).fontSize)
+      : 16
+    const cardPixelHeight = CARD_HEIGHT_REM * fontSize
+
     return {
       position: 'fixed',
       left: `${cardPosition.value.x}px`,
-      bottom: IS_CLIENT ? `${window.innerHeight - cardPosition.value.y}px` : 'auto', // Card's bottom edge relative to viewport bottom
-      // top will be auto, height will grow upwards from 'bottom'
+      top: `${cardPosition.value.y - cardPixelHeight}px`,
     }
   })
 

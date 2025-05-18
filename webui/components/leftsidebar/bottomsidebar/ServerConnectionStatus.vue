@@ -57,7 +57,7 @@ export default defineComponent({
     })
 
     return {
-      connectionStatus: status,
+      connectionStatus: status, // Kept for potential title or debug use
       statusClass,
       isCardVisible,
       cardDynamicStyle,
@@ -88,37 +88,34 @@ export default defineComponent({
     opacity 0.21s cubic-bezier(0.4, 0, 0.2, 1),
     width 0.21s cubic-bezier(0.4, 0, 0.2, 1),
     height 0.21s cubic-bezier(0.4, 0, 0.2, 1);
-  /* transform-origin: bottom left; /* Not strictly needed when animating width/height from anchored L/B */
 }
 .server-info-card-transition-enter-from {
   opacity: 0;
-  width: 0px; /* Start from 0 width */
-  height: 0px; /* Start from 0 height */
-  /* left and bottom are set by :card-style, growth is up and right */
+  width: 0px;
+  height: 0px;
 }
 .server-info-card-transition-enter-to {
   opacity: 1;
-  width: 15rem; /* Final width from serverinfocard.css */
-  height: 9rem; /* Final height from serverinfocard.css */
+  width: 15rem; /* Final width defined in serverinfocard.css */
+  height: 9rem; /* Final height defined in serverinfocard.css */
 }
 
 /* Card Disappearance (Leave) Transition: Fade out at full size with optional transform */
 .server-info-card-transition-leave-active {
   transition:
     opacity 0.2s ease-in-out,
-    transform 0.2s ease-in-out; /* For the slight translateY on leave */
-  /* Width and height are NOT transitioned on leave */
+    transform 0.2s ease-in-out;
 }
 .server-info-card-transition-leave-from {
   opacity: 1;
-  width: 15rem; /* Maintain full size */
-  height: 9rem; /* Maintain full size */
+  width: 15rem;
+  height: 9rem;
   transform: translateY(0px);
 }
 .server-info-card-transition-leave-to {
   opacity: 0;
-  width: 15rem; /* Maintain full size while fading */
-  height: 9rem; /* Maintain full size while fading */
-  transform: translateY(10px); /* Slight downward movement on fade out */
+  width: 15rem;
+  height: 9rem;
+  transform: translateY(10px);
 }
 </style>
