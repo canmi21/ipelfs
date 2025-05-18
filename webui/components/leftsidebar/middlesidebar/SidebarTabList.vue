@@ -2,10 +2,26 @@
 
 <template>
   <div class="sidebar-tab-list-container">
-    <InsightsTab :label="insightsLabel" :is-sidebar-collapsed="isSidebarCollapsed" />
-    <VolumesTab :label="volumesLabel" :is-sidebar-collapsed="isSidebarCollapsed" />
-    <CollectionsTab :label="collectionsLabel" :is-sidebar-collapsed="isSidebarCollapsed" />
-    <ActivityTab :label="activityLabel" :is-sidebar-collapsed="isSidebarCollapsed" />
+    <InsightsTab
+      :label="insightsLabel"
+      routeName="Insights"
+      :is-sidebar-collapsed="isSidebarCollapsed"
+    />
+    <VolumesTab
+      :label="volumesLabel"
+      routeName="Volumes"
+      :is-sidebar-collapsed="isSidebarCollapsed"
+    />
+    <CollectionsTab
+      :label="collectionsLabel"
+      routeName="Collections"
+      :is-sidebar-collapsed="isSidebarCollapsed"
+    />
+    <ActivityTab
+      :label="activityLabel"
+      routeName="Activity"
+      :is-sidebar-collapsed="isSidebarCollapsed"
+    />
   </div>
 </template>
 
@@ -32,7 +48,7 @@ export default defineComponent({
     },
   },
   setup() {
-    const { rt } = useI18n() // Using reactive translate for props
+    const { rt } = useI18n()
 
     const insightsLabel = rt('sidebar.insights')
     const volumesLabel = rt('sidebar.volumes')

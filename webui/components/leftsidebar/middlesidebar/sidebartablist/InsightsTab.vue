@@ -1,16 +1,25 @@
 <!-- components/leftsidebar/middlesidebar/sidebartablist/InsightsTab.vue -->
 
 <template>
-  <button class="sidebar-tab-item" :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }">
-    <div class="tab-content-focusable-area">
-      <div class="tab-icon-wrapper">
-        <LandPlot :size="24" :stroke-width="2" />
-      </div>
-      <transition name="fade-tab-label">
+  <router-link :to="{ name: routeName }" custom v-slot="{ navigate, isExactActive }">
+    <button
+      class="sidebar-tab-item"
+      :class="{
+        'sidebar-is-collapsed': isSidebarCollapsed,
+        'router-link-exact-active': isExactActive,
+      }"
+      @click="navigate"
+      role="link"
+      :aria-current="isExactActive ? 'page' : undefined"
+    >
+      <div class="tab-content-focusable-area">
+        <div class="tab-icon-wrapper">
+          <LandPlot :size="24" :stroke-width="2" />
+        </div>
         <span class="tab-label" v-show="!isSidebarCollapsed">{{ label }}</span>
-      </transition>
-    </div>
-  </button>
+      </div>
+    </button>
+  </router-link>
 </template>
 
 <script lang="ts">
@@ -31,12 +40,16 @@ export default defineComponent({
       type: Boolean,
       required: true,
     },
+    routeName: {
+      type: String,
+      required: true,
+    },
   },
 })
 </script>
 
 <style scoped>
-@import '../../../../assets/app/leftsidebar/middlesidebar/sidebartablist/commontab.css';
+@import '../../../../assets/app/leftsidebar/middlesidebar/sidebartablist/commontab.css'; /* Or specific insightstab.css */
 
 .sidebar-tab-item {
   height: 3rem;
@@ -64,8 +77,13 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.1s ease-out;
-  border-radius: 4px; /* Ensure this is present if outline is on this element directly in some cases */
+  transition:
+    transform 0.1s ease-out,
+    outline 0.12s ease-out,
+    outline-offset 0.12s ease-out;
+  border-radius: 4px;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 .tab-label {
@@ -78,7 +96,7 @@ export default defineComponent({
 
 .fade-tab-label-enter-active,
 .fade-tab-label-leave-active {
-  transition: opacity 0.15s ease-in-out; /* 150ms for a gentle fade */
+  transition: opacity 0.15s ease-in-out;
 }
 
 .fade-tab-label-enter-from,

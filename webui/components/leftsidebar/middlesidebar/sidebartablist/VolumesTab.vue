@@ -1,16 +1,25 @@
 <!-- components/leftsidebar/middlesidebar/sidebartablist/VolumesTab.vue -->
 
 <template>
-  <button class="sidebar-tab-item" :class="{ 'sidebar-is-collapsed': isSidebarCollapsed }">
-    <div class="tab-content-focusable-area">
-      <div class="tab-icon-wrapper">
-        <HardDrive :size="24" :stroke-width="2" />
-      </div>
-      <transition name="fade-tab-label">
+  <router-link :to="{ name: routeName }" custom v-slot="{ navigate, isExactActive }">
+    <button
+      class="sidebar-tab-item"
+      :class="{
+        'sidebar-is-collapsed': isSidebarCollapsed,
+        'router-link-exact-active': isExactActive,
+      }"
+      @click="navigate"
+      role="link"
+      :aria-current="isExactActive ? 'page' : undefined"
+    >
+      <div class="tab-content-focusable-area">
+        <div class="tab-icon-wrapper">
+          <HardDrive :size="24" :stroke-width="2" />
+        </div>
         <span class="tab-label" v-show="!isSidebarCollapsed">{{ label }}</span>
-      </transition>
-    </div>
-  </button>
+      </div>
+    </button>
+  </router-link>
 </template>
 
 <script lang="ts">
@@ -19,10 +28,22 @@ import { HardDrive } from 'lucide-vue-next'
 
 export default defineComponent({
   name: 'VolumesTab',
-  components: { HardDrive },
+  components: {
+    HardDrive,
+  },
   props: {
-    label: { type: String, required: true },
-    isSidebarCollapsed: { type: Boolean, required: true },
+    label: {
+      type: String,
+      required: true,
+    },
+    isSidebarCollapsed: {
+      type: Boolean,
+      required: true,
+    },
+    routeName: {
+      type: String,
+      required: true,
+    },
   },
 })
 </script>
@@ -56,8 +77,13 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.1s ease-out;
+  transition:
+    transform 0.1s ease-out,
+    outline 0.12s ease-out,
+    outline-offset 0.12s ease-out;
   border-radius: 4px;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 .tab-label {
