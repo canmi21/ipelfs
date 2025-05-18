@@ -1,4 +1,4 @@
-/* services/middleware.rs */
+/* src/services/middleware.rs */
 
 use axum::{
     extract::Request, // This is axum::http::Request<axum::body::Body> when used as an extractor

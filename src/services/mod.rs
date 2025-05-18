@@ -1,3 +1,3 @@
-// services/mod.rs
+// src/services/mod.rs
 
 pub mod middleware;

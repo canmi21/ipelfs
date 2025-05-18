@@ -1,4 +1,4 @@
-// utils/cli.rs
+// src/utils/cli.rs
 
 use clap::{Parser, Subcommand};
 
