@@ -37,3 +37,17 @@
   color: var(--color-text-default);
   transform: scale(1.05);
 }
+
+/* Status-specific icon colors */
+.server-status-icon-container.status-open svg {
+  color: var(--theme-green-base); /* Green for connected */
+}
+.server-status-icon-container.status-closed svg,
+.server-status-icon-container.status-error svg {
+  color: var(--theme-red-base); /* Red for closed or error */
+}
+.server-status-icon-container.status-connecting svg,
+.server-status-icon-container.status-closing svg {
+  color: var(--theme-yellow-base); /* Yellow for intermediate states */
+}
+/* The default color is var(--color-text-muted) via .server-status-icon-container if no status class matches */

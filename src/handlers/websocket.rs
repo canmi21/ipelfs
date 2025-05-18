@@ -3,11 +3,9 @@
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        // State, // Removed as it's unused
     },
     response::IntoResponse,
 };
-use futures_util::{sink::SinkExt, stream::StreamExt}; // Both SinkExt and StreamExt are used
 use crate::utils::logger;
 
 // This function handles WebSocket upgrade requests.
