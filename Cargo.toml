@@ -11,3 +11,5 @@ chrono = "0.4"
 tower-http = { version = "0.5", features = ["cors", "set-header"] }
 lazy_static = "1.4.0"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+futures = "0.3"
+get_if_addrs = "0.5"
