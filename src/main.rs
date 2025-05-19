@@ -27,15 +27,14 @@ async fn start_server(port: u16) {
     let addr_str = format!("0.0.0.0:{}", port);
     let addr: SocketAddr = addr_str.parse().expect("Invalid address format");
 
-    logger::action("Server setup complete. Listening for connections...");
-
-    logger::good(&format!("Local:   http://localhost:{}", port));
+    logger::action("server", "[Bootstrap] Listening for connections...");
+    logger::good("server", &format!("[Bootstrap] Local: http://localhost:{}", port));
 
     if let Ok(addrs) = get_if_addrs() {
         for iface in addrs {
             let ip = iface.ip();
             if ip.is_ipv4() && !ip.is_loopback() {
-                logger::good(&format!("Network: http://{}:{}", ip, port));
+                logger::good("server", &format!("[Bootstrap] Network: http://{}:{}", ip, port));
             }
         }
     }
@@ -49,6 +48,7 @@ async fn start_server(port: u16) {
 
 #[tokio::main]
 async fn main() {
+    logger::init_logger();
     let cli_args = Cli::parse();
 
     match cli_args.command {

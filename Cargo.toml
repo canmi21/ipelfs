@@ -13,3 +13,7 @@ lazy_static = "1.4.0"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 futures = "0.3"
 get_if_addrs = "0.5"
+rand = "0.8"
+once_cell = "1.18"
+colored = "2.0"
+termcolor = "1.1"
