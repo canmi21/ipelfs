@@ -13,7 +13,13 @@
       <div v-else class="content-container" key="text-phase">
         <p class="card-title">{{ title }}</p>
         <p class="card-description">{{ desc }}</p>
-        <p class="card-status" :class="statusTextClass">{{ cardStatusText }}</p>
+        <p class="card-status" :class="statusTextClass">
+          <span class="status-indicator-wrapper">
+            <span class="status-indicator-inner" :class="statusColorClass" />
+            <span class="status-indicator-outer" :class="statusColorClass" />
+          </span>
+          {{ cardStatusText }}
+        </p>
       </div>
     </transition>
   </div>
@@ -31,7 +37,7 @@ import {
 } from 'vue'
 import { RotateCcw } from 'lucide-vue-next'
 import { useI18n } from '@/composables/useI18n'
-import { useWebSocket } from '@/composables/useWebSocket' // Import global WebSocket status
+import { useWebSocket } from '@/composables/useWebSocket'
 
 export default defineComponent({
   name: 'ServerInfoCard',
@@ -46,7 +52,7 @@ export default defineComponent({
   },
   setup() {
     const { t, rt } = useI18n()
-    const { status: wsStatus } = useWebSocket() // Get the global WebSocket status
+    const { status: wsStatus } = useWebSocket()
 
     const title = rt('infocard.how')
     const desc = rt('infocard.desc')
@@ -56,12 +62,8 @@ export default defineComponent({
         case 'OPEN':
           return t('infocard.connected')
         case 'CONNECTING':
-          return t('infocard.connecting')
         case 'CLOSING':
-          return t('infocard.connecting') // Or a specific "infocard.closing" key
-        case 'CLOSED':
-        case 'ERROR':
-        case 'INITIAL':
+          return t('infocard.connecting')
         default:
           return t('infocard.disconnect')
       }
@@ -79,6 +81,18 @@ export default defineComponent({
       }
     })
 
+    const statusColorClass = computed(() => {
+      switch (wsStatus.value) {
+        case 'OPEN':
+          return 'status-indicator-green'
+        case 'CONNECTING':
+        case 'CLOSING':
+          return 'status-indicator-yellow'
+        default:
+          return 'status-indicator-red'
+      }
+    })
+
     const showActualContent = ref(false)
     const spinnerVisible = ref(false)
     let spinnerFadeInTimerId: number | null = null
@@ -87,12 +101,11 @@ export default defineComponent({
     onMounted(() => {
       spinnerFadeInTimerId = window.setTimeout(() => {
         spinnerVisible.value = true
-      }, 70) // Spinner fade-in after card starts appearing
+      }, 70)
 
-      // Display loader for 3 seconds (after spinner itself appears) then show content
       contentDisplayTimerId = window.setTimeout(() => {
         showActualContent.value = true
-      }, 210) // 210ms for spinner fade-in
+      }, 210)
     })
 
     onUnmounted(() => {
@@ -107,6 +120,7 @@ export default defineComponent({
       desc,
       cardStatusText,
       statusTextClass,
+      statusColorClass,
     }
   },
 })
@@ -160,14 +174,16 @@ export default defineComponent({
 .card-description {
   font-size: 0.875rem;
   margin-bottom: 0.75rem;
-  flex-grow: 1; /* Allow description to take space if status is pushed to bottom */
+  flex-grow: 1;
 }
 
 .card-status {
   font-size: 0.875rem;
   font-weight: 500;
-  margin-top: auto; /* Pushes status text to the bottom */
+  margin-top: auto;
   width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .status-text-open {
@@ -178,6 +194,74 @@ export default defineComponent({
 }
 .status-text-disconnected {
   color: var(--theme-red-base);
+}
+
+/* status indicator (inner + outer glow) */
+.status-indicator-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.5rem;
+}
+
+.status-indicator-inner,
+.status-indicator-outer {
+  position: absolute;
+  border-radius: 50%;
+  top: 0;
+  left: 0;
+}
+
+.status-indicator-inner {
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  z-index: 2;
+  animation: pulse-inner 2.8s ease-in-out infinite;
+}
+
+.status-indicator-outer {
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  opacity: 0.5;
+  filter: blur(4px);
+  transform: scale(1.3);
+  z-index: 1;
+  animation: pulse-outer 4.2s ease-in-out infinite;
+}
+
+.status-indicator-green {
+  color: var(--theme-green-base);
+}
+.status-indicator-yellow {
+  color: var(--theme-yellow-base);
+}
+.status-indicator-red {
+  color: var(--theme-red-base);
+}
+
+@keyframes pulse-inner {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes pulse-outer {
+  0%,
+  100% {
+    transform: scale(1.3);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.6;
+  }
 }
 
 .fade-spinner-enter-active {

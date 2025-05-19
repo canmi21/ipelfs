@@ -5,7 +5,7 @@
   "sidebar.activity": "历史操作",
   "infocard.how": "这是怎么实现的?",
   "infocard.desc": "当你打开这个页面的时候我们会自动尝试和后端建立 WebSocket 连接，当连接成功后客户端和服务器就可以互相推送事件了。",
-  "infocard.connected": "WebSocket 已连接",
-  "infocard.disconnect": "WebSocket 未连接",
-  "infocard.connecting": "WebSocket 连接中"
+  "infocard.connected": "已连接",
+  "infocard.disconnect": "未连接",
+  "infocard.connecting": "连接中"
 }
